@@ -1,12 +1,14 @@
 #include "opengl_manager.hpp"
 
 #include <array>
+#include <imgui.h>
 
 #include "glad/glad.h"
 #include "opengl_error.hpp"
 #include "opengl_shader.hpp"
 #include "GLFW/glfw3.h"
 #include "../../application/log.hpp"
+#include "../../application/time.hpp"
 #include "../../common_util/macros.hpp"
 
 #define WINDOW_PTR (GLFWwindow*)m_window->handle()
@@ -31,17 +33,11 @@ uint8_t pge::OpenGlManager::init()
 
     glfwSetFramebufferSizeCallback(WINDOW_PTR, framebuffer_resize_cb);
 
-    auto vertex_shader = create_opengl_shader(PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex);
-    auto fragment_shader = create_opengl_shader(PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment);
-
-    m_shader_program = glCreateProgram();
-
-    glAttachShader(m_shader_program, *vertex_shader);
-    glAttachShader(m_shader_program, *fragment_shader);
-    glLinkProgram(m_shader_program);
-
-    glDeleteShader(*vertex_shader);
-    glDeleteShader(*fragment_shader);
+    m_shader.create(
+    {
+        {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
+        {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment}
+    });
 
     float vertices[] =
     {
@@ -86,8 +82,24 @@ uint8_t pge::OpenGlManager::draw_frame()
     glClearColor(EXPAND_VEC4(m_clear_color));
     glClear(GL_COLOR_BUFFER_BIT);
 
+    auto time = program_time();
+    auto color = (sin(time) / 2.0f) + 0.5f;
 
-    glUseProgram(m_shader_program);
+    m_shader.use();
+    m_shader.set("color", {0.3f, 0.0f, color, 1.0f});
+
+    ImGui::Begin("Transform");
+    static float x_off;
+    static float y_off;
+    static bool invert = false;
+    ImGui::SliderFloat("X offset", &x_off, -1, 1);
+    ImGui::SliderFloat("Y offset", &y_off, -1, 1);
+    ImGui::Checkbox("Invert", &invert);
+
+    m_shader.set("x_off", invert ? -x_off : x_off);
+    m_shader.set("y_off", invert ? -y_off : y_off);
+
+    ImGui::End();
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

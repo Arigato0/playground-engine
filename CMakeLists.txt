@@ -3,13 +3,6 @@ project(playgroundEngine)
 
 set(CMAKE_CXX_STANDARD 20)
 
-#set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-#set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-#set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-#
-#set(IMGUI_DIR  "/lib/imgui-docking")
-#
-#add_subdirectory(lib/glfw-3.3.8)
 include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends)
 add_subdirectory("lib")
 
@@ -20,8 +13,8 @@ add_executable(playgroundEngine
         src/application/fmt.hpp
         src/application/glfw_window.cpp
         src/application/glfw_window.hpp
-        src/application/Application.cpp
-        src/application/Application.hpp
+        src/application/engine.cpp
+        src/application/engine.hpp
         src/application/error.hpp
         src/application/error.cpp
         src/graphics/vulkan/queue_families.hpp
@@ -62,6 +55,7 @@ add_executable(playgroundEngine
         src/graphics/openGL/opengl_shader.hpp
         src/graphics/types.hpp
         src/game/entity.hpp
-        src/application/time.hpp)
+        src/application/time.hpp
+        src/graphics/shader_interface.hpp)
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI)

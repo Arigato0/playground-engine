@@ -17,11 +17,11 @@ namespace pge
 	};
 
 	// TODO write an observable object for the application options
-	class Application
+	class Engine
 	{
 	public:
 
-        Application(AppInfo info) :
+        Engine(AppInfo info) :
         m_info(info)
         {}
 
@@ -34,7 +34,7 @@ namespace pge
 			return m_fps;
 		}
 
-		~Application();
+		~Engine();
 
 	private:
         AppInfo           m_info;

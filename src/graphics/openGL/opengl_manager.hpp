@@ -3,6 +3,7 @@
 #include "glad/glad.h"
 #include "../graphics_manager_interface.hpp"
 #include "opengl_error.hpp"
+#include "opengl_shader.hpp"
 
 namespace pge
 {
@@ -63,7 +64,7 @@ namespace pge
     private:
         IWindow *m_window;
         glm::vec4 m_clear_color;
-        uint32_t m_shader_program;
+        OpenGlShader m_shader;
         uint32_t m_vao;
     };
 }

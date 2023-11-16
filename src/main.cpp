@@ -1,12 +1,28 @@
 #include <any>
 
-#include "application/Application.hpp"
+#include "application/engine.hpp"
 #include "game/entity.hpp"
+
+class Test : pge::Entity
+{
+public:
+
+    Test()
+    {
+        Logger::info("Test constructed");
+    }
+
+    void update(double delta_time) override
+    {
+        Logger::info("updated");
+    }
+
+    PGE_MAKE_SERIALIZABLE();
+};
 
 int main()
 {
-
-    pge::Application app
+    pge::Engine app
     (
         {
             .title = "playground engine",

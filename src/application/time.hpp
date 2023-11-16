@@ -6,7 +6,7 @@
 
 namespace pge
 {
-    double program_time()
+    static double program_time()
     {
 #if defined(__linux__) || defined(__WIN32__)
         return glfwGetTime();

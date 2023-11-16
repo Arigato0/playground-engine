@@ -1,5 +1,7 @@
 #include "opengl_shader.hpp"
 
+#include <vector>
+
 #include "../../common_util/io.hpp"
 #include "../../application/log.hpp"
 
@@ -19,7 +21,44 @@ inline uint32_t opengl_shader_type(pge::ShaderType type)
     }
 }
 
-pge::Result<uint32_t, pge::OpenGlErrorCode> pge::create_opengl_shader(const std::filesystem::path& path, ShaderType type)
+pge::OpenGlShader::~OpenGlShader()
+{
+    glDeleteProgram(m_program);
+}
+
+uint32_t pge::OpenGlShader::create(std::initializer_list<std::pair<const std::filesystem::path, ShaderType>> shaders)
+{
+    std::vector<uint32_t> cleanup;
+
+    cleanup.reserve(shaders.size());
+
+    m_program = glCreateProgram();
+
+    for (auto [path, type] : shaders)
+    {
+        auto result = load_file(path, type);
+
+        if (!result.ok())
+        {
+            return result.error();
+        }
+
+        glAttachShader(m_program, *result);
+        cleanup.push_back(*result);
+    }
+
+    glLinkProgram(m_program);
+
+    for (const auto shader : cleanup)
+    {
+        glDeleteShader(shader);
+    }
+
+    return OPENGL_ERROR_OK;
+}
+
+pge::Result<unsigned, pge::OpenGlErrorCode> pge::OpenGlShader::load_file(const std::filesystem::path& path,
+    ShaderType type)
 {
     auto shader_type = opengl_shader_type(type);
 

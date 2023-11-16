@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <glm/vec3.hpp>
 
 namespace pge
 {
@@ -21,17 +22,20 @@ namespace pge
     class Entity
     {
     public:
+        glm::vec3 transform;
+
         virtual ~Entity() = default;
-        virtual void update(int delta_time) = 0;
+        virtual void update(double delta_time) = 0;
         virtual std::string serialize() = 0;
         virtual void deserialize(std::string_view data) = 0;
 
-        glm::vec3& transform()
+        [[nodiscard]]
+        uint32_t id() const
         {
-            return m_transform;
+            return m_id;
         }
 
     private:
-        glm::vec3 m_transform;
+        uint32_t m_id;
     };
 }

@@ -1,12 +1,12 @@
 #include <complex>
 
-#include "Application.hpp"
+#include "engine.hpp"
 #include "../graphics/openGL/opengl_manager.hpp"
 #include "./time.hpp"
 
 #include "imgui_handler.hpp"
 
-pge::ErrorCode pge::Application::init()
+pge::ErrorCode pge::Engine::init()
 {
     m_window.set_graphics_api(m_info.graphics_api);
 	m_window.resizable(true);
@@ -40,7 +40,7 @@ pge::ErrorCode pge::Application::init()
     return ErrorCode::Ok;
 }
 
-pge::ErrorCode pge::Application::run()
+pge::ErrorCode pge::Engine::run()
 {
     auto previous_time = program_time();
     uint32_t frames = 0;
@@ -64,11 +64,7 @@ pge::ErrorCode pge::Application::run()
             previous_time = current_time;
         }
 
-		// auto time = glfwGetTime();
-		// float color = std::sin(time) / 2.f + 0.5f;
-		//
-		// m_graphics_manager->set_clear_color({0.f, 0.3, color, 1.f});
-
+        imgui_new_frame();
         draw_ui();
 
 		auto result = m_graphics_manager->draw_frame();
@@ -79,6 +75,8 @@ pge::ErrorCode pge::Application::run()
 		}
 
         glfwPollEvents();
+
+        imgui_draw();
     }
 
 	m_graphics_manager->wait();
@@ -86,14 +84,14 @@ pge::ErrorCode pge::Application::run()
     return ErrorCode::Ok;
 }
 
-pge::Application::~Application()
+pge::Engine::~Engine()
 {
     cleanup_imgui();
     delete m_graphics_manager;
 	glfwTerminate();
 }
 
-void pge::Application::set_graphics_api(GraphicsApi api)
+void pge::Engine::set_graphics_api(GraphicsApi api)
 {
     delete m_graphics_manager;
 
@@ -106,13 +104,13 @@ void pge::Application::set_graphics_api(GraphicsApi api)
     }
 }
 
-void pge::Application::draw_ui()
+void pge::Engine::draw_ui()
 {
-    imgui_new_frame();
 
-    static bool enable_wireframe = false;
+    static bool enable_wireframe     = false;
+    static bool show_all             = false;
     static bool settings_window_open = false;
-    static bool stats_window_open = false;
+    static bool stats_window_open    = false;
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -128,6 +126,10 @@ void pge::Application::draw_ui()
 
         if (ImGui::BeginMenu("Windows"))
         {
+            ImGui::Checkbox("All", &show_all);
+            settings_window_open = show_all;
+            stats_window_open    = show_all;
+
             ImGui::Checkbox("Settings", &settings_window_open);
             ImGui::Checkbox("Statistics", &stats_window_open);
             ImGui::EndMenu();
@@ -158,7 +160,7 @@ void pge::Application::draw_ui()
                 ImGui::Text("Viewport");
 
                 auto clear_color_vec = m_graphics_manager->get_clear_color();
-                static float colors[3] {clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
+                static float colors[3]{clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
 
                 if (ImGui::ColorEdit3("Clear color", colors))
                 {
@@ -179,5 +181,4 @@ void pge::Application::draw_ui()
         ImGui::End();
     }
 
-    imgui_draw();
 }

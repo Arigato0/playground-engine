@@ -70,11 +70,6 @@ namespace pge
 
 		E& error()
 		{
-			if constexpr (m_value.index() < 1)
-			{
-				return {};
-			}
-
 			return std::get<E>(m_value);
 		}
 
