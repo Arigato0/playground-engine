@@ -45,6 +45,12 @@ pge::ErrorCode pge::Engine::run()
     auto previous_time = program_time();
     uint32_t frames = 0;
 
+    for (auto &[_, entities] : m_entities)
+    {
+        entities->on_start();
+        entities->start_components();
+    }
+
     while (!m_window.should_close())
     {
         if (m_window.is_key_pressed(Key::Escape))
@@ -66,6 +72,16 @@ pge::ErrorCode pge::Engine::run()
 
         imgui_new_frame();
         draw_ui();
+
+        for (auto [_, entity] : m_entities)
+        {
+            entity->update_components(m_delta_time);
+
+            if (entity->should_update)
+            {
+                entity->update(m_delta_time);
+            }
+        }
 
 		auto result = m_graphics_manager->draw_frame();
 

@@ -1,7 +1,10 @@
 #pragma once
 
 #include <vector>
+#include <memory>
+#include <unordered_map>
 
+#include "../game/ecs.hpp"
 #include "glfw_window.hpp"
 #include "error.hpp"
 #include "../graphics/vulkan/vulkan_manager.hpp"
@@ -25,6 +28,8 @@ namespace pge
         m_info(info)
         {}
 
+		~Engine();
+
 		ErrorCode init();
 
 		ErrorCode run();
@@ -34,7 +39,10 @@ namespace pge
 			return m_fps;
 		}
 
-		~Engine();
+		void register_entity(std::string_view name, Entity *entity)
+		{
+			m_entities.emplace(name, entity);
+		}
 
 	private:
         AppInfo           m_info;
@@ -42,6 +50,7 @@ namespace pge
 		IGraphicsManager *m_graphics_manager = nullptr;
 		double m_delta_time;
 		uint32_t m_fps;
+		std::unordered_map<std::string, Entity*> m_entities;
 
         void set_graphics_api(GraphicsApi api);
 		void draw_ui();

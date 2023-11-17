@@ -1,21 +1,36 @@
 #include <any>
 
 #include "application/engine.hpp"
-#include "game/entity.hpp"
+#include "game/ecs.hpp"
 
-class Test : pge::Entity
+struct HealthComp : public pge::Component
+{
+    int amount = 0;
+};
+class TestComp : public pge::Component
 {
 public:
-
-    Test()
+    void on_start() override
     {
-        Logger::info("Test constructed");
-    }
+        m_health = m_parent->find<HealthComp>();
 
+        if (m_health == nullptr)
+        {
+            Logger::fatal("could not get health comp");
+        }
+    }
     void update(double delta_time) override
     {
-        Logger::info("updated");
+        m_health->amount += 1;
+        Logger::info("health = {}", m_health->amount);
     }
+private:
+    HealthComp *m_health;
+};
+
+class Player : public pge::Entity
+{
+public:
 
     PGE_MAKE_SERIALIZABLE();
 };
@@ -32,5 +47,13 @@ int main()
     );
 
     ASSERT_ERR(app.init());
+
+    Player player;
+
+    player.register_component<TestComp>();
+    player.register_component<HealthComp>();
+
+    app.register_entity("player", &player);
+
     ASSERT_ERR(app.run());
 }

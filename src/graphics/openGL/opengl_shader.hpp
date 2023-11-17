@@ -16,7 +16,6 @@ namespace pge
     public:
         ~OpenGlShader() override;
 
-
         uint32_t create(
             std::initializer_list<
             std::pair<const std::filesystem::path, ShaderType>> shaders) override;
@@ -26,25 +25,25 @@ namespace pge
             glUseProgram(m_program);
         }
 
-        virtual void set(std::string_view name, int value) override
+        void set(std::string_view name, int value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform1i(location, value);
         }
 
-        virtual void set(std::string_view name, float value) override
+        void set(std::string_view name, float value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform1f(location, value);
         }
 
-        virtual void set(std::string_view name, glm::vec3 value) override
+        void set(std::string_view name, glm::vec3 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform3f(location, EXPAND_VEC3(value));
         }
 
-        virtual void set(std::string_view name, glm::vec4 value) override
+        void set(std::string_view name, glm::vec4 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform4f(location, EXPAND_VEC4(value));
