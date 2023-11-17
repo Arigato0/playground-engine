@@ -3,57 +3,45 @@
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 
-struct HealthComp : public pge::Component
-{
-    int amount = 0;
-};
-class TestComp : public pge::Component
+using namespace pge;
+
+class InputHandler : public Entity
 {
 public:
-    void on_start() override
-    {
-        m_health = m_parent->find<HealthComp>();
-
-        if (m_health == nullptr)
-        {
-            Logger::fatal("could not get health comp");
-        }
-    }
     void update(double delta_time) override
     {
-        m_health->amount += 1;
-        Logger::info("health = {}", m_health->amount);
+        if (Engine::window.is_key_held(Key::C))
+        {
+            // Engine::window.set_cursor(show_cursor ? CursorMode::Normal : CursorMode::Disabled);
+            // Logger::info("changed cursor mode to {}", show_cursor);
+            // show_cursor = !show_cursor;
+        }
+        if (Engine::window.is_key_pressed(Key::Escape))
+        {
+            Engine::window.set_should_close(true);
+        }
     }
-private:
-    HealthComp *m_health;
-};
-
-class Player : public pge::Entity
-{
-public:
 
     PGE_MAKE_SERIALIZABLE();
+
+private:
+    bool show_cursor = true;
 };
 
 int main()
 {
-    pge::Engine app
-    (
-        {
+    ASSERT_ERR(Engine::init({
             .title = "playground engine",
             .window_size = {720, 460},
             .graphics_api = pge::GraphicsApi::OpenGl,
-        }
-    );
+        }));
 
-    ASSERT_ERR(app.init());
 
-    Player player;
+    InputHandler input_handler;
 
-    player.register_component<TestComp>();
-    player.register_component<HealthComp>();
+    pge::Engine::entity_manager.register_entity("input handler", &input_handler);
 
-    app.register_entity("player", &player);
+    ASSERT_ERR(Engine::run());
 
-    ASSERT_ERR(app.run());
+    Engine::shutdown();
 }

@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "entity_manager.hpp"
 #include "../game/ecs.hpp"
 #include "glfw_window.hpp"
 #include "error.hpp"
@@ -24,36 +25,26 @@ namespace pge
 	{
 	public:
 
-        Engine(AppInfo info) :
-        m_info(info)
-        {}
+		static ErrorCode init(AppInfo info);
 
-		~Engine();
+		static ErrorCode run();
 
-		ErrorCode init();
+		static void shutdown();
 
-		ErrorCode run();
-
-		uint32_t get_fps() const
+		static uint32_t get_fps()
 		{
 			return m_fps;
 		}
 
-		void register_entity(std::string_view name, Entity *entity)
-		{
-			m_entities.emplace(name, entity);
-		}
-
+		static WINDOW_T      window;
+		static EntityManager entity_manager;
 	private:
-        AppInfo           m_info;
-		WINDOW_T          m_window;
-		IGraphicsManager *m_graphics_manager = nullptr;
-		double m_delta_time;
-		uint32_t m_fps;
-		std::unordered_map<std::string, Entity*> m_entities;
+		static IGraphicsManager *m_graphics_manager;
+		static double			 m_delta_time;
+		static uint32_t			 m_fps;
 
-        void set_graphics_api(GraphicsApi api);
-		void draw_ui();
+        static void set_graphics_api(GraphicsApi api);
+		static void draw_ui();
 	};
 }
 

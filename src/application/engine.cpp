@@ -1,26 +1,33 @@
 #include <complex>
 
 #include "engine.hpp"
+#include "window.hpp"
 #include "../graphics/openGL/opengl_manager.hpp"
 #include "./time.hpp"
 
 #include "imgui_handler.hpp"
 
-pge::ErrorCode pge::Engine::init()
-{
-    m_window.set_graphics_api(m_info.graphics_api);
-	m_window.resizable(true);
+WINDOW_T                pge::Engine::window;
+pge::EntityManager      pge::Engine::entity_manager;
+pge::IGraphicsManager  *pge::Engine::m_graphics_manager;
+double			        pge::Engine::m_delta_time;
+uint32_t			    pge::Engine::m_fps;
 
-    auto ok = m_window.open(m_info.title, m_info.window_size.x, m_info.window_size.y);
+pge::ErrorCode pge::Engine::init(AppInfo info)
+{
+    window.set_graphics_api(info.graphics_api);
+	window.resizable(true);
+
+    auto ok = window.open(info.title, info.window_size.x, info.window_size.y);
 
     if (!ok)
     {
         return ErrorCode::WindowCouldNotOpen;
     }
 
-    set_graphics_api(m_info.graphics_api);
+    set_graphics_api(info.graphics_api);
 
-    m_graphics_manager->set_window(&m_window);
+    m_graphics_manager->set_window(&window);
 	m_graphics_manager->set_clear_color({1.f, 0.0f, .3f, 1.f});
 
     auto result = m_graphics_manager->init();
@@ -35,7 +42,7 @@ pge::ErrorCode pge::Engine::init()
 
 	Logger::info("using renderer {}", properties.to_string());
 
-    init_imgui(&m_window, m_info.graphics_api);
+    init_imgui(&window, info.graphics_api);
 
     return ErrorCode::Ok;
 }
@@ -45,19 +52,11 @@ pge::ErrorCode pge::Engine::run()
     auto previous_time = program_time();
     uint32_t frames = 0;
 
-    for (auto &[_, entities] : m_entities)
-    {
-        entities->on_start();
-        entities->start_components();
-    }
+    entity_manager.start();
 
-    while (!m_window.should_close())
+    while (!window.should_close())
     {
-        if (m_window.is_key_pressed(Key::Escape))
-        {
-            break;
-        }
-
+        glfwPollEvents();
         auto current_time = program_time();
 
         m_delta_time = current_time - previous_time;
@@ -73,15 +72,7 @@ pge::ErrorCode pge::Engine::run()
         imgui_new_frame();
         draw_ui();
 
-        for (auto [_, entity] : m_entities)
-        {
-            entity->update_components(m_delta_time);
-
-            if (entity->should_update)
-            {
-                entity->update(m_delta_time);
-            }
-        }
+        entity_manager.update(m_delta_time);
 
 		auto result = m_graphics_manager->draw_frame();
 
@@ -89,8 +80,6 @@ pge::ErrorCode pge::Engine::run()
 		{
 			Logger::warn("error while drawing frame: {}", m_graphics_manager->error_message(result));
 		}
-
-        glfwPollEvents();
 
         imgui_draw();
     }
@@ -100,7 +89,7 @@ pge::ErrorCode pge::Engine::run()
     return ErrorCode::Ok;
 }
 
-pge::Engine::~Engine()
+void pge::Engine::shutdown()
 {
     cleanup_imgui();
     delete m_graphics_manager;
@@ -122,7 +111,6 @@ void pge::Engine::set_graphics_api(GraphicsApi api)
 
 void pge::Engine::draw_ui()
 {
-
     static bool enable_wireframe     = false;
     static bool show_all             = false;
     static bool settings_window_open = false;
@@ -134,7 +122,7 @@ void pge::Engine::draw_ui()
         {
             if (ImGui::MenuItem("Close", "Escape"))
             {
-                m_window.set_should_close(true);
+                window.set_should_close(true);
             }
 
             ImGui::EndMenu();

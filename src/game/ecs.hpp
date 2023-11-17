@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <memory>
+
 #include <glm/vec3.hpp>
 
 namespace pge
