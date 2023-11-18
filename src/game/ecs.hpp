@@ -21,43 +21,40 @@ namespace pge
     // TODO implement this when you come up with the serialization scheme
 #define PGE_MAKE_SERIALIZABLE() std::string serialize() override { return {}; } void deserialize(std::string_view data) override {}
 
-    class Entity;
+    class IEntity;
 
-    class Component
+    class IComponent
     {
     public:
         bool should_update = true;
 
-        virtual ~Component() = default;
+        virtual ~IComponent() = default;
         virtual void on_start() {}
         virtual void update(double delta_time) {}
-        void set_parent(Entity *parent)
+        void set_parent(IEntity *parent)
         {
             m_parent = parent;
         }
-        // virtual std::string serialize() = 0;
-        // virtual void deserialize(std::string_view data) = 0;
+        virtual std::string serialize() { return {}; }
+        virtual void deserialize(std::string_view data) {}
     protected:
-        Entity *m_parent;
+        IEntity *m_parent = nullptr;
     };
 
     template<class T>
     concept IsComponent = requires(T)
     {
-        std::derived_from<Component, T>;
+        std::derived_from<IComponent, T>;
     };
 
-    class Entity
+    class IEntity
     {
     public:
-        bool should_update = true;
         glm::vec3 transform;
 
-        virtual ~Entity() = default;
-        virtual void on_start() {}
-        virtual void update(double delta_time) {}
-        virtual std::string serialize() = 0;
-        virtual void deserialize(std::string_view data) = 0;
+        virtual ~IEntity() = default;
+        virtual std::string serialize() { return {}; }
+        virtual void deserialize(std::string_view data) {}
 
         void update_components(double delta_time)
         {
@@ -106,12 +103,12 @@ namespace pge
 
     protected:
         uint32_t m_id;
-        std::unordered_map<std::string_view, std::unique_ptr<Component>> m_components;
+        std::unordered_map<std::string_view, std::unique_ptr<IComponent>> m_components;
     };
 
     template<class T>
     concept IsEntity = requires(T)
     {
-        std::derived_from<Entity, T>;
+        std::derived_from<IEntity, T>;
     };
 }

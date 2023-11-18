@@ -56,7 +56,10 @@ add_executable(playgroundEngine
         src/graphics/types.hpp
         src/game/ecs.hpp
         src/application/time.hpp
-        src/application/entity_manager.hpp
-        src/application/entity_manager.cpp)
+        src/game/entity_manager.hpp
+        src/game/entity_manager.cpp
+        src/game/resource_manager.hpp
+        src/application/statistics.cpp
+        src/application/statistics.hpp)
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI)

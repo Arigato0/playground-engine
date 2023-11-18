@@ -4,10 +4,11 @@
 #include <memory>
 #include <unordered_map>
 
-#include "entity_manager.hpp"
+#include "../game/entity_manager.hpp"
 #include "../game/ecs.hpp"
 #include "glfw_window.hpp"
 #include "error.hpp"
+#include "statistics.hpp"
 #include "../graphics/vulkan/vulkan_manager.hpp"
 #include "window.hpp"
 
@@ -31,20 +32,13 @@ namespace pge
 
 		static void shutdown();
 
-		static uint32_t get_fps()
-		{
-			return m_fps;
-		}
-
-		static WINDOW_T      window;
-		static EntityManager entity_manager;
+		inline static WINDOW_T			window;
+		inline static EntityManager		entity_manager;
+		inline static IGraphicsManager *graphics_manager;
+		inline static Statistics		statistics;
 	private:
-		static IGraphicsManager *m_graphics_manager;
-		static double			 m_delta_time;
-		static uint32_t			 m_fps;
 
         static void set_graphics_api(GraphicsApi api);
-		static void draw_ui();
 	};
 }
 

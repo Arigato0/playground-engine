@@ -5,33 +5,46 @@ all the code for game logic stuff is stored here
 
 ```c++
 class Player : public Entity
+{}
+
+class HealthComp : public IComponent
 {
 public:
-
-   Player()
+    void update(double _) override
     {
-        auto &health = m_props[PROP_HEALTH];
-
-        health = 100;
-
-        m_props[PROP_NAME] = std::string {"john"};
+        if (m_amount <= 0)
+        {
+            // handle death logic
+        }
     }
 
-    void update(int delta_time) override
+    void set_health(int amount)
     {
-        fmt::println("health = {}", get<int&>(PROP_HEALTH));
-
-        fmt::println("name = {}", get<std::string&>(PROP_NAME));
+        m_amount = amount;
     }
 
-    PGE_MAKE_SERIALIZABLE();
-
+    int get_health()
+    {
+        return m_amount;
+    }
 private:
-    PGE_CREATE_PROP_TABLE(
-        PROP_HEALTH,
-        PROP_NAME,
-        PROP_ID);
+    int m_amount = 100;
 };
+
+class PlayerInputComp : public IComponent
+{
+    // handle input 
+};
+
+void main()
+{
+    // init engine
+       
+       // create entity
+       Engine::entity_manager.create<Player, HealthComp, PlayerInputComp>("Player");
+       
+    // run engine
+}
 ```
 `PGE_CREATE_PROP_TABLE` creates a table of properties along with a utility get function and `PGE_MAKE_SERIALIZABLE` generates functions to serialize the property table.
 
