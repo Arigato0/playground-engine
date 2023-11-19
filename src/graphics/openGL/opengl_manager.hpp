@@ -66,5 +66,7 @@ namespace pge
         glm::vec4 m_clear_color;
         OpenGlShader m_shader;
         uint32_t m_vao;
+        uint32_t m_texture;
+        uint32_t m_texture2;
     };
 }

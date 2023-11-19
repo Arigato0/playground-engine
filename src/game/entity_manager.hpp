@@ -6,6 +6,17 @@
 
 namespace pge
 {
+    template<class T>
+    class TypedArena
+    {
+    public:
+        TypedArena(size_t size)
+        {
+            m_data = (uint8_t*)malloc(sizeof(T) * size);
+        }
+    private:
+        uint8_t *m_data;
+    };
     class EntityManager
     {
     public:

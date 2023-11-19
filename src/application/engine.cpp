@@ -7,8 +7,6 @@
 
 #include "imgui_handler.hpp"
 
-
-
 pge::ErrorCode pge::Engine::init(AppInfo info)
 {
     window.set_graphics_api(info.graphics_api);

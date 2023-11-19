@@ -2,6 +2,7 @@
 #include <atomic>
 #include <thread>
 
+#include "application/dialog.hpp"
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
@@ -110,15 +111,19 @@ public:
 
 int main()
 {
-    ASSERT_ERR(Engine::init({
-            .title = "playground engine",
-            .window_size = {720, 460},
-            .graphics_api = pge::GraphicsApi::OpenGl,
-        }));
+    // ASSERT_ERR(Engine::init({
+    //         .title = "playground engine",
+    //         .window_size = {720, 460},
+    //         .graphics_api = pge::GraphicsApi::OpenGl,
+    //     }));
+    //
+    // Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
+    //
+    // ASSERT_ERR(Engine::run());
+    //
+    // Engine::shutdown();
 
-    Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
+    auto path = native_file_dialog("~");
 
-    ASSERT_ERR(Engine::run());
-
-    Engine::shutdown();
+    fmt::print("{}", path.value());
 }

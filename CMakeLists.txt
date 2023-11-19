@@ -3,12 +3,13 @@ project(playgroundEngine)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends)
+include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/)
 add_subdirectory("lib")
 
 add_executable(playgroundEngine
         src/main.cpp
         lib/glad/src/glad.c
+        lib/stb/stb_image.h
         src/application/log.hpp
         src/application/fmt.hpp
         src/application/glfw_window.cpp
@@ -58,8 +59,9 @@ add_executable(playgroundEngine
         src/application/time.hpp
         src/game/entity_manager.hpp
         src/game/entity_manager.cpp
-        src/game/resource_manager.hpp
         src/application/statistics.cpp
-        src/application/statistics.hpp)
+        src/application/statistics.hpp
+        src/application/dialog.cpp
+        src/application/dialog.hpp)
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI)
