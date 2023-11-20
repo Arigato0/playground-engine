@@ -7,6 +7,16 @@
 
 #include "imgui_handler.hpp"
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+    {
+        static bool cursor_visible = true;
+        pge::Engine::window.set_cursor(cursor_visible ? pge::CursorMode::Normal : pge::CursorMode::Disabled);
+        cursor_visible = !cursor_visible;
+    }
+}
+
 pge::ErrorCode pge::Engine::init(AppInfo info)
 {
     window.set_graphics_api(info.graphics_api);
@@ -18,6 +28,8 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
     {
         return ErrorCode::WindowCouldNotOpen;
     }
+
+    glfwSetKeyCallback((GLFWwindow*)window.handle(), key_callback);
 
     set_graphics_api(info.graphics_api);
 

@@ -11,6 +11,7 @@
 #include "opengl_error.hpp"
 #include "opengl_shader.hpp"
 #include "../../application/dialog.hpp"
+#include "../../application/engine.hpp"
 #include "GLFW/glfw3.h"
 #include "../../application/log.hpp"
 #include "../../application/time.hpp"
@@ -62,6 +63,8 @@ static float CUBE_MESH[] =
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
+
+constexpr glm::vec3 UP (0, 1, 0);
 
 void framebuffer_resize_cb(GLFWwindow *window, int width, int height)
 {
@@ -139,6 +142,7 @@ uint8_t pge::OpenGlManager::init()
     });
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
 
     stbi_set_flip_vertically_on_load(true);
 
@@ -167,8 +171,6 @@ uint8_t pge::OpenGlManager::init()
 
     glBindVertexArray(0);
 
-    auto trans = glm::mat4(1.0f);
-
     return OPENGL_ERROR_OK;
 }
 
@@ -181,20 +183,24 @@ uint8_t pge::OpenGlManager::draw_frame()
 
     ImGui::Begin("Object Control");
 
+    static float time_scale = 0.3f;
+
+    ImGui::SliderFloat("Time", &time_scale, 0, 10);
+
     ImGui::SeparatorText("Texture");
 
     if (ImGui::Button("Load texture"))
     {
         auto path = native_file_dialog("~");
         glDeleteTextures(1, &m_texture);
-        VALIDATE_ERR(set_texture(m_texture, path->c_str()));
+        set_texture(m_texture, path->c_str());
     }
 
     if (ImGui::Button("Load Overlay"))
     {
         auto path = native_file_dialog("~");
         glDeleteTextures(1, &m_texture2);
-        VALIDATE_ERR(set_texture(m_texture2, path->c_str()));
+        set_texture(m_texture2, path->c_str());
     }
 
     static auto enable_texture = true;
@@ -262,7 +268,7 @@ uint8_t pge::OpenGlManager::draw_frame()
     model = glm::translate(model, off_vector);
 
     static float rotation = 0;
-    static float scale = 1;
+    static float scale = 0.8;
 
     ImGui::SliderAngle("rotation", &rotation);
     ImGui::SliderFloat("Scale", &scale, 0, 100);
@@ -294,10 +300,68 @@ uint8_t pge::OpenGlManager::draw_frame()
 
     ImGui::SliderFloat3("View", view_vec, -10, 10);
 
-    glm::mat4 view(1.0f);
-    view = glm::translate(view, glm::make_vec3(view_vec));
+    static glm::vec3 camera_position(0, 0, 3);
+    static glm::vec3 camera_target(0.0f, 0.0f, 0.0f);
+    static glm::vec3 camera_direction(camera_position - camera_target);
+    static glm::vec3 camera_right = glm::normalize(glm::cross(UP, camera_direction));
+    static glm::vec3 camera_up = glm::cross(camera_direction, camera_right);
+    static glm::vec3 camera_forward(0, 0, -1);
 
     auto [window_width, window_height] = m_window->framebuffer_size();
+
+    auto mouse = m_window->mouse_xy();
+
+    static float last_x = window_width / 2;
+    static float last_y = window_height / 2;
+
+    auto x_offset = mouse.x - last_x;
+    auto y_offset = last_y - mouse.y;
+
+    last_x = mouse.x;
+    last_y = mouse.y;
+
+    static float mouse_sensitivity = 0.1;
+
+    x_offset *= mouse_sensitivity;
+    y_offset *= mouse_sensitivity;
+
+    static float yaw = 0;
+    static float pitch = 0;
+
+    yaw += x_offset;
+    pitch += y_offset;
+
+    pitch = std::clamp((double)pitch, -89.0, 89.0);
+
+    glm::vec3 direction{};
+
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    camera_forward = glm::normalize(direction);
+
+    glm::mat4 view;
+    view = glm::lookAt(camera_position, camera_position + camera_forward, UP);
+
+    float delta_time = Engine::statistics.delta_time();
+    float camera_speed = 2.5f * delta_time;
+
+    if (m_window->is_key_pressed(Key::W))
+    {
+        camera_position += camera_speed * camera_forward;
+    }
+    if (m_window->is_key_pressed(Key::S))
+    {
+        camera_position -= camera_speed * camera_forward;
+    }
+        if (m_window->is_key_pressed(Key::A))
+    {
+        camera_position -= glm::normalize(glm::cross(camera_forward, UP)) * camera_speed;
+    }
+    if (m_window->is_key_pressed(Key::D))
+    {
+        camera_position += glm::normalize(glm::cross(camera_forward, UP)) * camera_speed;
+    }
 
     static float fov = 65.0f;
 
@@ -332,14 +396,16 @@ uint8_t pge::OpenGlManager::draw_frame()
     glBindTexture(GL_TEXTURE_2D, m_texture2);
     glBindVertexArray(m_vao);
 
+
     for (int i = 0; i < 10; i++)
     {
         glm::mat4 model(1.0f);
-        model = glm::translate(model, cube_positions[i]);
+        model = glm::translate(model, cube_positions[i] + off_vector);
+        model = glm::scale(model, glm::vec3(scale));
 
         auto angle = 3.0f * (i + 1);
 
-        model = glm::rotate(model, glm::radians(float(time * angle)), glm::vec3(1.0f, 0.3f, 0.5f));
+        model = glm::rotate(model, glm::radians(float(time * angle)), glm::vec3(1.0f, 0.3f, 0.5f)) * delta_time;
 
         m_shader.set("model", model);
 

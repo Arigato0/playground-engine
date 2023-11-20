@@ -42,6 +42,5 @@ namespace pge
         double   m_previous_time = program_time();
         double	 m_delta_time;
         uint32_t m_fps;
-        uint32_t m_frames;
     };
 }

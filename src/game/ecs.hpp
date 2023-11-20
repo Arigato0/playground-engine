@@ -26,19 +26,42 @@ namespace pge
     class IComponent
     {
     public:
-        bool should_update = true;
-
         virtual ~IComponent() = default;
         virtual void on_start() {}
+        virtual void on_enable() {}
+        virtual void on_disable() {}
         virtual void update(double delta_time) {}
+        virtual std::string serialize() { return {}; }
+        virtual void deserialize(std::string_view data) {}
+
         void set_parent(IEntity *parent)
         {
             m_parent = parent;
         }
-        virtual std::string serialize() { return {}; }
-        virtual void deserialize(std::string_view data) {}
+
+        bool is_enabled() const
+        {
+            return m_enabled;
+        }
+
+        void set_enabled(bool value)
+        {
+            m_enabled = value;
+
+            if (m_enabled)
+            {
+                on_enable();
+            }
+            else
+            {
+                on_disable();
+            }
+        }
+
     protected:
+        friend IEntity;
         IEntity *m_parent = nullptr;
+        bool m_enabled = true;
     };
 
     template<class T>
@@ -60,7 +83,7 @@ namespace pge
         {
             for (auto &[_, component] : m_components)
             {
-                if (component->should_update)
+                if (component->m_enabled)
                 {
                     component->update(delta_time);
                 }

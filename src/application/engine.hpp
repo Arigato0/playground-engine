@@ -36,6 +36,7 @@ namespace pge
 		inline static EntityManager		entity_manager;
 		inline static IGraphicsManager *graphics_manager;
 		inline static Statistics		statistics;
+		inline static float				time_scale = 1;
 	private:
 
         static void set_graphics_api(GraphicsApi api);
