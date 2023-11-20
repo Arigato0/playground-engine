@@ -1,14 +1,18 @@
 #include "dialog.hpp"
 
 #include <cstdio>
+#include <string>
 
 #include "fmt.hpp"
+#include "log.hpp"
+#include "../common_util/defer.hpp"
+
+constexpr int MAX_PATH = 256;
 
 std::optional<std::filesystem::path> linux_native_dialog(std::string_view start_dir)
 {
     std::string_view gde = getenv("XDG_CURRENT_DESKTOP");
 
-    char buffer[1024];
     std::string cmd_name;
 
     if (gde == "KDE")
@@ -27,7 +31,22 @@ std::optional<std::filesystem::path> linux_native_dialog(std::string_view start_
         return std::nullopt;
     }
 
-    fgets(buffer, sizeof(buffer), f);
+    DEFER([&f]
+    {
+        pclose(f);
+    });
+
+    std::string buffer;
+
+    buffer.reserve(MAX_PATH);
+
+    char c = fgetc(f);
+
+    while (c != '\n' && c != '\r')
+    {
+        buffer += c;
+        c = fgetc(f);
+    }
 
     return buffer;
 }

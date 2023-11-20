@@ -2,6 +2,7 @@
 #include <atomic>
 #include <thread>
 
+#include "stb_image.h"
 #include "application/dialog.hpp"
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
@@ -31,6 +32,7 @@ public:
     bool show_all             = false;
     bool settings_window_open = false;
     bool stats_window_open    = false;
+    bool demo_window_open     = false;
 
     void update(double delta_time) override
     {
@@ -54,14 +56,21 @@ public:
                 {
                     settings_window_open = show_all;
                     stats_window_open    = show_all;
+                    demo_window_open     = show_all;
                 }
 
                 ImGui::Checkbox("Settings", &settings_window_open);
                 ImGui::Checkbox("Statistics", &stats_window_open);
+                ImGui::Checkbox("Demo", &demo_window_open);
                 ImGui::EndMenu();
             }
 
             ImGui::EndMainMenuBar();
+        }
+
+        if (demo_window_open)
+        {
+            ImGui::ShowDemoWindow(&demo_window_open);
         }
 
         if (stats_window_open)
@@ -111,19 +120,16 @@ public:
 
 int main()
 {
-    // ASSERT_ERR(Engine::init({
-    //         .title = "playground engine",
-    //         .window_size = {720, 460},
-    //         .graphics_api = pge::GraphicsApi::OpenGl,
-    //     }));
-    //
-    // Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
-    //
-    // ASSERT_ERR(Engine::run());
-    //
-    // Engine::shutdown();
+    ASSERT_ERR(Engine::init({
+            .title = "playground engine",
+            .window_size = {1920, 1080},
+            .graphics_api = pge::GraphicsApi::OpenGl,
+        }));
 
-    auto path = native_file_dialog("~");
+    Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    fmt::print("{}", path.value());
+    ASSERT_ERR(Engine::run());
+
+    Engine::shutdown();
+
 }

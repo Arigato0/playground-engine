@@ -1,5 +1,7 @@
 #pragma once
 
+#include <imgui.h>
+
 #include "glad/glad.h"
 #include "../graphics_manager_interface.hpp"
 #include "opengl_error.hpp"

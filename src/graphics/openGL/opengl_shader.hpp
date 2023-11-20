@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "opengl_error.hpp"
 #include "../shaders.hpp"
@@ -47,6 +48,12 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform4f(location, EXPAND_VEC4(value));
+        }
+
+        void set(std::string_view name, glm::mat4 value) override
+        {
+            auto location = glGetUniformLocation(m_program, name.data());
+            glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
         }
 
     private:

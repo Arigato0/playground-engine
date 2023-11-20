@@ -27,5 +27,6 @@ namespace pge
         virtual void set(std::string_view name, float value) = 0;
         virtual void set(std::string_view name, glm::vec3 value) = 0;
         virtual void set(std::string_view name, glm::vec4 value) = 0;
+        virtual void set(std::string_view name, glm::mat4 value) = 0;
     };
 }
