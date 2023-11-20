@@ -22,7 +22,7 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
     set_graphics_api(info.graphics_api);
 
     graphics_manager->set_window(&window);
-	graphics_manager->set_clear_color({1.f, 0.0f, .3f, 1.f});
+	graphics_manager->set_clear_color({0.f, 0.5f, 0.6f, 1.f});
 
     auto result = graphics_manager->init();
 

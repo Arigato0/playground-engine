@@ -18,6 +18,51 @@
 
 #define WINDOW_PTR (GLFWwindow*)m_window->handle()
 
+static float CUBE_MESH[] =
+{
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+
 void framebuffer_resize_cb(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -58,13 +103,13 @@ pge::Result<uint32_t, pge::OpenGlErrorCode> create_texture(std::string_view path
     return id;
 }
 
-
 pge::OpenGlErrorCode set_texture(uint32_t &texture, std::string_view path)
 {
     auto tex_result = create_texture(path);
 
     if (!tex_result.ok())
     {
+        texture = create_texture("assets/missing.jpeg").get();
         return tex_result.error();
     }
 
@@ -93,25 +138,12 @@ uint8_t pge::OpenGlManager::init()
         {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment}
     });
 
-    float vertices[] =
-    {
-        // positions          // texture coords
-        0.5f,  0.5f, 0.0f,   1.0f, 1.0f,   // top right
-        0.5f, -0.5f, 0.0f,   1.0f, 0.0f,   // bottom right
-       -0.5f, -0.5f, 0.0f,   0.0f, 0.0f,   // bottom left
-       -0.5f,  0.5f, 0.0f,   0.0f, 1.0f    // top left
-    };
-
-    uint32_t indices[] =
-    {
-        0, 1, 3,
-        1, 2, 3,
-    };
+    glEnable(GL_DEPTH_TEST);
 
     stbi_set_flip_vertically_on_load(true);
 
-    VALIDATE_ERR(set_texture(m_texture, "assets/mona.jpg"));
-    VALIDATE_ERR(set_texture(m_texture2, "assets/awesomeface.png"));
+    set_texture(m_texture, "assets/mona.jpg");
+    set_texture(m_texture2, "assets/container.jpg");
 
     static uint32_t vbo, ebo;
 
@@ -122,10 +154,10 @@ uint8_t pge::OpenGlManager::init()
     glBindVertexArray(m_vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(CUBE_MESH), CUBE_MESH, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -145,7 +177,7 @@ uint8_t pge::OpenGlManager::draw_frame()
     glfwSwapBuffers(WINDOW_PTR);
 
     glClearColor(EXPAND_VEC4(m_clear_color));
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     ImGui::Begin("Object Control");
 
@@ -188,7 +220,7 @@ uint8_t pge::OpenGlManager::draw_frame()
 
     if (ImGui::ColorEdit4("Color", color))
     {
-        m_shader.set("color", {color[0], color[1], color[2], color[3]});
+        m_shader.set("color", glm::make_vec4(color));
     }
 
     static float mix_value = 0;
@@ -219,15 +251,15 @@ uint8_t pge::OpenGlManager::draw_frame()
     ImGui::Checkbox("Invert", &invert);
     ImGui::SliderFloat2("Offset", offset, -2, 2);
 
-    glm::vec3 off_vector (offset[0], offset[1], 0.f);
+    glm::vec3 off_vector (glm::make_vec2(offset), 0.f);
 
     if (invert)
     {
         off_vector = -off_vector;
     }
 
-    auto trans = glm::mat4(1.0f);
-    trans = glm::translate(trans, off_vector);
+    auto model = glm::mat4(1.0f);
+    model = glm::translate(model, off_vector);
 
     static float rotation = 0;
     static float scale = 1;
@@ -235,7 +267,7 @@ uint8_t pge::OpenGlManager::draw_frame()
     ImGui::SliderAngle("rotation", &rotation);
     ImGui::SliderFloat("Scale", &scale, 0, 100);
 
-    static bool rotate_x, rotate_y, rotate_z = true;
+    static bool rotate_x = true, rotate_y, rotate_z;
 
     ImGui::Text("Rotation Axis");
 
@@ -255,10 +287,42 @@ uint8_t pge::OpenGlManager::draw_frame()
         ImGui::SliderFloat("Speed", &speed, 0.0, 5);
     }
 
-    trans = glm::rotate(trans, rotation, glm::vec3(rotate_x, rotate_y, rotate_z));
-    trans = glm::scale(trans, glm::vec3(scale, scale, scale));
+    // model = glm::rotate(model, rotation, glm::vec3(rotate_x, rotate_y, rotate_z));
+    // model = glm::scale(model, glm::vec3(scale, scale, scale));
 
-    m_shader.set("transform", trans);
+    static float view_vec[3] {0.f, 0.f, -3.0f};
+
+    ImGui::SliderFloat3("View", view_vec, -10, 10);
+
+    glm::mat4 view(1.0f);
+    view = glm::translate(view, glm::make_vec3(view_vec));
+
+    auto [window_width, window_height] = m_window->framebuffer_size();
+
+    static float fov = 65.0f;
+
+    ImGui::SliderFloat("FOV", &fov, -360, 360);
+
+    glm::mat4 projection;
+    projection = glm::perspective(glm::radians(fov), (float)(window_width / window_height), 0.1f, 100.0f);
+
+    //m_shader.set("model", model);
+    m_shader.set("projection", projection);
+    m_shader.set("view", view);
+
+    static glm::vec3 cube_positions[] =
+    {
+        {0.0f,  0.0f,  0.0f},
+        { 2.0f,  5.0f, -15.0f},
+        {-1.5f, -2.2f, -2.5f},
+        {-3.8f, -2.0f, -12.3f},
+        { 2.4f, -0.4f, -3.5f},
+        {-1.7f,  3.0f, -7.5f},
+        { 1.3f, -2.0f, -2.5f},
+        { 1.5f,  2.0f, -2.5f},
+        { 1.5f,  0.2f, -1.5f},
+        {-1.3f,  1.0f, -1.5f}
+    };
 
     ImGui::End();
 
@@ -267,7 +331,20 @@ uint8_t pge::OpenGlManager::draw_frame()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_texture2);
     glBindVertexArray(m_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    for (int i = 0; i < 10; i++)
+    {
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, cube_positions[i]);
+
+        auto angle = 3.0f * (i + 1);
+
+        model = glm::rotate(model, glm::radians(float(time * angle)), glm::vec3(1.0f, 0.3f, 0.5f));
+
+        m_shader.set("model", model);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
     return OPENGL_ERROR_OK;
 }

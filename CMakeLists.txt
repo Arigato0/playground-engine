@@ -62,6 +62,7 @@ add_executable(playgroundEngine
         src/application/statistics.cpp
         src/application/statistics.hpp
         src/application/dialog.cpp
-        src/application/dialog.hpp)
+        src/application/dialog.hpp
+)
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI)
