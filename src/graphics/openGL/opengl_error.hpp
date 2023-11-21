@@ -11,6 +11,7 @@ namespace pge
         OPENGL_ERROR_GLAD_INIT,
         OPENGL_ERROR_SHADER_CREATION,
         OPENGL_ERROR_TEXTURE_LOADING,
+        OPENGL_ERROR_MESH_NOT_FOUND,
     };
 
     std::string_view opengl_error_message(OpenGlErrorCode code);

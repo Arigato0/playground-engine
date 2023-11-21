@@ -9,6 +9,7 @@ constexpr std::array ERROR_MESSAGES
     "Could not load the glad library",
     "Could not create shader",
     "Could not load or generate texture",
+    "could not find the specified mesh"
 };
 
 std::string_view pge::opengl_error_message(OpenGlErrorCode code)

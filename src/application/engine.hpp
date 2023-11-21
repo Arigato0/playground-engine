@@ -14,6 +14,8 @@
 
 namespace pge
 {
+	class IRenderer;
+
 	struct AppInfo
 	{
 		std::string_view title;
@@ -34,7 +36,7 @@ namespace pge
 
 		inline static WINDOW_T			window;
 		inline static EntityManager		entity_manager;
-		inline static IGraphicsManager *graphics_manager;
+		inline static IRenderer		   *renderer;
 		inline static Statistics		statistics;
 		inline static float				time_scale = 1;
 	private:

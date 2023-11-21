@@ -6,6 +6,7 @@
 #include "./time.hpp"
 
 #include "imgui_handler.hpp"
+#include "../graphics/openGL/opengl_renderer.hpp"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -33,18 +34,17 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
 
     set_graphics_api(info.graphics_api);
 
-    graphics_manager->set_window(&window);
-	graphics_manager->set_clear_color({0.f, 0.5f, 0.6f, 1.f});
+    renderer->clear_color = {0.f, 0.5f, 0.6f, 1.f};
 
-    auto result = graphics_manager->init();
+    auto result = renderer->init();
 
     if (result != 0)
     {
-        Logger::warn("could not initialize graphics subsystem. {}", graphics_manager->error_message(result));
+        Logger::warn("could not initialize graphics subsystem. {}", renderer->error_message(result));
         return ErrorCode::GraphicsSubsystemInitError;
     }
 
-    auto properties = graphics_manager->properties();
+    auto properties = renderer->properties();
 
 	Logger::info("using renderer {}", properties.to_string());
 
@@ -65,19 +65,14 @@ pge::ErrorCode pge::Engine::run()
 
         imgui_new_frame();
 
+        renderer->new_frame();
+
         entity_manager.update(statistics.delta_time());
-
-		auto result = graphics_manager->draw_frame();
-
-		if (result != 0)
-		{
-			Logger::warn("error while drawing frame: {}", graphics_manager->error_message(result));
-		}
 
         imgui_draw();
     }
 
-	graphics_manager->wait();
+	renderer->wait();
 
     return ErrorCode::Ok;
 }
@@ -85,19 +80,19 @@ pge::ErrorCode pge::Engine::run()
 void pge::Engine::shutdown()
 {
     cleanup_imgui();
-    delete graphics_manager;
+    delete renderer;
 	glfwTerminate();
 }
 
 void pge::Engine::set_graphics_api(GraphicsApi api)
 {
-    delete graphics_manager;
+    delete renderer;
 
     using enum GraphicsApi;
 
     switch (api)
     {
         //case Vulkan: m_graphics_manager = new VulkanManager(); break;
-        case OpenGl: graphics_manager = new OpenGlManager(); break;
+        case OpenGl: renderer = new OpenglRenderer(); break;
     }
 }

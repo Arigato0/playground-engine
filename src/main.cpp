@@ -7,6 +7,7 @@
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
+#include "graphics/renderer_interface.hpp"
 
 using namespace pge;
 
@@ -89,17 +90,17 @@ public:
                 {
                     ImGui::Checkbox("Wireframe", &enable_wireframe);
 
-                    Engine::graphics_manager->draw_wireframe(enable_wireframe);
+                    Engine::renderer->set_wireframe_mode(enable_wireframe);
 
                     ImGui::Separator();
                     ImGui::Text("Viewport");
 
-                    auto clear_color_vec = Engine::graphics_manager->get_clear_color();
+                    auto clear_color_vec = Engine::renderer->clear_color;
                     static float colors[3]{clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
 
                     if (ImGui::ColorEdit3("Clear color", colors))
                     {
-                        Engine::graphics_manager->set_clear_color({colors[0], colors[1], colors[2], 1.f});
+                        Engine::renderer->clear_color = {colors[0], colors[1], colors[2], 1.f};
                     }
 
                     ImGui::EndTabItem();

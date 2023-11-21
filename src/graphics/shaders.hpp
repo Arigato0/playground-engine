@@ -14,14 +14,14 @@ namespace pge
         Vertex,
         Fragment,
     };
+    using ShaderList = std::initializer_list<
+            std::pair<const std::filesystem::path, ShaderType>>;
 
     class IShader
     {
     public:
         virtual ~IShader() = default;
-        virtual uint32_t create(
-            std::initializer_list<
-            std::pair<const std::filesystem::path, ShaderType>> shaders) = 0;
+        virtual uint32_t create(ShaderList shaders) = 0;
         virtual void use() = 0;
         virtual void set(std::string_view name, int value) = 0;
         virtual void set(std::string_view name, float value) = 0;

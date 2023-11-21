@@ -3,8 +3,9 @@ project(playgroundEngine)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/)
+include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm)
 add_subdirectory("lib")
+add_subdirectory("lib/glm/")
 
 add_executable(playgroundEngine
         src/main.cpp
@@ -63,6 +64,10 @@ add_executable(playgroundEngine
         src/application/statistics.hpp
         src/application/dialog.cpp
         src/application/dialog.hpp
+        src/graphics/renderer_interface.hpp
+        src/graphics/mesh.hpp
+        src/graphics/openGL/opengl_renderer.cpp
+        src/graphics/openGL/opengl_renderer.hpp
 )
 
-target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI)
+target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

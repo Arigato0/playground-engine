@@ -396,7 +396,6 @@ uint8_t pge::OpenGlManager::draw_frame()
     glBindTexture(GL_TEXTURE_2D, m_texture2);
     glBindVertexArray(m_vao);
 
-
     for (int i = 0; i < 10; i++)
     {
         glm::mat4 model(1.0f);
