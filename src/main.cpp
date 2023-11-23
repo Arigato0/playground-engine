@@ -8,6 +8,7 @@
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
+#include "application/input.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/primitives.hpp"
 #include "graphics/renderer_interface.hpp"
@@ -215,7 +216,10 @@ public:
     }
     void update(double delta_time) override
     {
-        //handle_mouse(delta_time);
+        if (auto cords = mouse_cords(); cords)
+        {
+            handle_mouse(delta_time, cords->x, cords->y);
+        }
         handle_movement(delta_time);
     }
 
@@ -239,10 +243,8 @@ public:
         }
     }
 
-    void handle_mouse(float delta_time, float x, float y)
+    void handle_mouse(double delta_time, float x, float y)
     {
-        auto [window_width, window_height] = Engine::window.framebuffer_size();
-
         auto x_offset = x - last_x;
         auto y_offset = last_y - y;
 
@@ -255,7 +257,7 @@ public:
         m_camera->camera.yaw += x_offset;
         m_camera->camera.pitch += y_offset;
 
-        m_camera->camera.pitch = std::clamp(m_camera->camera.pitch, -89.0f, 89.0f);
+        m_camera->camera.pitch = std::clamp(m_camera->camera.pitch, -90.0f, 90.0f);
     }
 
     float speed_mod = 1.0f;
@@ -266,16 +268,6 @@ private:
     float last_y;
 };
 
-PlayerController *controller;
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-    ImGuiIO& io = ImGui::GetIO();
-
-    io.AddMousePosEvent(xpos, ypos);
-
-    controller->handle_mouse(Engine::statistics.delta_time(), xpos, ypos);
-}
-
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -283,8 +275,6 @@ int main()
             .window_size = {1920, 1080},
             .graphics_api = pge::GraphicsApi::OpenGl,
         }));
-
-    glfwSetCursorPosCallback((GLFWwindow*)Engine::window.handle(), mouse_callback);
 
     Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
 
@@ -311,7 +301,6 @@ int main()
 
     auto player_ent = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
 
-    controller = player_ent->find<PlayerController>();
     ASSERT_ERR(Engine::run());
 
     Engine::shutdown();

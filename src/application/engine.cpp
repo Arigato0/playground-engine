@@ -6,6 +6,7 @@
 #include "./time.hpp"
 
 #include "imgui_handler.hpp"
+#include "input.hpp"
 #include "../graphics/openGL/opengl_renderer.hpp"
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -29,6 +30,8 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
     {
         return ErrorCode::WindowCouldNotOpen;
     }
+
+    init_input();
 
     glfwSetKeyCallback((GLFWwindow*)window.handle(), key_callback);
 
@@ -70,6 +73,8 @@ pge::ErrorCode pge::Engine::run()
         entity_manager.update(statistics.delta_time());
 
         imgui_draw();
+
+        reset_input();
     }
 
 	renderer->wait();
