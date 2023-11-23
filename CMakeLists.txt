@@ -68,6 +68,10 @@ add_executable(playgroundEngine
         src/graphics/mesh.hpp
         src/graphics/openGL/opengl_renderer.cpp
         src/graphics/openGL/opengl_renderer.hpp
+        src/graphics/camera.cpp
+        src/graphics/camera.hpp
+        src/graphics/primitives.hpp
+        src/game/transform.hpp
 )
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

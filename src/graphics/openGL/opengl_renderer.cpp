@@ -60,6 +60,51 @@ pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
     return nullptr;
 }
 
+static float _CUBE_MESH[] =
+{
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+
 size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::string_view, 2> textures)
 {
     OpenGlMesh mesh;
@@ -76,7 +121,7 @@ size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::s
     glBindVertexArray(mesh.vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, data.size(), data.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
 
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
@@ -89,9 +134,10 @@ size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::s
 
     glBindVertexArray(0);
 
+    auto idx = m_meshes.size();
     m_meshes.emplace_back(std::move(mesh));
 
-    return m_meshes.size();
+    return idx;
 }
 
 void pge::OpenglRenderer::new_frame()
@@ -104,7 +150,7 @@ void pge::OpenglRenderer::new_frame()
 
 uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
 {
-    if (mesh_id >= m_meshes.size())
+    if (mesh_id > m_meshes.size())
     {
         return OPENGL_ERROR_MESH_NOT_FOUND;
     }
@@ -121,10 +167,15 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
     m_shader.set("model", transform);
 
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_size);
+    Engine::statistics.report_draw_call();
+    Engine::statistics.report_verticies(mesh.vertex_size);
+
+    return OPENGL_ERROR_OK;
 }
 
 uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t& out_texture)
 {
+    stbi_set_flip_vertically_on_load(true);
     int width, height, channels;
 
     uint8_t *data = stbi_load(path.data(), &width, &height, &channels, 0);

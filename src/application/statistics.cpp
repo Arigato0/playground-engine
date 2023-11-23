@@ -2,6 +2,9 @@
 
 void pge::Statistics::calculate()
 {
+    m_draw_calls = 0;
+    m_vertices = 0;
+
     auto current_time = program_time();
 
     m_delta_time = current_time - m_previous_time;

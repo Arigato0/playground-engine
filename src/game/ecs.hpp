@@ -6,6 +6,8 @@
 
 #include <glm/vec3.hpp>
 
+#include "transform.hpp"
+
 namespace pge
 {
 #define PGE_CREATE_PROP_TABLE(prop_names...) \
@@ -73,7 +75,7 @@ namespace pge
     class IEntity
     {
     public:
-        glm::vec3 transform;
+        Transform transform;
 
         virtual ~IEntity() = default;
         virtual std::string serialize() { return {}; }
