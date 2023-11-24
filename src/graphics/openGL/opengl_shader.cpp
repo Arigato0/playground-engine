@@ -32,6 +32,11 @@ uint32_t pge::OpenGlShader::create(std::initializer_list<std::pair<const std::fi
 
     m_program = glCreateProgram();
 
+    if (m_program == 0)
+    {
+        return OPENGL_ERROR_SHADER_CREATION;
+    }
+
     for (auto [path, type] : shaders)
     {
         auto result = load_file(path, type);
@@ -58,10 +63,6 @@ uint32_t pge::OpenGlShader::create(std::initializer_list<std::pair<const std::fi
 pge::Result<unsigned, pge::OpenGlErrorCode> pge::OpenGlShader::load_file(const std::filesystem::path& path,
     ShaderType type)
 {
-    auto shader_type = opengl_shader_type(type);
-
-    auto id = glCreateShader(shader_type);
-
     auto contents = util::read_file(path);
 
     if (contents.empty())
@@ -70,6 +71,10 @@ pge::Result<unsigned, pge::OpenGlErrorCode> pge::OpenGlShader::load_file(const s
     }
 
     auto data = contents.c_str();
+
+    auto shader_type = opengl_shader_type(type);
+    auto id = glCreateShader(shader_type);
+
     glShaderSource(id, 1, (const GLchar* const*)&data, nullptr);
     glCompileShader(id);
 

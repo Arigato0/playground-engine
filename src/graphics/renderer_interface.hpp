@@ -7,7 +7,9 @@
 #include "graphics_api.hpp"
 #include "mesh.hpp"
 #include "shaders.hpp"
+#include "shader_params.hpp"
 #include "../application/fmt.hpp"
+#include "camera.hpp"
 
 namespace pge
 {
@@ -46,6 +48,8 @@ namespace pge
         // draws the given mesh
         virtual uint32_t draw(size_t mesh_id, glm::mat4 transform) = 0;
 
+        virtual void set_shader_params(ShaderParams *params, size_t mesh_id) = 0;
+
         // sets if wireframe mode is active
         virtual void set_wireframe_mode(bool value) = 0;
 
@@ -58,12 +62,18 @@ namespace pge
         // translates the underlying graphics apis error code to a string
         virtual std::string_view error_message(uint32_t code) = 0;
 
-        virtual IShader* get_shader() = 0;
-
         virtual uint32_t create_texture(std::string_view path, uint32_t &out_texture) = 0;
 
         virtual void delete_texture(uint32_t id) = 0;
 
+        void set_camera(Camera *camera)
+        {
+            m_camera = camera;
+        }
+
         glm::vec4 clear_color;
+
+    protected:
+        Camera *m_camera;
     };
 }

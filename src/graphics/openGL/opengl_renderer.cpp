@@ -31,14 +31,6 @@ uint32_t pge::OpenglRenderer::init()
             glViewport(0, 0, width, height);
         });
 
-    VALIDATE_ERR(m_shader.create(
-    {
-        {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-        {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment}
-    }));
-
-    m_shader.use();
-
     create_texture("assets/missing.jpeg", m_missing_texture);
 
     glEnable(GL_DEPTH_TEST);
@@ -52,13 +44,13 @@ uint32_t pge::OpenglRenderer::init()
 
 pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
 {
-    // auto iter = m_shaders.emplace_back();
-    //
-    // iter.create(shaders);
-    //
-    // return &iter;
+    auto id = m_shaders.size();
 
-    return nullptr;
+    auto &iter = m_shaders.emplace_back();
+
+    iter.create(shaders);
+
+    return &iter;
 }
 
 size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::string_view, 2> textures)
@@ -79,9 +71,6 @@ size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::s
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
     glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
 
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -91,7 +80,8 @@ size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::s
     glBindVertexArray(0);
 
     auto idx = m_meshes.size();
-    m_meshes.emplace_back(std::move(mesh));
+
+    m_meshes.emplace_back(mesh);
 
     return idx;
 }
@@ -106,30 +96,65 @@ void pge::OpenglRenderer::new_frame()
 
 uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
 {
-    if (mesh_id > m_meshes.size())
+    if (mesh_id >= m_meshes.size())
     {
         return OPENGL_ERROR_MESH_NOT_FOUND;
     }
 
     auto mesh = m_meshes[mesh_id];
 
+    auto shader = mesh.shader_params->shader;
+
+    if (shader == nullptr)
+    {
+        goto draw;
+    }
+
+    shader->use();
+
+    if (auto params = mesh.shader_params; params)
+    {
+        shader->set("enable_color", params->color_enabled);
+        shader->set("enable_textures", params->textures_enabled);
+        shader->set("object_color", params->object_color);
+        shader->set("light_color", params->light_color);
+        shader->set("texture_mix_value", params->texture_mix);
+    }
+
+    shader->set("texture1", 0);
+    shader->set("texture2", 1);
+    shader->set("model", transform);
+    shader->set("projection", m_camera->projection);
+    shader->set("view", m_camera->view);
+
+draw:
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mesh.texture1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, mesh.texture2);
 
     glBindVertexArray(mesh.vao);
-
-    m_shader.set("model", transform);
-
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_size);
+
     Engine::statistics.report_draw_call();
     Engine::statistics.report_verticies(mesh.vertex_size);
 
     return OPENGL_ERROR_OK;
 }
 
-uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t& out_texture)
+void pge::OpenglRenderer::set_shader_params(ShaderParams *params, size_t mesh_id)
+{
+    if (mesh_id >= m_meshes.size())
+    {
+        return;
+    }
+
+    auto &mesh = m_meshes[mesh_id];
+
+    mesh.shader_params = params;
+}
+
+uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture)
 {
     stbi_set_flip_vertically_on_load(true);
     int width, height, channels;

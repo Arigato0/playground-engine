@@ -54,6 +54,14 @@ public:
     {
         m_mesh_id = Engine::renderer->create_mesh(mesh, textures);
     }
+
+    void apply_params()
+    {
+        Engine::renderer->set_shader_params(&params, m_mesh_id);
+    }
+
+    ShaderParams params;
+
 private:
     size_t m_mesh_id;
     std::vector<glm::mat4> m_instances;
@@ -70,6 +78,7 @@ public:
     void on_start() override
     {
         camera.position.z = 3;
+        Engine::renderer->set_camera(&camera);
     }
     void update(double delta_time) override
     {
@@ -114,7 +123,7 @@ public:
     }
     void update(double delta_time) override
     {
-        if (auto cords = mouse_cords(); cords)
+        if (auto cords = mouse_cords(); cords && !camera_locked)
         {
             handle_mouse(delta_time, cords->x, cords->y);
         }
@@ -128,6 +137,10 @@ public:
         {
             show_cursor = !show_cursor;
             Engine::window.set_cursor(show_cursor ? pge::CursorMode::Normal : pge::CursorMode::Disabled);
+        }
+        if (key_pressed(Key::C, Modifier::Shift))
+        {
+            camera_locked = !camera_locked;
         }
     }
 
@@ -180,6 +193,7 @@ public:
     float mouse_sensitivity = 0.1f;
 private:
     CameraComp *m_camera;
+    bool camera_locked = false;
     float last_x;
     float last_y;
     bool show_cursor = true;
@@ -279,6 +293,19 @@ public:
                         m_camera->camera.fov = fov;
                     }
 
+                    static float camera_near = m_camera->camera.near;
+                    if (ImGui::SliderFloat("Near", &camera_near, 0.01, 1000))
+                    {
+                        m_camera->camera.near = camera_near;
+                    }
+
+                    static float camera_far = m_camera->camera.near;
+
+                    if (ImGui::SliderFloat("Far", &camera_far, 0.01, 1000))
+                    {
+                        m_camera->camera.far = camera_far;
+                    }
+
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Style"))
@@ -308,30 +335,64 @@ int main()
 
     Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
 
+    auto lighting_shader = Engine::renderer->create_shader
+    ({
+        {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
+        {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
+    });
+
+    auto standard_shader = Engine::renderer->create_shader
+    ({
+       {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
+       {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment}
+   });
+
     auto cube_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Cube");
 
-    // cube_ent->transform.transform = glm::scale(cube_ent->transform.transform, glm::vec3{2.2});
-    // cube_ent->transform.transform = glm::translate(cube_ent->transform.transform, glm::vec3{0, 0.5, 0});
     cube_ent->transform.rotate(60, {0, 1, 0});
+
     auto cube_mesh = cube_ent->find<MeshRenderer>();
 
-    cube_mesh->set_mesh(CUBE_MESH, {"assets/dirt block.jpg"});
+    cube_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
 
-    float offset = 10;
+    //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
+    cube_mesh->params.textures_enabled = false;
+    cube_mesh->params.color_enabled = true;
+    cube_mesh->params.shader = standard_shader;
 
-    for (int i = 0; i < 100; i++)
-    {
-        for (int j = 0; j < 100; j++)
-        {
-            glm::mat4 trans {1.0f};
+    cube_mesh->apply_params();
 
-            trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
+    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Light");
 
-            cube_mesh->add_instance(trans);
-        }
-    }
+    light_ent->transform.rotate(-60, {0, 1, 0});
+    light_ent->transform.translate({-2, 0, -1});
 
-    auto player_ent = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
+    auto light_mesh = light_ent->find<MeshRenderer>();
+
+    light_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
+
+    light_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
+    light_mesh->params.textures_enabled = false;
+    light_mesh->params.color_enabled = true;
+    light_mesh->params.shader = lighting_shader;
+
+    light_mesh->apply_params();
+
+    // float offset = 10;
+    //
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     for (int j = 0; j < 100; j++)
+    //     {
+    //         glm::mat4 trans {1.0f};
+    //
+    //         trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
+    //
+    //         cube_mesh->add_instance(trans);
+    //     }
+    // }
+
+    auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
 
     ASSERT_ERR(Engine::run());
 

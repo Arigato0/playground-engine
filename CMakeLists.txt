@@ -74,6 +74,7 @@ add_executable(playgroundEngine
         src/game/transform.hpp
         src/application/input.cpp
         src/application/input.hpp
+        src/graphics/shader_params.hpp
 )
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

@@ -5,6 +5,7 @@
 
 #include "opengl_error.hpp"
 #include "../shaders.hpp"
+#include "../../application/log.hpp"
 #include "../../application/error.hpp"
 #include "../../common_util/macros.hpp"
 
@@ -57,7 +58,7 @@ namespace pge
         }
 
     private:
-        uint32_t m_program;
+        uint32_t m_program = -1;
 
         Result<uint32_t, OpenGlErrorCode> load_file(const std::filesystem::path &path, ShaderType type);
     };
