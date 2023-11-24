@@ -1,14 +1,14 @@
 #pragma once
 
 #include <filesystem>
-#include <glad/glad.h>
-#include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "opengl_error.hpp"
 #include "../shaders.hpp"
 #include "../../application/error.hpp"
 #include "../../common_util/macros.hpp"
+
+#include <glad/glad.h>
 
 namespace pge
 {

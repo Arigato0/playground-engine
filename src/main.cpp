@@ -1,18 +1,11 @@
-#include <any>
-#include <atomic>
-#include <thread>
 #include <bits/stl_algo.h>
 
-#include "stb_image.h"
-#include "application/dialog.hpp"
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
 #include "application/input.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/primitives.hpp"
-#include "graphics/renderer_interface.hpp"
-#include "graphics/openGL/opengl_renderer.hpp"
 
 using namespace pge;
 
@@ -24,108 +17,14 @@ class InputHandlerComp : public IComponent
 public:
     void update(double delta_time) override
     {
-        if (Engine::window.is_key_pressed(Key::Escape))
+        if (Engine::window.is_key_held(Key::Escape))
         {
             Engine::window.set_should_close(true);
         }
     }
 };
 
-class DebugUiComp : public IComponent
-{
-public:
-    bool enable_wireframe     = false;
-    bool show_all             = false;
-    bool settings_window_open = false;
-    bool stats_window_open    = false;
-    bool demo_window_open     = false;
 
-    void update(double delta_time) override
-    {
-        if (ImGui::BeginMainMenuBar())
-        {
-            if (ImGui::BeginMenu("File"))
-            {
-                if (ImGui::MenuItem("Close", "Escape"))
-                {
-                    Engine::window.set_should_close(true);
-                }
-
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Windows"))
-            {
-                ImGui::Checkbox("All", &show_all);
-
-                if (show_all)
-                {
-                    settings_window_open = show_all;
-                    stats_window_open    = show_all;
-                    demo_window_open     = show_all;
-                }
-
-                ImGui::Checkbox("Settings", &settings_window_open);
-                ImGui::Checkbox("Statistics", &stats_window_open);
-                ImGui::Checkbox("Demo", &demo_window_open);
-                ImGui::EndMenu();
-            }
-
-            ImGui::EndMainMenuBar();
-        }
-
-        if (demo_window_open)
-        {
-            ImGui::ShowDemoWindow(&demo_window_open);
-        }
-
-        if (stats_window_open)
-        {
-            auto stats = Engine::statistics.stats();
-            ImGui::Begin("Statistics", &stats_window_open);
-            ImGui::Text(fmt::format("fps: {}", stats.fps).data());
-            ImGui::Text(fmt::format("draw calls: {}", stats.draw_calls).data());
-            ImGui::Text(fmt::format("vertices: {}", stats.vertices).data());
-            ImGui::End();
-        }
-
-        if (settings_window_open)
-        {
-            ImGui::Begin("Settings", &settings_window_open);
-            if (ImGui::BeginTabBar("Tabs"))
-            {
-                if (ImGui::BeginTabItem("Renderering"))
-                {
-                    ImGui::Checkbox("Wireframe", &enable_wireframe);
-
-                    Engine::renderer->set_wireframe_mode(enable_wireframe);
-
-                    ImGui::Separator();
-                    ImGui::Text("Viewport");
-
-                    auto clear_color_vec = Engine::renderer->clear_color;
-                    static float colors[3]{clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
-
-                    if (ImGui::ColorEdit3("Clear color", colors))
-                    {
-                        Engine::renderer->clear_color = {colors[0], colors[1], colors[2], 1.f};
-                    }
-
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Style"))
-                {
-                    ImGui::ShowStyleEditor();
-                    ImGui::EndTabItem();
-                }
-
-                ImGui::EndTabBar();
-            }
-
-            ImGui::End();
-        }
-    }
-};
 
 class Cube : public IEntity
 {
@@ -201,7 +100,6 @@ public:
     Camera camera;
 };
 
-
 class PlayerController : public IComponent
 {
 public:
@@ -221,25 +119,43 @@ public:
             handle_mouse(delta_time, cords->x, cords->y);
         }
         handle_movement(delta_time);
+        other_input();
+    }
+
+    void other_input()
+    {
+        if (key_pressed(Key::C))
+        {
+            show_cursor = !show_cursor;
+            Engine::window.set_cursor(show_cursor ? pge::CursorMode::Normal : pge::CursorMode::Disabled);
+        }
     }
 
     void handle_movement(double delta_time)
     {
-        if (Engine::window.is_key_pressed(Key::W))
+        if (key_held(Key::W))
         {
             m_camera->move_forward(delta_time * speed_mod);
         }
-        if (Engine::window.is_key_pressed(Key::S))
+        if (key_held(Key::S))
         {
             m_camera->move_backward(delta_time * speed_mod);
         }
-        if (Engine::window.is_key_pressed(Key::A))
+        if (key_held(Key::A))
         {
             m_camera->move_left(delta_time * speed_mod);
         }
-        if (Engine::window.is_key_pressed(Key::D))
+        if (key_held(Key::D))
         {
             m_camera->move_right(delta_time * speed_mod);
+        }
+        if (key_held(Key::LeftShift))
+        {
+            speed_mod = 4;
+        }
+        else
+        {
+            speed_mod = 1;
         }
     }
 
@@ -266,6 +182,120 @@ private:
     CameraComp *m_camera;
     float last_x;
     float last_y;
+    bool show_cursor = true;
+};
+
+class DebugUiComp : public IComponent
+{
+public:
+    bool enable_wireframe     = false;
+    bool show_all             = false;
+    bool settings_window_open = false;
+    bool stats_window_open    = false;
+    bool demo_window_open     = false;
+
+    void on_start() override
+    {
+        m_player = (Player*)Engine::entity_manager.find("Player");
+        m_camera = m_player->find<CameraComp>();
+    }
+
+    void update(double delta_time) override
+    {
+        if (ImGui::BeginMainMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Close", "Escape"))
+                {
+                    Engine::window.set_should_close(true);
+                }
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Windows"))
+            {
+                ImGui::Checkbox("All", &show_all);
+
+                if (show_all)
+                {
+                    settings_window_open = show_all;
+                    stats_window_open    = show_all;
+                    demo_window_open     = show_all;
+                }
+
+                ImGui::Checkbox("Settings", &settings_window_open);
+                ImGui::Checkbox("Statistics", &stats_window_open);
+                ImGui::Checkbox("Demo", &demo_window_open);
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMainMenuBar();
+        }
+
+        if (demo_window_open)
+        {
+            ImGui::ShowDemoWindow(&demo_window_open);
+        }
+
+        if (stats_window_open)
+        {
+            auto stats = Engine::statistics.stats();
+            ImGui::Begin("Statistics", &stats_window_open);
+            ImGui::Text(fmt::format("fps: {}", stats.fps).data());
+            ImGui::Text(fmt::format("draw calls: {}", stats.draw_calls).data());
+            ImGui::Text(fmt::format("vertices: {}", stats.vertices).data());
+            ImGui::End();
+        }
+
+        if (settings_window_open)
+        {
+            ImGui::Begin("Settings", &settings_window_open);
+            if (ImGui::BeginTabBar("Tabs"))
+            {
+                if (ImGui::BeginTabItem("Renderering"))
+                {
+                    ImGui::Checkbox("Wireframe", &enable_wireframe);
+
+                    Engine::renderer->set_wireframe_mode(enable_wireframe);
+
+                    ImGui::SeparatorText("Viewport");
+
+                    auto clear_color_vec = Engine::renderer->clear_color;
+                    static float colors[3]{clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
+
+                    if (ImGui::ColorEdit3("Clear color", colors))
+                    {
+                        Engine::renderer->clear_color = {colors[0], colors[1], colors[2], 1.f};
+                    }
+
+                    ImGui::SeparatorText("Camera");
+
+                    static float fov = m_camera->camera.fov;
+
+                    if (ImGui::SliderFloat("FOV", &fov, 1, 135))
+                    {
+                        m_camera->camera.fov = fov;
+                    }
+
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Style"))
+                {
+                    ImGui::ShowStyleEditor();
+                    ImGui::EndTabItem();
+                }
+
+                ImGui::EndTabBar();
+            }
+
+            ImGui::End();
+        }
+    }
+private:
+    CameraComp *m_camera;
+    Player *m_player;
 };
 
 int main()
@@ -285,7 +315,9 @@ int main()
     cube_ent->transform.rotate(60, {0, 1, 0});
     auto cube_mesh = cube_ent->find<MeshRenderer>();
 
-    cube_mesh->set_mesh(CUBE_MESH, {"assets/mona.jpg"});
+    cube_mesh->set_mesh(CUBE_MESH, {"assets/dirt block.jpg"});
+
+    float offset = 10;
 
     for (int i = 0; i < 100; i++)
     {
@@ -293,7 +325,7 @@ int main()
         {
             glm::mat4 trans {1.0f};
 
-            trans = glm::translate(trans, glm::vec3{j, 0, i});
+            trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
 
             cube_mesh->add_instance(trans);
         }

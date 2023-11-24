@@ -32,7 +32,6 @@ namespace pge
 
         virtual std::pair<uint32_t, uint32_t> framebuffer_size() = 0;
 
-        virtual bool is_key_pressed(Key key) = 0;
         virtual bool is_key_held(Key key) = 0;
         virtual glm::dvec2 mouse_xy() = 0;
         virtual void set_cursor(CursorMode mode) = 0;

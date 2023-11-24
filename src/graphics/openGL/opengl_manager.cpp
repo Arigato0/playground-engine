@@ -346,19 +346,19 @@ uint8_t pge::OpenGlManager::draw_frame()
     float delta_time = Engine::statistics.delta_time();
     float camera_speed = 2.5f * delta_time;
 
-    if (m_window->is_key_pressed(Key::W))
+    if (m_window->is_key_held(Key::W))
     {
         camera_position += camera_speed * camera_forward;
     }
-    if (m_window->is_key_pressed(Key::S))
+    if (m_window->is_key_held(Key::S))
     {
         camera_position -= camera_speed * camera_forward;
     }
-        if (m_window->is_key_pressed(Key::A))
+        if (m_window->is_key_held(Key::A))
     {
         camera_position -= glm::normalize(glm::cross(camera_forward, UP)) * camera_speed;
     }
-    if (m_window->is_key_pressed(Key::D))
+    if (m_window->is_key_held(Key::D))
     {
         camera_position += glm::normalize(glm::cross(camera_forward, UP)) * camera_speed;
     }

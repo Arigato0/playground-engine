@@ -1,6 +1,7 @@
 #pragma once
 #include <string_view>
 #include <string>
+
 #include <GLFW/glfw3.h>
 
 namespace pge
@@ -133,7 +134,13 @@ namespace pge
     };
     enum class Modifier
     {
-        None,
+        None = 0,
+        Shift = 0x0001,
+        Control = 0x0002,
+        Alt = 0x0004,
+        Super = 0x0008,
+        CapsLock = 0x0010,
+        NumLock = 0x0020,
     };
 
     enum class CursorMode
@@ -143,17 +150,7 @@ namespace pge
         Disabled = 0x00034003,
     };
 
-    static std::string key_name(Key key)
-    {
-        auto str = glfwGetKeyName((int)key, 0);
 
-        if (str == nullptr)
-        {
-            return {};
-        }
-
-        return str;
-    }
 
 #else
 #error "Key enums for this platform have not been defined"

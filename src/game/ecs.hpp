@@ -1,10 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <string>
 #include <memory>
-
-#include <glm/vec3.hpp>
 
 #include "transform.hpp"
 

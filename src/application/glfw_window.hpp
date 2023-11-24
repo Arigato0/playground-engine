@@ -1,7 +1,6 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <glad/glad.h>
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <string_view>
 #include <cassert>
@@ -125,14 +124,9 @@ namespace pge
             return { width, height };
         }
 
-        bool is_key_pressed(Key key) override
-        {
-            return glfwGetKey(m_window, (int)key) == GLFW_PRESS;
-        }
-
         bool is_key_held(Key key) override
         {
-            return glfwGetKey(m_window, (int)key) == GLFW_RELEASE;
+            return glfwGetKey(m_window, (int)key) == GLFW_PRESS;
         }
 
         glm::dvec2 mouse_xy() override

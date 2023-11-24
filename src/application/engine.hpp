@@ -1,14 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <memory>
-#include <unordered_map>
-
 #include "../game/entity_manager.hpp"
 #include "../game/ecs.hpp"
 #include "glfw_window.hpp"
 #include "error.hpp"
 #include "statistics.hpp"
+#include "../graphics/renderer_interface.hpp"
 #include "../graphics/vulkan/vulkan_manager.hpp"
 #include "window.hpp"
 

@@ -5,8 +5,6 @@
 #include "../../common_util/io.hpp"
 #include "../../application/log.hpp"
 
-#include "glad/glad.h"
-
 constexpr int LOG_SIZE = 512;
 static char g_info_log[LOG_SIZE];
 
