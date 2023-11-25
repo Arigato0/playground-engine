@@ -125,6 +125,11 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
         shader->set("object_color", params->object_color);
         shader->set("light_color", params->light_color);
         shader->set("texture_mix_value", params->texture_mix);
+
+        if (params->light_source)
+        {
+            shader->set("light_pos", *params->light_source);
+        }
     }
 
     shader->set("texture1", 0);
@@ -132,6 +137,7 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
     shader->set("model", transform);
     shader->set("projection", m_camera->projection);
     shader->set("view", m_camera->view);
+    shader->set("view_pos", m_camera->position);
 
 draw:
     glActiveTexture(GL_TEXTURE0);

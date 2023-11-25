@@ -1,4 +1,5 @@
 #include <bits/stl_algo.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
@@ -23,8 +24,6 @@ public:
         }
     }
 };
-
-
 
 class Cube : public IEntity
 {
@@ -105,6 +104,16 @@ public:
         camera.position -= glm::normalize(glm::cross(camera.forward, camera.up)) * speed * mod;
     }
 
+    void move_up(float mod = 1)
+    {
+        camera.position += camera.up * speed * mod;
+    }
+
+    void move_down(float mod = 1)
+    {
+        camera.position -= camera.up * speed * mod;
+    }
+
     float speed = 2.5f;
     Camera camera;
 };
@@ -148,22 +157,33 @@ public:
 
     void handle_movement(double delta_time)
     {
+        auto mod = delta_time * speed_mod;
+
         if (key_held(Key::W))
         {
-            m_camera->move_forward(delta_time * speed_mod);
+            m_camera->move_forward(mod);
         }
         if (key_held(Key::S))
         {
-            m_camera->move_backward(delta_time * speed_mod);
+            m_camera->move_backward(mod);
         }
         if (key_held(Key::A))
         {
-            m_camera->move_left(delta_time * speed_mod);
+            m_camera->move_left(mod);
         }
         if (key_held(Key::D))
         {
-            m_camera->move_right(delta_time * speed_mod);
+            m_camera->move_right(mod);
         }
+        if (key_held(Key::Space))
+        {
+            m_camera->move_up(mod);
+        }
+        if (key_held(Key::LeftControl))
+        {
+            m_camera->move_down(mod);
+        }
+
         if (key_held(Key::LeftShift))
         {
             speed_mod = 4;
@@ -209,11 +229,18 @@ public:
     bool settings_window_open = false;
     bool stats_window_open    = false;
     bool demo_window_open     = false;
+    bool show_object_control  = false;
+
+    MeshRenderer *ground_mesh;
 
     void on_start() override
     {
         m_player = (Player*)Engine::entity_manager.find("Player");
         m_camera = m_player->find<CameraComp>();
+
+        auto ground_ent = Engine::entity_manager.find("Ground");
+
+        ground_mesh = ground_ent->find<MeshRenderer>();
     }
 
     void update(double delta_time) override
@@ -244,10 +271,25 @@ public:
                 ImGui::Checkbox("Settings", &settings_window_open);
                 ImGui::Checkbox("Statistics", &stats_window_open);
                 ImGui::Checkbox("Demo", &demo_window_open);
+                ImGui::Checkbox("Objects", &show_object_control);
                 ImGui::EndMenu();
             }
 
             ImGui::EndMainMenuBar();
+        }
+
+        if (show_object_control)
+        {
+            ImGui::Begin("Objects", &show_object_control);
+
+            float *light_colors = glm::value_ptr(ground_mesh->params.light_color);
+            if (ImGui::ColorEdit3("Light Color", light_colors))
+            {
+                ground_mesh->params.light_color = glm::make_vec3(light_colors);
+                ground_mesh->params.object_color = glm::make_vec3(light_colors);
+            }
+
+            ImGui::End();
         }
 
         if (demo_window_open)
@@ -327,6 +369,17 @@ private:
     Player *m_player;
 };
 
+class ObjectRotator : public IComponent
+{
+public:
+
+    void update(double delta_time) override
+    {
+        m_parent->transform.rotate(sin(3) * 3, {1, 1, 1});
+        m_parent->transform.translate({0, cos(program_time() * 3) * 0.020, 0});
+    }
+};
+
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -349,36 +402,37 @@ int main()
        {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment},
    });
 
-    auto cube_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Cube");
+    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
 
-    cube_ent->transform.rotate(60, {0, 1, 0});
-
-    auto cube_mesh = cube_ent->find<MeshRenderer>();
-
-    cube_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
-
-    //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
-    cube_mesh->params.textures_enabled = false;
-    cube_mesh->params.color_enabled = true;
-    cube_mesh->params.shader = standard_shader;
-
-    cube_mesh->apply_params();
-
-    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Light");
-
-    light_ent->transform.rotate(-60, {0, 1, 0});
-    light_ent->transform.translate({-2, 0, -1});
+    light_ent->transform.translate({0, 3, -10});
 
     auto light_mesh = light_ent->find<MeshRenderer>();
 
     light_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
 
-    light_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
+    //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
     light_mesh->params.textures_enabled = false;
     light_mesh->params.color_enabled = true;
-    light_mesh->params.shader = lighting_shader;
+    light_mesh->params.shader = standard_shader;
 
     light_mesh->apply_params();
+
+    auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
+
+    ground_ent->transform.scale({10, 0.3, 10});
+    ground_ent->transform.translate({0, -3, -1});
+
+    auto ground_mesh = ground_ent->find<MeshRenderer>();
+
+    ground_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
+
+    ground_mesh->params.object_color = {0.0f, 0.5f, 0.51f};
+    ground_mesh->params.textures_enabled = true;
+    ground_mesh->params.color_enabled = true;
+    ground_mesh->params.shader = lighting_shader;
+    ground_mesh->params.light_source = &light_ent->transform.position;
+
+    ground_mesh->apply_params();
 
     // float offset = 10;
     //

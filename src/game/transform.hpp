@@ -20,6 +20,7 @@ namespace pge
 
         void translate(glm::vec3 vec)
         {
+            position += vec;
             transform = glm::translate(transform, vec);
         }
 

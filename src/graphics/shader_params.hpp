@@ -13,5 +13,6 @@ namespace pge
         glm::vec3 light_color {1.0f};
         float texture_mix = 0.0f;
         IShader *shader = nullptr;
+        glm::vec3 *light_source = nullptr;
     };
 }

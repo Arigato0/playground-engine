@@ -10,10 +10,12 @@ uniform mat4 projection;
 
 out vec2 text_cord;
 out vec3 normals;
+out vec3 frag_pos;
 
 void main()
 {
     gl_Position = projection * view * model * vec4(in_pos, 1.0);
     text_cord = in_tex_cord;
-    normals = in_normals;
+    frag_pos = vec3(model * vec4(in_pos, 1.0));
+    normals = mat3(transpose(inverse(model))) * in_normals;
 }

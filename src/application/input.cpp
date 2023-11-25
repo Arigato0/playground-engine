@@ -16,7 +16,7 @@ struct KeyEvent
 
 static std::array<KeyEvent, 119> g_key_cache;
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void mouse_callback(GLFWwindow *_, double xpos, double ypos)
 {
     auto &io = ImGui::GetIO();
 
@@ -145,11 +145,11 @@ bool pge::key_released(Key key, Modifier mod)
 
 std::string pge::key_name(Key key)
 {
-    auto str = glfwGetKeyName((int)key, 0);
+    auto *str = glfwGetKeyName(int(key), 0);
 
     if (str == nullptr)
     {
-        return {};
+        return "Unknown key";
     }
 
     return str;
