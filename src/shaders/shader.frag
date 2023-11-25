@@ -3,6 +3,7 @@
 out vec4 FragColor;
 
 in vec2 text_cord;
+in vec3 normals;
 
 uniform bool enable_textures;
 uniform bool enable_color;

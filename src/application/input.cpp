@@ -133,9 +133,14 @@ bool pge::key_pressed(Key key, Modifier mod)
     return get_key(int(key), GLFW_PRESS, int(mod));
 }
 
-bool pge::key_held(Key key, Modifier mod)
+bool pge::key_held(Key key)
 {
     return Engine::window.is_key_held(key);
+}
+
+bool pge::key_released(Key key, Modifier mod)
+{
+    return get_key(int(key), GLFW_RELEASE, int(mod));
 }
 
 std::string pge::key_name(Key key)

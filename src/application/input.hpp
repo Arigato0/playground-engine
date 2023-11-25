@@ -13,7 +13,8 @@ namespace pge
     std::optional<glm::vec2> mouse_cords();
 
     bool key_pressed(Key key, Modifier mod = Modifier::None);
-    bool key_held(Key key, Modifier mod = Modifier::None);
+    bool key_held(Key key);
+    bool key_released(Key key, Modifier mod = Modifier::None);
 
     std::string key_name(Key key);
 

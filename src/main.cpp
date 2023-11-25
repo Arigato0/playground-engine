@@ -120,6 +120,8 @@ public:
 
         last_x = window_width / 2;
         last_y = window_height / 2;
+
+        Engine::window.set_cursor(CursorMode::Disabled);
     }
     void update(double delta_time) override
     {
@@ -196,7 +198,7 @@ private:
     bool camera_locked = false;
     float last_x;
     float last_y;
-    bool show_cursor = true;
+    bool show_cursor = false;
 };
 
 class DebugUiComp : public IComponent
@@ -344,7 +346,7 @@ int main()
     auto standard_shader = Engine::renderer->create_shader
     ({
        {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment}
+       {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment},
    });
 
     auto cube_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Cube");
