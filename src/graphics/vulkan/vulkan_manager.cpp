@@ -186,18 +186,6 @@ VkPhysicalDeviceProperties pge::VulkanManager::device_properties(VkPhysicalDevic
     return properties;
 }
 
-pge::GraphicsProperties pge::VulkanManager::properties()
-{
-    auto device_props = device_properties(m_physical_device);
-
-    return
-    {
-        .device_name = device_props.deviceName,
-        .version_major = device_props.apiVersion,
-        .api = GraphicsApi::Vulkan,
-    };
-}
-
 pge::VulkanErrorCode pge::VulkanManager::create_surface()
 {
     auto result = glfwCreateWindowSurface(m_instance, (GLFWwindow*)m_window->handle(), nullptr, &m_surface);

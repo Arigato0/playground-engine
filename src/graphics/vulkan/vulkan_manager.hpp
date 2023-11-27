@@ -1,53 +1,51 @@
 #pragma once
 
 #include <vector>
+#include <glm/vec4.hpp>
 
 #include "../../application/glfw_window.hpp"
 #include "../../application/log.hpp"
 #include "../../application/error.hpp"
 #include "../../common_util/util.hpp"
 #include "queue_families.hpp"
-#include "../graphics_manager_interface.hpp"
 #include "graphics_errors.hpp"
 
 namespace pge
 {
-    class VulkanManager : public IGraphicsManager
+    class VulkanManager
     {
     public:
 
         VulkanManager() = default;
 
-        ~VulkanManager() override;
+        ~VulkanManager() ;
 
-        uint8_t init() override;
-
-        GraphicsProperties properties() override;
+        uint8_t init();
 
         VulkanErrorCode record_cmd(VkCommandBuffer cmd_buffer, size_t image_idx);
 
-        inline void set_window(IWindow *window) override
+        inline void set_window(IWindow *window)
         {
             m_window = window;
         }
 
-        inline void wait() override
+        inline void wait()
         {
             vkDeviceWaitIdle(m_device);
         }
 
-        inline void set_clear_color(glm::vec4 value) override
+        inline void set_clear_color(glm::vec4 value)
         {
             m_clear_color = { EXPAND_VEC4(value) };
         }
 
         VulkanErrorCode recreate_swap_chain();
 
-        uint8_t draw_frame() override;
+        uint8_t draw_frame();
 
-        std::vector<const char*> extensions() override;
+        std::vector<const char*> extensions();
 
-        inline std::string_view error_message(uint8_t code) override
+        inline std::string_view error_message(uint8_t code)
         {
             return vulkan_error_message((VulkanErrorCode)code);
         }

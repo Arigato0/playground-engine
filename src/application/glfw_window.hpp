@@ -38,7 +38,7 @@ namespace pge
                 m_is_init = true;
             }
 
-            m_window = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
+            m_window = glfwCreateWindow(width, height, title.data(), glfwGetPrimaryMonitor(), nullptr);
 
             glfwMakeContextCurrent(m_window);
 
@@ -55,6 +55,36 @@ namespace pge
         void resize(int width, int height) override
         {
             glfwSetWindowSize(m_window, width, height);
+        }
+
+        void change(int width, int height, int refresh_rate, int xpos = 0, int ypos = 0) override
+        {
+            glfwSetWindowMonitor(m_window, m_monitor, xpos, ypos, width, height, refresh_rate);
+        }
+
+        void cap_refresh_rate(bool value) override
+        {
+            glfwSwapInterval(value);
+        }
+
+        void set_fullscreen(bool value) override
+        {
+            auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+            int xpos, ypos;
+            glfwGetWindowPos(m_window, &xpos, &ypos);
+
+            if (value && m_monitor == nullptr)
+            {
+                m_monitor = glfwGetPrimaryMonitor();
+            }
+            if (!value)
+            {
+                m_monitor = nullptr;
+            }
+
+            glfwSetWindowMonitor(m_window,
+                m_monitor, xpos, ypos, mode->width, mode->height, mode->refreshRate);
         }
 
         void close() override
@@ -152,6 +182,7 @@ namespace pge
         }
 
     private:
+        GLFWmonitor *m_monitor = nullptr;
         GLFWwindow *m_window;
         bool m_is_init = false;
 

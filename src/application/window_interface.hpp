@@ -18,6 +18,12 @@ namespace pge
 
         virtual void resize(int width, int height) = 0;
 
+        virtual void change(int width, int height, int refresh_rate, int xpos, int ypos) = 0;
+
+        virtual void set_fullscreen(bool value) = 0;
+
+        virtual void cap_refresh_rate(bool value) = 0;
+
         virtual void close() = 0;
 
         virtual bool should_close() = 0;

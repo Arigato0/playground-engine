@@ -1,6 +1,6 @@
 #include "opengl_renderer.hpp"
 
-//#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include <glad/glad.h>
@@ -125,14 +125,21 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
         shader->set("object_color", params->object_color);
         shader->set("light_color", params->light_color);
         shader->set("texture_mix_value", params->texture_mix);
+        shader->set("material.specular", params->specular);
+        shader->set("material.shininess", params->shininess);
+        shader->set("material.emission", params->emission);
+        shader->set("light.diffuse", params->light_diffuse);
+        shader->set("light.specular", params->light_specular);
+        shader->set("light.ambient", params->light_ambient);
 
-        if (params->light_source)
+        if (params->light_pos)
         {
-            shader->set("light_pos", *params->light_source);
+            shader->set("light.position", *params->light_pos);
         }
     }
 
-    shader->set("texture1", 0);
+    shader->set("material.diffuse", 0);
+    shader->set("material.specular", 1);
     shader->set("texture2", 1);
     shader->set("model", transform);
     shader->set("projection", m_camera->projection);

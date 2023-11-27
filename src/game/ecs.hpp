@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "transform.hpp"
 
@@ -22,6 +23,19 @@ namespace pge
 
     class IEntity;
 
+    enum class EditorControlType
+    {
+        Slider,
+        ColorEdit,
+    };
+
+    struct EditorProperty
+    {
+        std::string_view name;
+        void *ptr;
+        EditorControlType control_type;
+    };
+
     class IComponent
     {
     public:
@@ -29,9 +43,10 @@ namespace pge
         virtual void on_start() {}
         virtual void on_enable() {}
         virtual void on_disable() {}
-        virtual void update(double delta_time) {}
+        virtual void update(double delta_time) = 0;
         virtual std::string serialize() { return {}; }
         virtual void deserialize(std::string_view data) {}
+        virtual std::vector<EditorProperty> editor_properties() { return {}; }
 
         void set_parent(IEntity *parent)
         {

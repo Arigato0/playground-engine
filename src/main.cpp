@@ -1,10 +1,15 @@
 #include <bits/stl_algo.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/compatibility.hpp>
 
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
 #include "application/input.hpp"
+#include "application/misc.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/primitives.hpp"
 
@@ -52,10 +57,6 @@ public:
     void set_mesh(std::span<float> mesh, std::array<std::string_view, 2> textures)
     {
         m_mesh_id = Engine::renderer->create_mesh(mesh, textures);
-    }
-
-    void apply_params()
-    {
         Engine::renderer->set_shader_params(&params, m_mesh_id);
     }
 
@@ -282,12 +283,30 @@ public:
         {
             ImGui::Begin("Objects", &show_object_control);
 
-            float *light_colors = glm::value_ptr(ground_mesh->params.light_color);
-            if (ImGui::ColorEdit3("Light Color", light_colors))
+            auto *specular_color = glm::value_ptr(ground_mesh->params.light_specular);
+            if (ImGui::ColorEdit3("Specular", specular_color))
             {
-                ground_mesh->params.light_color = glm::make_vec3(light_colors);
-                ground_mesh->params.object_color = glm::make_vec3(light_colors);
+                ground_mesh->params.light_specular = glm::make_vec3(specular_color);
             }
+            auto *ambient_color = glm::value_ptr(ground_mesh->params.light_ambient);
+            if (ImGui::ColorEdit3("Ambient", ambient_color))
+            {
+                ground_mesh->params.light_ambient = glm::make_vec3(ambient_color);
+            }
+            auto *diffuse_color = glm::value_ptr(ground_mesh->params.light_diffuse);
+            if (ImGui::ColorEdit3("Diffuse", diffuse_color))
+            {
+                ground_mesh->params.light_diffuse = glm::make_vec3(diffuse_color);
+            }
+            auto *emission_color = glm::value_ptr(ground_mesh->params.emission);
+            if (ImGui::ColorEdit3("Emission", emission_color))
+            {
+                ground_mesh->params.emission = glm::make_vec3(emission_color);
+            }
+
+            auto &time_scale = Engine::time_scale;
+            ImGui::SliderFloat("Time scale", &time_scale, 0, 10);
+
 
             ImGui::End();
         }
@@ -350,6 +369,44 @@ public:
                         m_camera->camera.far = camera_far;
                     }
 
+                    static bool framerate_cap = false;
+
+                    if (ImGui::Checkbox("Framerate cap", &framerate_cap))
+                    {
+                        Engine::window.cap_refresh_rate(framerate_cap);
+                    }
+
+                    static bool fullscreen = true;
+
+                    if (ImGui::Checkbox("Fullscreen", &fullscreen))
+                    {
+                        Engine::window.set_fullscreen(fullscreen);
+                    }
+
+                    if (ImGui::TreeNode("Set resolution"))
+                    {
+                        static int current_item = 0;
+                        auto resolution_strings = get_resolution_strings();
+
+                        std::vector<const char*> raw_strings;
+
+                        raw_strings.reserve(resolution_strings.size());
+
+                        for (auto &str : resolution_strings)
+                        {
+                            raw_strings.emplace_back(str.c_str());
+                        }
+
+                        if (ImGui::ListBox("resolution", &current_item, raw_strings.data(), raw_strings.size()))
+                        {
+                            auto modes = get_video_modes();
+                            auto m = modes[current_item];
+                            Engine::window.change(m.width, m.height, m.refresh_rate);
+                        }
+
+                        ImGui::TreePop();
+                    }
+
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Style"))
@@ -375,8 +432,8 @@ public:
 
     void update(double delta_time) override
     {
-        m_parent->transform.rotate(sin(3) * 3, {1, 1, 1});
-        m_parent->transform.translate({0, cos(program_time() * 3) * 0.020, 0});
+        m_parent->transform.rotate((sin(3) * 3) * Engine::time_scale, {1, 1, 1});
+        m_parent->transform.translate({0, (cos(program_time() * 3) * 0.020), 0});
     }
 };
 
@@ -405,34 +462,69 @@ int main()
     auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
 
     light_ent->transform.translate({0, 3, -10});
+    light_ent->transform.scale(glm::vec3{0.5});
 
     auto light_mesh = light_ent->find<MeshRenderer>();
 
-    light_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
+    light_mesh->set_mesh(CUBE_MESH, {""});
 
     //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
     light_mesh->params.textures_enabled = false;
     light_mesh->params.color_enabled = true;
     light_mesh->params.shader = standard_shader;
 
-    light_mesh->apply_params();
-
     auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
 
-    ground_ent->transform.scale({10, 0.3, 10});
-    ground_ent->transform.translate({0, -3, -1});
+    ground_ent->transform.scale({100, 0.5, 100});
+    ground_ent->transform.translate({0, -3, 0});
 
     auto ground_mesh = ground_ent->find<MeshRenderer>();
 
-    ground_mesh->set_mesh(CUBE_MESH, {"assets/container.jpg"});
+    ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
 
-    ground_mesh->params.object_color = {0.0f, 0.5f, 0.51f};
-    ground_mesh->params.textures_enabled = true;
-    ground_mesh->params.color_enabled = true;
-    ground_mesh->params.shader = lighting_shader;
-    ground_mesh->params.light_source = &light_ent->transform.position;
+    ground_mesh->params =
+    {
+        .textures_enabled = false,
+        .color_enabled = true,
+        .object_color = {0.0f, 0.5f, 0.51f},
+        .shader = lighting_shader,
+        .light_pos = &light_ent->transform.position,
+        .specular = {0.0f, 0.0f, 0.0f},
+        // .light_ambient = {0.8f, 0.1f, 0.2f},
+        // .light_diffuse = {0.8f, 0.1f, 0.2f},
+        // .light_specular = {0.1f, 0.1f, 0.1f},
+    };
 
-    ground_mesh->apply_params();
+    auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
+
+    box_ent->transform.translate({-2, -0.25, -10});
+
+    auto box_mesh = box_ent->find<MeshRenderer>();
+
+    box_mesh->set_mesh(CUBE_MESH, {"assets/container2.png", "assets/container2_specular.png"});
+
+    box_mesh->params =
+    {
+        .textures_enabled = true,
+        .color_enabled = true,
+        .object_color = {0.0f, 0.5f, 0.51f},
+        .shader = lighting_shader,
+        .light_pos = &light_ent->transform.position,
+        .specular = {0.5f, 0.5f, 0.5f},
+        // .light_ambient = {0.8f, 0.1f, 0.2f},
+        // .light_diffuse = {0.8f, 0.1f, 0.2f},
+        // .light_specular = {0.1f, 0.1f, 0.1f},
+    };
+
+    for (int i = 0; i < 100; i++)
+    {
+        glm::mat4 trans {1.0f};
+
+        trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
+        trans = glm::translate(trans, glm::vec3{1 + i, -0.25, 1 + i});
+
+        box_mesh->add_instance(trans);
+    }
 
     // float offset = 10;
     //

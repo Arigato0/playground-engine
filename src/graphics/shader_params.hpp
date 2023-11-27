@@ -13,6 +13,13 @@ namespace pge
         glm::vec3 light_color {1.0f};
         float texture_mix = 0.0f;
         IShader *shader = nullptr;
-        glm::vec3 *light_source = nullptr;
+        glm::vec3 *light_pos = nullptr;
+        glm::vec3 specular {1.0};
+        glm::vec3 emission;
+        float shininess = 32;
+
+        glm::vec3 light_ambient {1.0};
+        glm::vec3 light_diffuse {1.0};
+        glm::vec3 light_specular {1.0};
     };
 }

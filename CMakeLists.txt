@@ -38,15 +38,12 @@ add_executable(playgroundEngine
         src/graphics/vulkan/vulkan_shader.hpp
         src/graphics/vulkan/util.hpp
         src/application/log.cpp
-        src/graphics/graphics_manager_interface.hpp
         src/graphics/vulkan/graphics_errors.cpp
         src/graphics/vulkan/graphics_errors.hpp
         src/common_util/debug.hpp
         src/graphics/graphics_api.hpp
         src/application/window_interface.hpp
         src/application/window.hpp
-        src/graphics/openGL/opengl_manager.cpp
-        src/graphics/openGL/opengl_manager.hpp
         src/graphics/openGL/opengl_error.hpp
         src/graphics/openGL/opengl_error.cpp
         src/application/input_keys.hpp
@@ -75,6 +72,8 @@ add_executable(playgroundEngine
         src/application/input.cpp
         src/application/input.hpp
         src/graphics/shader_params.hpp
+        src/application/misc.cpp
+        src/application/misc.hpp
 )
 
 target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

@@ -31,11 +31,11 @@ namespace pge
 
 		static void shutdown();
 
-		inline static WINDOW_T			window;
-		inline static EntityManager		entity_manager;
-		inline static IRenderer		   *renderer;
-		inline static Statistics		statistics;
-		inline static float				time_scale = 1;
+		inline static WINDOW_T		window;
+		inline static EntityManager	entity_manager;
+		inline static IRenderer	   *renderer;
+		inline static Statistics	statistics;
+		inline static float			time_scale = 1;
 	private:
 
         static void set_graphics_api(GraphicsApi api);
