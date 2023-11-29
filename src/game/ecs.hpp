@@ -2,9 +2,13 @@
 
 #include <string>
 #include <memory>
+#include <variant>
 #include <vector>
 
 #include "transform.hpp"
+#include <cxxabi.h>
+#include "../application/log.hpp"
+#include "../common_util/misc.hpp"
 
 namespace pge
 {
@@ -23,18 +27,22 @@ namespace pge
 
     class IEntity;
 
-    enum class EditorControlType
+    template<class T>
+    struct RangeControl
     {
-        Slider,
-        ColorEdit,
+        T min;
+        T max;
     };
 
-    struct EditorProperty
-    {
-        std::string_view name;
-        void *ptr;
-        EditorControlType control_type;
-    };
+    using EditorControl = std::variant<
+        RangeControl<float>, RangeControl<double>, RangeControl<int>, bool, glm::vec3>;
+
+        struct EditorProperty
+        {
+            std::string_view name;
+            void *ptr;
+            EditorControl control_type;
+        };
 
     class IComponent
     {
@@ -87,6 +95,7 @@ namespace pge
     class IEntity
     {
     public:
+        using ComponentTable = std::unordered_map<std::string, std::unique_ptr<IComponent>>;
         Transform transform;
 
         virtual ~IEntity() = default;
@@ -121,7 +130,7 @@ namespace pge
         template<class T>
         T* find()
         {
-            auto iter = m_components.find(typeid(T).name());
+            auto iter = m_components.find(type_name<T>());
 
             if (iter == m_components.end())
             {
@@ -134,13 +143,18 @@ namespace pge
         template<IsComponent T>
         void register_component()
         {
-            auto [comp, _] = m_components.emplace(typeid(T).name(), std::make_unique<T>());
+            auto [comp, _] = m_components.emplace(type_name<T>(), std::make_unique<T>());
             comp->second->set_parent(this);
+        }
+
+        const ComponentTable& get_components() const
+        {
+            return m_components;
         }
 
     protected:
         uint32_t m_id;
-        std::unordered_map<std::string_view, std::unique_ptr<IComponent>> m_components;
+        ComponentTable m_components;
     };
 
     template<class T>

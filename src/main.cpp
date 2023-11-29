@@ -283,30 +283,34 @@ public:
         {
             ImGui::Begin("Objects", &show_object_control);
 
-            auto *specular_color = glm::value_ptr(ground_mesh->params.light_specular);
-            if (ImGui::ColorEdit3("Specular", specular_color))
+            for (const auto &[name, entity] : Engine::entity_manager.get_entities())
             {
-                ground_mesh->params.light_specular = glm::make_vec3(specular_color);
-            }
-            auto *ambient_color = glm::value_ptr(ground_mesh->params.light_ambient);
-            if (ImGui::ColorEdit3("Ambient", ambient_color))
-            {
-                ground_mesh->params.light_ambient = glm::make_vec3(ambient_color);
-            }
-            auto *diffuse_color = glm::value_ptr(ground_mesh->params.light_diffuse);
-            if (ImGui::ColorEdit3("Diffuse", diffuse_color))
-            {
-                ground_mesh->params.light_diffuse = glm::make_vec3(diffuse_color);
-            }
-            auto *emission_color = glm::value_ptr(ground_mesh->params.emission);
-            if (ImGui::ColorEdit3("Emission", emission_color))
-            {
-                ground_mesh->params.emission = glm::make_vec3(emission_color);
-            }
+                if (ImGui::TreeNode(name.data()))
+                {
+                    if (ImGui::TreeNode("Transform"))
+                    {
+                        auto &trans = entity->transform;
 
-            auto &time_scale = Engine::time_scale;
-            ImGui::SliderFloat("Time scale", &time_scale, 0, 10);
+                        auto *pos = glm::value_ptr(trans.position);
 
+                        if (ImGui::SliderFloat3("Position", pos, -1, 1))
+                        {
+                            trans.translate(glm::make_vec3(pos));
+                        }
+
+                        ImGui::TreePop();
+                    }
+
+                    for (const auto &[comp_name, comp] : entity->get_components())
+                    {
+                        if (ImGui::TreeNode(comp_name.data()))
+                        {
+                            ImGui::TreePop();
+                        }
+                    }
+                    ImGui::TreePop();
+                }
+            }
 
             ImGui::End();
         }
@@ -465,6 +469,11 @@ int main()
     light_ent->transform.scale(glm::vec3{0.5});
 
     auto light_mesh = light_ent->find<MeshRenderer>();
+
+    if (light_mesh == nullptr)
+    {
+        Logger::fatal("Could not find component");
+    }
 
     light_mesh->set_mesh(CUBE_MESH, {""});
 

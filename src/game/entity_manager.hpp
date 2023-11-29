@@ -20,6 +20,7 @@ namespace pge
     class EntityManager
     {
     public:
+        using EntityTable = std::unordered_map<std::string_view, std::unique_ptr<IEntity>>;
         void start();
 
         void update(double delta_time);
@@ -43,7 +44,12 @@ namespace pge
             return entity;
         }
 
+        const EntityTable& get_entities() const
+        {
+            return m_entities;
+        }
+
     private:
-        std::unordered_map<std::string_view, std::unique_ptr<IEntity>> m_entities;
+        EntityTable m_entities;
     };
 }
