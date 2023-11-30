@@ -4,10 +4,10 @@
 
 namespace pge
 {
-    std::string demangle_name(const char *mangled_name);
+    std::string_view demangle_name(const char *mangled_name);
 
     template<class T>
-    static std::string type_name()
+    static std::string_view type_name()
     {
         return demangle_name(typeid(T).name());
     }

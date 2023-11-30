@@ -10,14 +10,14 @@
 #endif
 
 #ifdef HAS_CXXABI
-std::string pge::demangle_name(const char* mangled_name)
+std::string_view pge::demangle_name(const char* mangled_name)
 {
     int status = 0;
     size_t size = 0;
     return abi::__cxa_demangle(mangled_name, nullptr, &size, &status);
 }
 #else
-std::string pge::demangle_name(const char* mangled_name)
+std::string_view pge::demangle_name(const char* mangled_name)
 {
    return mangled_name;
 }

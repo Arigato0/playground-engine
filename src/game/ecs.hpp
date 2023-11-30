@@ -95,7 +95,7 @@ namespace pge
     class IEntity
     {
     public:
-        using ComponentTable = std::unordered_map<std::string, std::unique_ptr<IComponent>>;
+        using ComponentTable = std::unordered_map<std::string_view, std::unique_ptr<IComponent>>;
         Transform transform;
 
         virtual ~IEntity() = default;

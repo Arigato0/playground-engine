@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(playgroundEngine)
+project(playgroundEngineLib)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -7,8 +7,7 @@ include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backe
 add_subdirectory("lib")
 add_subdirectory("lib/glm/")
 
-add_executable(playgroundEngine
-        src/main.cpp
+add_library(playgroundEngineLib
         lib/glad/src/glad.c
         lib/stb/stb_image.h
         src/application/log.hpp
@@ -78,4 +77,4 @@ add_executable(playgroundEngine
         src/common_util/misc.hpp
 )
 
-target_link_libraries(playgroundEngine glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)
+target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

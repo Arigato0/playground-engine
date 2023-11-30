@@ -293,9 +293,10 @@ public:
 
                         auto *pos = glm::value_ptr(trans.position);
 
-                        if (ImGui::SliderFloat3("Position", pos, -1, 1))
+                        if (ImGui::SliderFloat3("Position", pos, -1000, 1000, "%.2f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat))
                         {
-                            trans.translate(glm::make_vec3(pos));
+                            auto vec3 = glm::make_vec3(pos);
+                            trans.transform[3] = {vec3, 1.0f};
                         }
 
                         ImGui::TreePop();
