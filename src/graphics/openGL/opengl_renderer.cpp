@@ -131,6 +131,16 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
         shader->set("light.diffuse", params->light_diffuse);
         shader->set("light.specular", params->light_specular);
         shader->set("light.ambient", params->light_ambient);
+        shader->set("light.direction", m_camera->front);
+        shader->set("light.cutoff", glm::cos(glm::radians(12.5f)));
+        shader->set("light.outer_cutoff", glm::cos(glm::radians(14.f)));
+        shader->set("light.constant",  1.0f);
+        shader->set("light.linear",    0.09f);
+        shader->set("light.quadratic", 0.032f);
+        shader->set("is_spot_light", params->is_spot_light);
+
+        shader->set("texture_scale", params->texture_scale);
+        shader->set("enable_specular", params->enable_specular);
 
         if (params->light_pos)
         {
@@ -196,13 +206,12 @@ uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &ou
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     auto format = channels > 3 ? GL_RGBA : GL_RGB;
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);

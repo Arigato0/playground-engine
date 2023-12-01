@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "transform.hpp"
-#include <cxxabi.h>
 #include "../application/log.hpp"
 #include "../common_util/misc.hpp"
 

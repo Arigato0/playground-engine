@@ -6,6 +6,7 @@ constexpr std::array ERROR_MESSAGES
         "Could not open a window",
         "The graphics library could not initialize",
         "An error occurred while drawing",
+        "The engine has not been initialized"
 };
 
 std::string_view pge::error_message(ErrorCode type)

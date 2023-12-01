@@ -37,11 +37,18 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
 
     init_imgui(&window, info.graphics_api);
 
+    m_initialized = true;
+
     return ErrorCode::Ok;
 }
 
 pge::ErrorCode pge::Engine::run()
 {
+    if (!m_initialized)
+    {
+        return ErrorCode::EngineNotInitialized;
+    }
+
     entity_manager.start();
 
     while (!window.should_close())
@@ -68,9 +75,16 @@ pge::ErrorCode pge::Engine::run()
 
 void pge::Engine::shutdown()
 {
+    if (!m_initialized)
+    {
+        return;
+    }
+
     cleanup_imgui();
     delete renderer;
 	glfwTerminate();
+
+    m_initialized = false;
 }
 
 void pge::Engine::set_graphics_api(GraphicsApi api)

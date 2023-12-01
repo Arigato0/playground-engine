@@ -87,22 +87,22 @@ public:
 
     void move_forward(float mod = 1)
     {
-        camera.position += speed * camera.forward * mod;
+        camera.position += speed * camera.front * mod;
     }
 
     void move_backward(float mod = 1)
     {
-        camera.position -= speed * camera.forward * mod;
+        camera.position -= speed * camera.front * mod;
     }
 
     void move_right(float mod = 1)
     {
-        camera.position += glm::normalize(glm::cross(camera.forward, camera.up)) * speed * mod;
+        camera.position += glm::normalize(glm::cross(camera.front, camera.up)) * speed * mod;
     }
 
     void move_left(float mod = 1)
     {
-        camera.position -= glm::normalize(glm::cross(camera.forward, camera.up)) * speed * mod;
+        camera.position -= glm::normalize(glm::cross(camera.front, camera.up)) * speed * mod;
     }
 
     void move_up(float mod = 1)
@@ -442,6 +442,24 @@ public:
     }
 };
 
+class FlashLight : public IComponent
+{
+public:
+
+    void on_start() override
+    {
+        m_light = Engine::entity_manager.find("Light");
+    }
+
+    void update(double delta_time) override
+    {
+        m_light->transform.transform = m_parent->transform.transform;
+    }
+
+private:
+    IEntity *m_light;
+};
+
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -500,6 +518,8 @@ int main()
         .shader = lighting_shader,
         .light_pos = &light_ent->transform.position,
         .specular = {0.0f, 0.0f, 0.0f},
+        .texture_scale = 10,
+        .enable_specular = false,
         // .light_ambient = {0.8f, 0.1f, 0.2f},
         // .light_diffuse = {0.8f, 0.1f, 0.2f},
         // .light_specular = {0.1f, 0.1f, 0.1f},

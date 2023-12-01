@@ -17,9 +17,14 @@ namespace pge
         glm::vec3 specular {1.0};
         glm::vec3 emission;
         float shininess = 32;
+        float texture_scale = 1;
+        bool enable_specular = true;
 
         glm::vec3 light_ambient {1.0};
         glm::vec3 light_diffuse {1.0};
         glm::vec3 light_specular {1.0};
+        glm::vec3 light_direction {1.0};
+        float light_cutoff;
+        bool is_spot_light = false;
     };
 }

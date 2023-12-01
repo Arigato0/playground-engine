@@ -11,8 +11,6 @@
 
 namespace pge
 {
-	class IRenderer;
-
 	struct AppInfo
 	{
 		std::string_view title;
@@ -37,7 +35,7 @@ namespace pge
 		inline static Statistics	statistics;
 		inline static float			time_scale = 1;
 	private:
-
+		inline static bool m_initialized = false;
         static void set_graphics_api(GraphicsApi api);
 	};
 }

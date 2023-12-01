@@ -15,6 +15,7 @@ namespace pge
         WindowCouldNotOpen,
         GraphicsSubsystemInitError,
         DrawingError,
+		EngineNotInitialized,
 	};
 
     template<class T>
