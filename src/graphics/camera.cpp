@@ -15,5 +15,12 @@ void pge::Camera::update()
     auto [window_width, window_height] = Engine::window.framebuffer_size();
 
     view = glm::lookAt(position, position + front, up);
-    projection = glm::perspective(glm::radians(fov), (float)(window_width / window_height), near, far);
+    if (type == Perspective)
+    {
+        projection = glm::perspective(glm::radians(fov), (float)(window_width / window_height), near, far);
+    }
+    else if (type == Ortographic)
+    {
+        projection = glm::ortho(glm::radians(fov), (float)(window_width / window_height), near, far);
+    }
 }

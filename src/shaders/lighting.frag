@@ -74,11 +74,11 @@ vec3 calculate_lighting()
 
     if (is_spot_light)
     {
-        float theta = dot(light_dir, normalize(-light.direction));
+        float theta     = dot(light_dir, normalize(-light.direction));
         float epsilon   = light.cutoff - light.outer_cutoff;
         float intensity = clamp((theta - light.outer_cutoff) / epsilon, 0.0, 1.0);
 
-        diffuse *= intensity;
+        diffuse  *= intensity;
         specular *= intensity;
     }
 

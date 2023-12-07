@@ -75,6 +75,7 @@ add_library(playgroundEngineLib
         src/application/misc.hpp
         src/common_util/misc.cpp
         src/common_util/misc.hpp
+        src/events/signal.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

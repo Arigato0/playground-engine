@@ -4,12 +4,14 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/compatibility.hpp>
+#include <any>
 
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
 #include "application/input.hpp"
 #include "application/misc.hpp"
+#include "events/signal.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/primitives.hpp"
 
@@ -293,7 +295,7 @@ public:
 
                         auto *pos = glm::value_ptr(trans.position);
 
-                        if (ImGui::SliderFloat3("Position", pos, -1000, 1000, "%.2f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat))
+                        if (ImGui::DragFloat3("Position", pos))
                         {
                             auto vec3 = glm::make_vec3(pos);
                             trans.transform[3] = {vec3, 1.0f};
@@ -442,138 +444,163 @@ public:
     }
 };
 
-class FlashLight : public IComponent
+class HealthComp : public IComponent
 {
 public:
 
-    void on_start() override
-    {
-        m_light = Engine::entity_manager.find("Light");
-    }
 
+    HealthComp()
+    {
+    }
     void update(double delta_time) override
     {
-        m_light->transform.transform = m_parent->transform.transform;
+        if (m_health != m_last_health)
+        {
+        }
     }
 
 private:
-    IEntity *m_light;
+    int m_health;
+    int m_last_health;
 };
 
+struct Test
+{
+    void test(int n)
+    {
+        fmt::println("n {}", n);
+    }
+};
+
+void _test(int n)
+{
+    fmt::println("standalone n {}", n);
+}
 int main()
 {
-    ASSERT_ERR(Engine::init({
-            .title = "playground engine",
-            .window_size = {1920, 1080},
-            .graphics_api = pge::GraphicsApi::OpenGl,
-        }));
+    Signal<void(int)> signal;
+    Test test;
 
-    Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
+    auto &con1 = signal.connect(&test, &Test::test);
 
-    auto lighting_shader = Engine::renderer->create_shader
-    ({
-        {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-        {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
-    });
+    signal.disconnect(con1);
 
-    auto standard_shader = Engine::renderer->create_shader
-    ({
-       {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment},
-   });
+    signal.connect(_test);
 
-    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
+    signal(10);
 
-    light_ent->transform.translate({0, 3, -10});
-    light_ent->transform.scale(glm::vec3{0.5});
-
-    auto light_mesh = light_ent->find<MeshRenderer>();
-
-    if (light_mesh == nullptr)
-    {
-        Logger::fatal("Could not find component");
-    }
-
-    light_mesh->set_mesh(CUBE_MESH, {""});
-
-    //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
-    light_mesh->params.textures_enabled = false;
-    light_mesh->params.color_enabled = true;
-    light_mesh->params.shader = standard_shader;
-
-    auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
-
-    ground_ent->transform.scale({100, 0.5, 100});
-    ground_ent->transform.translate({0, -3, 0});
-
-    auto ground_mesh = ground_ent->find<MeshRenderer>();
-
-    ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
-
-    ground_mesh->params =
-    {
-        .textures_enabled = false,
-        .color_enabled = true,
-        .object_color = {0.0f, 0.5f, 0.51f},
-        .shader = lighting_shader,
-        .light_pos = &light_ent->transform.position,
-        .specular = {0.0f, 0.0f, 0.0f},
-        .texture_scale = 10,
-        .enable_specular = false,
-        // .light_ambient = {0.8f, 0.1f, 0.2f},
-        // .light_diffuse = {0.8f, 0.1f, 0.2f},
-        // .light_specular = {0.1f, 0.1f, 0.1f},
-    };
-
-    auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
-
-    box_ent->transform.translate({-2, -0.25, -10});
-
-    auto box_mesh = box_ent->find<MeshRenderer>();
-
-    box_mesh->set_mesh(CUBE_MESH, {"assets/container2.png", "assets/container2_specular.png"});
-
-    box_mesh->params =
-    {
-        .textures_enabled = true,
-        .color_enabled = true,
-        .object_color = {0.0f, 0.5f, 0.51f},
-        .shader = lighting_shader,
-        .light_pos = &light_ent->transform.position,
-        .specular = {0.5f, 0.5f, 0.5f},
-        // .light_ambient = {0.8f, 0.1f, 0.2f},
-        // .light_diffuse = {0.8f, 0.1f, 0.2f},
-        // .light_specular = {0.1f, 0.1f, 0.1f},
-    };
-
-    for (int i = 0; i < 100; i++)
-    {
-        glm::mat4 trans {1.0f};
-
-        trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
-        trans = glm::translate(trans, glm::vec3{1 + i, -0.25, 1 + i});
-
-        box_mesh->add_instance(trans);
-    }
-
-    // float offset = 10;
-    //
-    // for (int i = 0; i < 100; i++)
-    // {
-    //     for (int j = 0; j < 100; j++)
-    //     {
-    //         glm::mat4 trans {1.0f};
-    //
-    //         trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
-    //
-    //         cube_mesh->add_instance(trans);
-    //     }
-    // }
-
-    auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
-
-    ASSERT_ERR(Engine::run());
-
-    Engine::shutdown();
+   //  ASSERT_ERR(Engine::init({
+   //          .title = "playground engine",
+   //          .window_size = {1920, 1080},
+   //          .graphics_api = GraphicsApi::OpenGl,
+   //      }));
+   //
+   //  Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
+   //
+   //  auto lighting_shader = Engine::renderer->create_shader
+   //  ({
+   //      {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
+   //      {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
+   //  });
+   //
+   //  auto standard_shader = Engine::renderer->create_shader
+   //  ({
+   //     {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
+   //     {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment},
+   // });
+   //
+   //  auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
+   //
+   //  light_ent->transform.translate({0, 3, -10});
+   //  light_ent->transform.scale(glm::vec3{0.5});
+   //
+   //  auto light_mesh = light_ent->find<MeshRenderer>();
+   //
+   //  if (light_mesh == nullptr)
+   //  {
+   //      Logger::fatal("Could not find component");
+   //  }
+   //
+   //  light_mesh->set_mesh(CUBE_MESH, {""});
+   //
+   //  //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
+   //  light_mesh->params.textures_enabled = false;
+   //  light_mesh->params.color_enabled = true;
+   //  light_mesh->params.shader = standard_shader;
+   //
+   //  auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
+   //
+   //  ground_ent->transform.scale({100, 0.5, 100});
+   //  ground_ent->transform.translate({0, -3, 0});
+   //
+   //  auto ground_mesh = ground_ent->find<MeshRenderer>();
+   //
+   //  ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
+   //
+   //  ground_mesh->params =
+   //  {
+   //      .textures_enabled = false,
+   //      .color_enabled = true,
+   //      .object_color = {0.0f, 0.5f, 0.51f},
+   //      .shader = lighting_shader,
+   //      .light_pos = &light_ent->transform.position,
+   //      .specular = {0.0f, 0.0f, 0.0f},
+   //      .texture_scale = 10,
+   //      .enable_specular = false,
+   //      // .light_ambient = {0.8f, 0.1f, 0.2f},
+   //      // .light_diffuse = {0.8f, 0.1f, 0.2f},
+   //      // .light_specular = {0.1f, 0.1f, 0.1f},
+   //  };
+   //
+   //  auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
+   //
+   //  box_ent->transform.translate({-2, -0.25, -10});
+   //
+   //  auto box_mesh = box_ent->find<MeshRenderer>();
+   //
+   //  box_mesh->set_mesh(CUBE_MESH, {"assets/container2.png", "assets/container2_specular.png"});
+   //
+   //  box_mesh->params =
+   //  {
+   //      .textures_enabled = true,
+   //      .color_enabled = true,
+   //      .object_color = {0.0f, 0.5f, 0.51f},
+   //      .shader = lighting_shader,
+   //      .light_pos = &light_ent->transform.position,
+   //      .specular = {0.5f, 0.5f, 0.5f},
+   //      // .light_ambient = {0.8f, 0.1f, 0.2f},
+   //      // .light_diffuse = {0.8f, 0.1f, 0.2f},
+   //      // .light_specular = {0.1f, 0.1f, 0.1f},
+   //  };
+   //
+   //  for (int i = 0; i < 100; i++)
+   //  {
+   //      glm::mat4 trans {1.0f};
+   //
+   //      trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
+   //      trans = glm::translate(trans, glm::vec3{1 + i, -0.25, 1 + i});
+   //
+   //      box_mesh->add_instance(trans);
+   //  }
+   //
+   //  // float offset = 10;
+   //  //
+   //  // for (int i = 0; i < 100; i++)
+   //  // {
+   //  //     for (int j = 0; j < 100; j++)
+   //  //     {
+   //  //         glm::mat4 trans {1.0f};
+   //  //
+   //  //         trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
+   //  //
+   //  //         cube_mesh->add_instance(trans);
+   //  //     }
+   //  // }
+   //
+   //  auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
+   //
+   //  ASSERT_ERR(Engine::run());
+   //
+   //  Engine::shutdown();
 
 }

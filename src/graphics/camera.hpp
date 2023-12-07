@@ -9,6 +9,14 @@ namespace pge
 {
     struct Camera
     {
+        enum Projection : uint8_t
+        {
+            Perspective,
+            Ortographic
+        };
+
+        Projection type = Perspective;
+
         float fov = 65;
         float yaw = -90;
         float pitch;
