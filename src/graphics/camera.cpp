@@ -11,16 +11,17 @@ void pge::Camera::update()
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     front = glm::normalize(direction);
+    view  = glm::lookAt(position, position + front, up);
+    view  = glm::scale(view, glm::vec3{zoom});
 
-    auto [window_width, window_height] = Engine::window.framebuffer_size();
-
-    view = glm::lookAt(position, position + front, up);
     if (type == Perspective)
     {
+        auto [window_width, window_height] = Engine::window.framebuffer_size();
+
         projection = glm::perspective(glm::radians(fov), (float)(window_width / window_height), near, far);
     }
     else if (type == Ortographic)
     {
-        projection = glm::ortho(glm::radians(fov), (float)(window_width / window_height), near, far);
+        projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, near, far);
     }
 }

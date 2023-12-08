@@ -7,6 +7,9 @@
 static glm::vec2 g_mouse_cords;
 static bool g_mouse_called;
 
+static glm::vec2 g_scroll_offsets;
+static bool g_scroll_called;
+
 struct KeyEvent
 {
     bool called;
@@ -27,10 +30,25 @@ void mouse_callback(GLFWwindow *_, double xpos, double ypos)
         return;
     }
 
-    g_mouse_cords.x = xpos;
-    g_mouse_cords.y = ypos;
+    g_mouse_cords =
+    {
+        xpos,
+        ypos
+    };
 
     g_mouse_called = true;
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    Logger::info("{} {}", xoffset, yoffset);
+    g_scroll_offsets =
+    {
+        xoffset,
+        yoffset
+    };
+
+    g_scroll_called = true;
 }
 
 uint32_t translate_glfw_key(int key)
@@ -93,11 +111,13 @@ void pge::init_input()
 {
     glfwSetCursorPosCallback((GLFWwindow*)Engine::window.handle(), mouse_callback);
     glfwSetKeyCallback((GLFWwindow*)Engine::window.handle(), key_callback);
+    glfwSetScrollCallback((GLFWwindow*)Engine::window.handle(), scroll_callback);
 }
 
 void pge::reset_input()
 {
     g_mouse_called = false;
+    g_scroll_called = false;
 
     for (auto &key : g_key_cache)
     {
@@ -105,7 +125,7 @@ void pge::reset_input()
     }
 }
 
-std::optional<glm::vec2> pge::mouse_cords()
+std::optional<glm::vec2> pge::get_mouse()
 {
     if (!g_mouse_called)
     {
@@ -113,6 +133,16 @@ std::optional<glm::vec2> pge::mouse_cords()
     }
 
     return g_mouse_cords;
+}
+
+std::optional<glm::vec2> pge::get_scroll()
+{
+    if (!g_scroll_called)
+    {
+        return std::nullopt;
+    }
+
+    return g_scroll_offsets;
 }
 
 bool get_key(int key, int action, int mod)

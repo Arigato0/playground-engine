@@ -70,12 +70,12 @@ add_library(playgroundEngineLib
         src/game/transform.hpp
         src/application/input.cpp
         src/application/input.hpp
-        src/graphics/shader_params.hpp
         src/application/misc.cpp
         src/application/misc.hpp
         src/common_util/misc.cpp
         src/common_util/misc.hpp
         src/events/signal.hpp
+        src/graphics/light.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

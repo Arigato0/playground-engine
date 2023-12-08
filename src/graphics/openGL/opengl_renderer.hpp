@@ -5,7 +5,6 @@
 
 #include "opengl_shader.hpp"
 #include "../renderer_interface.hpp"
-#include "../shader_params.hpp"
 
 namespace pge
 {
@@ -20,7 +19,7 @@ namespace pge
 
         uint32_t vertex_size;
 
-        ShaderParams *shader_params;
+        Material *material = nullptr;
     };
 
     class OpenglRenderer : public IRenderer
@@ -32,11 +31,11 @@ namespace pge
 
         size_t create_mesh(std::span<float> data, std::array<std::string_view, 2> textures) override;
 
+        void set_material(Material *material, size_t mesh_id) override;
+
         void new_frame() override;
 
         uint32_t draw(size_t mesh_id, glm::mat4 transform) override;
-
-        void set_shader_params(ShaderParams *params, size_t mesh_id) override;
 
         uint32_t create_texture(std::string_view path, uint32_t &out_texture) override;
 
@@ -62,6 +61,6 @@ namespace pge
     private:
         uint32_t m_missing_texture;
         std::vector<OpenGlMesh> m_meshes;
-        std::list<OpenGlShader> m_shaders;
+        OpenGlShader m_shader;
     };
 }

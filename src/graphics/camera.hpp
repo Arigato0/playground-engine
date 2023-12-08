@@ -24,6 +24,7 @@ namespace pge
 
         float near = 0.1;
         float far = 100.f;
+        float zoom = 1.0f;
 
         glm::mat4 projection {1.0f};
         glm::mat4 view {1.0f};

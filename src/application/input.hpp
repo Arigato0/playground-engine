@@ -10,7 +10,8 @@ namespace pge
     void init_input();
     void reset_input();
 
-    std::optional<glm::vec2> mouse_cords();
+    std::optional<glm::vec2> get_mouse();
+    std::optional<glm::vec2> get_scroll();
 
     bool key_pressed(Key key, Modifier mod = Modifier::None);
     bool key_held(Key key);

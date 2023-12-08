@@ -59,10 +59,10 @@ public:
     void set_mesh(std::span<float> mesh, std::array<std::string_view, 2> textures)
     {
         m_mesh_id = Engine::renderer->create_mesh(mesh, textures);
-        Engine::renderer->set_shader_params(&params, m_mesh_id);
+        Engine::renderer->set_material(&material, m_mesh_id);
     }
 
-    ShaderParams params;
+    Material material;
 
 private:
     size_t m_mesh_id;
@@ -137,7 +137,7 @@ public:
     }
     void update(double delta_time) override
     {
-        if (auto cords = mouse_cords(); cords && !camera_locked)
+        if (auto cords = get_mouse(); cords && !camera_locked)
         {
             handle_mouse(delta_time, cords->x, cords->y);
         }
@@ -212,6 +212,11 @@ public:
         m_camera->camera.pitch += y_offset;
 
         m_camera->camera.pitch = std::clamp(m_camera->camera.pitch, -90.0f, 90.0f);
+
+        if (auto scroll = get_scroll(); scroll)
+        {
+            m_camera->camera.zoom += scroll->y;
+        }
     }
 
     float speed_mod = 1.0f;
@@ -376,6 +381,8 @@ public:
                         m_camera->camera.far = camera_far;
                     }
 
+                    ImGui::DragFloat("Zoom", &m_camera->camera.zoom, 0.1);
+
                     static bool framerate_cap = false;
 
                     if (ImGui::Checkbox("Framerate cap", &framerate_cap))
@@ -444,163 +451,70 @@ public:
     }
 };
 
-class HealthComp : public IComponent
-{
-public:
-
-
-    HealthComp()
-    {
-    }
-    void update(double delta_time) override
-    {
-        if (m_health != m_last_health)
-        {
-        }
-    }
-
-private:
-    int m_health;
-    int m_last_health;
-};
-
-struct Test
-{
-    void test(int n)
-    {
-        fmt::println("n {}", n);
-    }
-};
-
-void _test(int n)
-{
-    fmt::println("standalone n {}", n);
-}
 int main()
 {
-    Signal<void(int)> signal;
-    Test test;
+    ASSERT_ERR(Engine::init({
+            .title = "playground engine",
+            .window_size = {1920, 1080},
+            .graphics_api = GraphicsApi::OpenGl,
+        }));
 
-    auto &con1 = signal.connect(&test, &Test::test);
+    Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    signal.disconnect(con1);
+    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
 
-    signal.connect(_test);
+    light_ent->transform.translate({0, 3, -10});
+    light_ent->transform.scale(glm::vec3{0.5});
 
-    signal(10);
+    auto light_mesh = light_ent->find<MeshRenderer>();
 
-   //  ASSERT_ERR(Engine::init({
-   //          .title = "playground engine",
-   //          .window_size = {1920, 1080},
-   //          .graphics_api = GraphicsApi::OpenGl,
-   //      }));
-   //
-   //  Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
-   //
-   //  auto lighting_shader = Engine::renderer->create_shader
-   //  ({
-   //      {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-   //      {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
-   //  });
-   //
-   //  auto standard_shader = Engine::renderer->create_shader
-   //  ({
-   //     {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-   //     {PGE_FIND_SHADER("shader.frag"), ShaderType::Fragment},
-   // });
-   //
-   //  auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
-   //
-   //  light_ent->transform.translate({0, 3, -10});
-   //  light_ent->transform.scale(glm::vec3{0.5});
-   //
-   //  auto light_mesh = light_ent->find<MeshRenderer>();
-   //
-   //  if (light_mesh == nullptr)
-   //  {
-   //      Logger::fatal("Could not find component");
-   //  }
-   //
-   //  light_mesh->set_mesh(CUBE_MESH, {""});
-   //
-   //  //cube_mesh->params.object_color = {1.0f, 0.5f, 0.31f};
-   //  light_mesh->params.textures_enabled = false;
-   //  light_mesh->params.color_enabled = true;
-   //  light_mesh->params.shader = standard_shader;
-   //
-   //  auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
-   //
-   //  ground_ent->transform.scale({100, 0.5, 100});
-   //  ground_ent->transform.translate({0, -3, 0});
-   //
-   //  auto ground_mesh = ground_ent->find<MeshRenderer>();
-   //
-   //  ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
-   //
-   //  ground_mesh->params =
-   //  {
-   //      .textures_enabled = false,
-   //      .color_enabled = true,
-   //      .object_color = {0.0f, 0.5f, 0.51f},
-   //      .shader = lighting_shader,
-   //      .light_pos = &light_ent->transform.position,
-   //      .specular = {0.0f, 0.0f, 0.0f},
-   //      .texture_scale = 10,
-   //      .enable_specular = false,
-   //      // .light_ambient = {0.8f, 0.1f, 0.2f},
-   //      // .light_diffuse = {0.8f, 0.1f, 0.2f},
-   //      // .light_specular = {0.1f, 0.1f, 0.1f},
-   //  };
-   //
-   //  auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
-   //
-   //  box_ent->transform.translate({-2, -0.25, -10});
-   //
-   //  auto box_mesh = box_ent->find<MeshRenderer>();
-   //
-   //  box_mesh->set_mesh(CUBE_MESH, {"assets/container2.png", "assets/container2_specular.png"});
-   //
-   //  box_mesh->params =
-   //  {
-   //      .textures_enabled = true,
-   //      .color_enabled = true,
-   //      .object_color = {0.0f, 0.5f, 0.51f},
-   //      .shader = lighting_shader,
-   //      .light_pos = &light_ent->transform.position,
-   //      .specular = {0.5f, 0.5f, 0.5f},
-   //      // .light_ambient = {0.8f, 0.1f, 0.2f},
-   //      // .light_diffuse = {0.8f, 0.1f, 0.2f},
-   //      // .light_specular = {0.1f, 0.1f, 0.1f},
-   //  };
-   //
-   //  for (int i = 0; i < 100; i++)
-   //  {
-   //      glm::mat4 trans {1.0f};
-   //
-   //      trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
-   //      trans = glm::translate(trans, glm::vec3{1 + i, -0.25, 1 + i});
-   //
-   //      box_mesh->add_instance(trans);
-   //  }
-   //
-   //  // float offset = 10;
-   //  //
-   //  // for (int i = 0; i < 100; i++)
-   //  // {
-   //  //     for (int j = 0; j < 100; j++)
-   //  //     {
-   //  //         glm::mat4 trans {1.0f};
-   //  //
-   //  //         trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
-   //  //
-   //  //         cube_mesh->add_instance(trans);
-   //  //     }
-   //  // }
-   //
-   //  auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
-   //
-   //  ASSERT_ERR(Engine::run());
-   //
-   //  Engine::shutdown();
+    light_mesh->set_mesh(CUBE_MESH, {""});
+
+    auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
+
+    ground_ent->transform.scale({100, 0.5, 100});
+    ground_ent->transform.translate({0, -3, 0});
+
+    auto ground_mesh = ground_ent->find<MeshRenderer>();
+
+    ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
+
+    auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
+
+    box_ent->transform.translate({-2, -0.25, -10});
+
+    auto box_mesh = box_ent->find<MeshRenderer>();
+
+    box_mesh->set_mesh(CUBE_MESH, {"assets/container2.png", "assets/container2_specular.png"});
+
+    for (int i = 0; i < 100; i++)
+    {
+        glm::mat4 trans {1.0f};
+
+        trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
+        trans = glm::translate(trans, glm::vec3{1 + i, -0.25, 1 + i});
+
+        box_mesh->add_instance(trans);
+    }
+
+    // float offset = 10;
+    //
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     for (int j = 0; j < 100; j++)
+    //     {
+    //         glm::mat4 trans {1.0f};
+    //
+    //         trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
+    //
+    //         cube_mesh->add_instance(trans);
+    //     }
+    // }
+
+    auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
+
+    ASSERT_ERR(Engine::run());
+
+    Engine::shutdown();
 
 }

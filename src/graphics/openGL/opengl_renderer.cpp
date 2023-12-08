@@ -33,6 +33,12 @@ uint32_t pge::OpenglRenderer::init()
 
     create_texture("assets/missing.jpeg", m_missing_texture);
 
+    m_shader.create
+   ({
+       {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
+       {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
+   });
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_CULL_FACE);
@@ -44,13 +50,13 @@ uint32_t pge::OpenglRenderer::init()
 
 pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
 {
-    auto id = m_shaders.size();
+    // auto id = m_shaders.size();
+    //
+    // auto &iter = m_shaders.emplace_back();
+    //
+    // iter.create(shaders);
 
-    auto &iter = m_shaders.emplace_back();
-
-    iter.create(shaders);
-
-    return &iter;
+    return nullptr;
 }
 
 size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::string_view, 2> textures)
@@ -92,6 +98,18 @@ size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::s
     return idx;
 }
 
+void pge::OpenglRenderer::set_material(Material *material, size_t mesh_id)
+{
+    if (mesh_id >= m_meshes.size())
+    {
+        return;
+    }
+
+    auto &mesh = m_meshes[mesh_id];
+
+    mesh.material = material;
+}
+
 void pge::OpenglRenderer::new_frame()
 {
     glfwSwapBuffers(WINDOW_PTR);
@@ -109,54 +127,50 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
 
     auto mesh = m_meshes[mesh_id];
 
-    auto shader = mesh.shader_params->shader;
+    m_shader.use();
 
-    if (shader == nullptr)
+    if (auto material = mesh.material; material)
     {
-        goto draw;
-    }
+        m_shader.set("object_color", material->color);
+        m_shader.set("material.specular", material->specular);
+        m_shader.set("material.shininess", material->shininess);
+        m_shader.set("texture_scale", material->diffuse_texture.scale);
 
-    shader->use();
-
-    if (auto params = mesh.shader_params; params)
-    {
-        shader->set("enable_color", params->color_enabled);
-        shader->set("enable_textures", params->textures_enabled);
-        shader->set("object_color", params->object_color);
-        shader->set("light_color", params->light_color);
-        shader->set("texture_mix_value", params->texture_mix);
-        shader->set("material.specular", params->specular);
-        shader->set("material.shininess", params->shininess);
-        shader->set("material.emission", params->emission);
-        shader->set("light.diffuse", params->light_diffuse);
-        shader->set("light.specular", params->light_specular);
-        shader->set("light.ambient", params->light_ambient);
-        shader->set("light.direction", m_camera->front);
-        shader->set("light.cutoff", glm::cos(glm::radians(12.5f)));
-        shader->set("light.outer_cutoff", glm::cos(glm::radians(14.f)));
-        shader->set("light.constant",  1.0f);
-        shader->set("light.linear",    0.09f);
-        shader->set("light.quadratic", 0.032f);
-        shader->set("is_spot_light", params->is_spot_light);
-
-        shader->set("texture_scale", params->texture_scale);
-        shader->set("enable_specular", params->enable_specular);
-
-        if (params->light_pos)
+        for (int i = 0; i < material->lights.size(); i++)
         {
-            shader->set("light.position", *params->light_pos);
+            auto *light = material->lights[i];
+            static char name_buffer[256];
+
+            auto start = sprintf(name_buffer, "lights[%i].", i);
+
+            static auto field = [&name_buffer, start](std::string_view name) -> const char*
+            {
+                memcpy(name_buffer + start, name.data(), name.size());
+                return name_buffer;
+            };
+
+            m_shader.set(field("diffuse"), light->diffuse);
+            m_shader.set(field("specular"), light->specular);
+            m_shader.set(field("ambient"), light->ambient);
+            m_shader.set(field("direction"), m_camera->front);
+            m_shader.set(field("cutoff"), glm::cos(glm::radians(12.5f)));
+            m_shader.set(field("outer_cutoff"), glm::cos(glm::radians(14.f)));
+            m_shader.set(field("constant"),  1.0f);
+            m_shader.set(field("linear"),    0.09f);
+            m_shader.set(field("quadratic"), 0.032f);
+            m_shader.set(field("is_dir"), light->is_dir);
+            m_shader.set(field("position"), light->position);
         }
     }
 
-    shader->set("material.diffuse", 0);
-    shader->set("material.specular", 1);
-    shader->set("texture2", 1);
-    shader->set("model", transform);
-    shader->set("projection", m_camera->projection);
-    shader->set("view", m_camera->view);
-    shader->set("view_pos", m_camera->position);
+    m_shader.set("material.diffuse", 0);
+    m_shader.set("material.specular", 1);
+    m_shader.set("texture2", 1);
+    m_shader.set("model", transform);
+    m_shader.set("projection", m_camera->projection);
+    m_shader.set("view", m_camera->view);
+    m_shader.set("view_pos", m_camera->position);
 
-draw:
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mesh.texture1);
     glActiveTexture(GL_TEXTURE1);
@@ -169,18 +183,6 @@ draw:
     Engine::statistics.report_verticies(mesh.vertex_size);
 
     return OPENGL_ERROR_OK;
-}
-
-void pge::OpenglRenderer::set_shader_params(ShaderParams *params, size_t mesh_id)
-{
-    if (mesh_id >= m_meshes.size())
-    {
-        return;
-    }
-
-    auto &mesh = m_meshes[mesh_id];
-
-    mesh.shader_params = params;
 }
 
 uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture)

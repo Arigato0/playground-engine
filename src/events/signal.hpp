@@ -56,7 +56,6 @@ namespace pge
     {
     public:
         using connection_t = Connection<R, A...>;
-        using fn_t = std::function<R(A...)>;
 
         template<class Obj, util::IsFunction Fn>
         connection_t& connect(Obj *obj, Fn fn)
