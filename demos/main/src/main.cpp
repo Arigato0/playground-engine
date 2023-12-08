@@ -11,6 +11,7 @@
 #include "application/imgui_handler.hpp"
 #include "application/input.hpp"
 #include "application/misc.hpp"
+#include "common_util/random.hpp"
 #include "events/signal.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/primitives.hpp"
@@ -32,6 +33,39 @@ public:
     }
 };
 
+class LightManagerComp : public IComponent
+{
+public:
+    void update(double delta_time) override
+    {
+
+    }
+    void register_light(Light &light)
+    {
+        m_lights.emplace_back(&light);
+
+        for (auto *material : m_materials)
+        {
+            material->lights.emplace_back(&light);
+        }
+    }
+
+    void update_material(Material &material)
+    {
+        util::concat(material.lights, m_lights);
+        m_materials.emplace_back(&material);
+    }
+
+private:
+    std::vector<Light*> m_lights;
+    std::vector<Material*> m_materials;
+};
+
+class LightManager : public IEntity
+{
+
+};
+
 class Cube : public IEntity
 {
 
@@ -40,6 +74,11 @@ class Cube : public IEntity
 class MeshRenderer : public IComponent
 {
 public:
+    void on_start() override
+    {
+        auto manager = Engine::entity_manager.find("LightManager");
+        manager->find<LightManagerComp>()->update_material(material);
+    }
 
     void update(double delta_time) override
     {
@@ -451,6 +490,25 @@ public:
     }
 };
 
+class LightComp : public IComponent
+{
+public:
+    void on_start() override
+    {
+        m_light.position = &m_parent->transform.position;
+        auto manager = Engine::entity_manager.find("LightManager");
+        manager->find<LightManagerComp>()->register_light(m_light);
+    }
+
+    void update(double delta_time) override
+    {
+
+    }
+
+private:
+    Light m_light;
+};
+
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -459,9 +517,11 @@ int main()
             .graphics_api = GraphicsApi::OpenGl,
         }));
 
+    Engine::entity_manager.create<LightManager, LightManagerComp>("LightManager");
+
     Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator>("Light");
+    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator, LightComp>("Light");
 
     light_ent->transform.translate({0, 3, -10});
     light_ent->transform.scale(glm::vec3{0.5});
@@ -469,6 +529,9 @@ int main()
     auto light_mesh = light_ent->find<MeshRenderer>();
 
     light_mesh->set_mesh(CUBE_MESH, {""});
+    light_mesh->material.diffuse_texture.enabled = false;
+    light_mesh->material.specular_texture.enabled = false;
+    light_mesh->material.color = glm::vec3{1.0f};
 
     auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
 
@@ -478,6 +541,8 @@ int main()
     auto ground_mesh = ground_ent->find<MeshRenderer>();
 
     ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
+
+    ground_mesh->material.diffuse_texture.scale = 10.0f;
 
     auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
 
@@ -497,19 +562,27 @@ int main()
         box_mesh->add_instance(trans);
     }
 
-    // float offset = 10;
-    //
-    // for (int i = 0; i < 100; i++)
-    // {
-    //     for (int j = 0; j < 100; j++)
-    //     {
-    //         glm::mat4 trans {1.0f};
-    //
-    //         trans = glm::translate(trans, glm::vec3{j + offset, 0, i + offset});
-    //
-    //         cube_mesh->add_instance(trans);
-    //     }
-    // }
+    const char *names[] =
+        {
+        "light1",
+        "light2",
+        "light3"
+        };
+
+    for (int i = 0; i < 3; i++)
+    {
+        auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, LightComp>(names[i]);
+
+        light_ent->transform.translate({rand_range(-5, 5) + 5.0f, rand_range(1, 10), rand_range(-5, 5) + 5.0f});
+        light_ent->transform.scale(glm::vec3{0.5});
+
+        auto light_mesh = light_ent->find<MeshRenderer>();
+
+        light_mesh->set_mesh(CUBE_MESH, {""});
+        light_mesh->material.diffuse_texture.enabled = false;
+        light_mesh->material.specular_texture.enabled = false;
+        light_mesh->material.color = glm::vec3{1.0f};
+    }
 
     auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
 

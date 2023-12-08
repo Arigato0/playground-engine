@@ -37,6 +37,8 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
 
     init_imgui(&window, info.graphics_api);
 
+    srand(time(0));
+
     m_initialized = true;
 
     return ErrorCode::Ok;

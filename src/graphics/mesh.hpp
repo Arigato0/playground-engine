@@ -11,17 +11,16 @@ namespace pge
     struct Texture
     {
         uint32_t id;
-        int scale = 1;
-        float mix = 0.0f;
+        float scale = 1;
         bool enabled = true;
     };
 
     struct Material
     {
-        float shininess = 32;
+        float shininess = 128;
         Texture diffuse_texture;
         Texture specular_texture;
-        glm::vec3 specular {1.0};
+        glm::vec3 specular {0.1};
         glm::vec3 color {0.0f};
         std::vector<Light*> lights;
     };

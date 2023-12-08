@@ -12,10 +12,17 @@ in vec3 frag_pos;
 in vec3 normals;
 in vec2 text_cord;
 
+struct Texture
+{
+    sampler2D sampler;
+    float scale;
+    bool enabled;
+};
+
 struct Material
 {
-    sampler2D diffuse;
-    sampler2D specular;
+    Texture diffuse;
+    Texture specular;
     float shininess;
 };
 
@@ -37,7 +44,7 @@ struct Light
 
 uniform Material material;
 
-#define LIGHT_COUNT 1
+#define LIGHT_COUNT 4
 uniform Light lights[LIGHT_COUNT];
 
 float get_attenuation(Light light)
@@ -56,9 +63,20 @@ float calc_dir_light(Light light, vec3 light_dir)
     return clamp((theta - light.outer_cutoff) / epsilon, 0.0, 1.0);
 }
 
+vec3 create_texture(Texture text)
+{
+    if (!text.enabled)
+    {
+        return object_color;
+    }
+
+    return vec3(texture(text.sampler, text_cord * texture_scale));
+}
+
 vec3 calculate_lighting(Light light, vec3 norm, vec3 view_dir)
 {
-    vec3 diffuse_texture = vec3(texture(material.diffuse, text_cord * texture_scale));
+    vec3 diffuse_texture = create_texture(material.diffuse);
+    vec3 specular_texture = create_texture(material.specular);
 
     vec3 light_dir = normalize(light.position - frag_pos);
 
@@ -70,13 +88,9 @@ vec3 calculate_lighting(Light light, vec3 norm, vec3 view_dir)
     vec3 reflect_dir = reflect(-light_dir, norm);
 
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-    vec3 specular_texture = vec3(texture(material.specular, text_cord * texture_scale));
     vec3 specular = vec3(0);
 
-    if (enable_specular)
-    {
-        specular = specular_texture * spec * light.specular;
-    }
+    specular = specular_texture * spec * light.specular;
 
     if (light.is_dir)
     {

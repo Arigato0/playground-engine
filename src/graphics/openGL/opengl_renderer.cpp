@@ -135,17 +135,25 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
         m_shader.set("material.specular", material->specular);
         m_shader.set("material.shininess", material->shininess);
         m_shader.set("texture_scale", material->diffuse_texture.scale);
+        m_shader.set("material.diffuse.enabled", material->diffuse_texture.enabled);
+        m_shader.set("material.specular.enabled", material->specular_texture.enabled);
 
         for (int i = 0; i < material->lights.size(); i++)
         {
             auto *light = material->lights[i];
+
+            if (light == nullptr)
+            {
+                continue;
+            }
+
             static char name_buffer[256];
 
             auto start = sprintf(name_buffer, "lights[%i].", i);
 
             static auto field = [&name_buffer, start](std::string_view name) -> const char*
             {
-                memcpy(name_buffer + start, name.data(), name.size());
+                sprintf(name_buffer + start, "%s", name.data());
                 return name_buffer;
             };
 
@@ -153,19 +161,22 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
             m_shader.set(field("specular"), light->specular);
             m_shader.set(field("ambient"), light->ambient);
             m_shader.set(field("direction"), m_camera->front);
-            m_shader.set(field("cutoff"), glm::cos(glm::radians(12.5f)));
-            m_shader.set(field("outer_cutoff"), glm::cos(glm::radians(14.f)));
-            m_shader.set(field("constant"),  1.0f);
-            m_shader.set(field("linear"),    0.09f);
-            m_shader.set(field("quadratic"), 0.032f);
+            m_shader.set(field("cutoff"), light->inner_cutoff);
+            m_shader.set(field("outer_cutoff"), light->outer_cutoff);
+            m_shader.set(field("constant"),  light->constant);
+            m_shader.set(field("linear"),    light->linear);
+            m_shader.set(field("quadratic"), light->quadratic);
             m_shader.set(field("is_dir"), light->is_dir);
-            m_shader.set(field("position"), light->position);
+
+            if (light->position)
+            {
+                m_shader.set(field("position"), *light->position);
+            }
         }
     }
 
-    m_shader.set("material.diffuse", 0);
-    m_shader.set("material.specular", 1);
-    m_shader.set("texture2", 1);
+    m_shader.set("material.diffuse.sampler", 0);
+    m_shader.set("material.specular.sampler", 1);
     m_shader.set("model", transform);
     m_shader.set("projection", m_camera->projection);
     m_shader.set("view", m_camera->view);
