@@ -50,7 +50,7 @@ namespace pge
         virtual void on_start() {}
         virtual void on_enable() {}
         virtual void on_disable() {}
-        virtual void update(double delta_time) = 0;
+        virtual void update(double delta_time) {}
         virtual std::string serialize() { return {}; }
         virtual void deserialize(std::string_view data) {}
         virtual std::vector<EditorProperty> editor_properties() { return {}; }

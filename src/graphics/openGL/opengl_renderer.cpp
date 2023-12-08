@@ -129,6 +129,8 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
 
     m_shader.use();
 
+    m_shader.set("light_count", (int)Light::table.size());
+
     if (auto material = mesh.material; material)
     {
         m_shader.set("object_color", material->color);
@@ -138,9 +140,9 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
         m_shader.set("material.diffuse.enabled", material->diffuse_texture.enabled);
         m_shader.set("material.specular.enabled", material->specular_texture.enabled);
 
-        for (int i = 0; i < material->lights.size(); i++)
+        for (int i = 0; i < Light::table.size(); i++)
         {
-            auto *light = material->lights[i];
+            auto *light = Light::table[i];
 
             if (light == nullptr)
             {

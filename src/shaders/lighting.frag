@@ -44,8 +44,9 @@ struct Light
 
 uniform Material material;
 
-#define LIGHT_COUNT 4
-uniform Light lights[LIGHT_COUNT];
+#define MAX_LIGHTS 16
+uniform Light lights[MAX_LIGHTS];
+uniform int light_count;
 
 float get_attenuation(Light light)
 {
@@ -116,7 +117,7 @@ void main()
     vec3 view_dir = normalize(view_pos - frag_pos);
     vec3 norm = normalize(normals);
 
-    for (int i = 0; i < LIGHT_COUNT; i++)
+    for (int i = 0; i < light_count && i < MAX_LIGHTS; i++)
     {
         result += calculate_lighting(lights[i], norm, view_dir);
     }

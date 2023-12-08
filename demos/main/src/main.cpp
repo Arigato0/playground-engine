@@ -33,39 +33,6 @@ public:
     }
 };
 
-class LightManagerComp : public IComponent
-{
-public:
-    void update(double delta_time) override
-    {
-
-    }
-    void register_light(Light &light)
-    {
-        m_lights.emplace_back(&light);
-
-        for (auto *material : m_materials)
-        {
-            material->lights.emplace_back(&light);
-        }
-    }
-
-    void update_material(Material &material)
-    {
-        util::concat(material.lights, m_lights);
-        m_materials.emplace_back(&material);
-    }
-
-private:
-    std::vector<Light*> m_lights;
-    std::vector<Material*> m_materials;
-};
-
-class LightManager : public IEntity
-{
-
-};
-
 class Cube : public IEntity
 {
 
@@ -74,11 +41,6 @@ class Cube : public IEntity
 class MeshRenderer : public IComponent
 {
 public:
-    void on_start() override
-    {
-        auto manager = Engine::entity_manager.find("LightManager");
-        manager->find<LightManagerComp>()->update_material(material);
-    }
 
     void update(double delta_time) override
     {
@@ -496,13 +458,7 @@ public:
     void on_start() override
     {
         m_light.position = &m_parent->transform.position;
-        auto manager = Engine::entity_manager.find("LightManager");
-        manager->find<LightManagerComp>()->register_light(m_light);
-    }
-
-    void update(double delta_time) override
-    {
-
+        Light::table.emplace_back(&m_light);
     }
 
 private:
@@ -516,8 +472,6 @@ int main()
             .window_size = {1920, 1080},
             .graphics_api = GraphicsApi::OpenGl,
         }));
-
-    Engine::entity_manager.create<LightManager, LightManagerComp>("LightManager");
 
     Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
 
@@ -546,7 +500,7 @@ int main()
 
     auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
 
-    box_ent->transform.translate({-2, -0.25, -10});
+    box_ent->transform.translate({-2, -0.8, -10});
 
     auto box_mesh = box_ent->find<MeshRenderer>();
 
@@ -557,7 +511,7 @@ int main()
         glm::mat4 trans {1.0f};
 
         trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
-        trans = glm::translate(trans, glm::vec3{1 + i, -0.25, 1 + i});
+        trans = glm::translate(trans, glm::vec3{1 + i, -0.8, 1 + i});
 
         box_mesh->add_instance(trans);
     }
