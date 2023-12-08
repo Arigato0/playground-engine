@@ -8,7 +8,7 @@
 #include "mesh.hpp"
 #include "shaders.hpp"
 #include "../application/fmt.hpp"
-#include "camera.hpp"
+#include "CameraData.hpp"
 
 namespace pge
 {
@@ -65,7 +65,7 @@ namespace pge
 
         virtual void delete_texture(uint32_t id) = 0;
 
-        void set_camera(Camera *camera)
+        void set_camera(CameraData *camera)
         {
             m_camera = camera;
         }
@@ -73,6 +73,6 @@ namespace pge
         glm::vec4 clear_color;
 
     protected:
-        Camera *m_camera;
+        CameraData *m_camera;
     };
 }

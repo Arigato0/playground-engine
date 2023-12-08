@@ -7,7 +7,7 @@
 
 namespace pge
 {
-    struct Camera
+    struct CameraData
     {
         enum Projection : uint8_t
         {
@@ -23,7 +23,7 @@ namespace pge
         float roll;
 
         float near = 0.1;
-        float far = 100.f;
+        float far = 1000.f;
         float zoom = 1.0f;
 
         glm::mat4 projection {1.0f};
@@ -34,7 +34,7 @@ namespace pge
         glm::vec3 right;
         glm::vec3 front {0, 0, -1};
 
-        void update();
+        void process();
 
     };
 }

@@ -13,13 +13,11 @@
 #include "application/misc.hpp"
 #include "common_util/random.hpp"
 #include "events/signal.hpp"
-#include "graphics/camera.hpp"
+#include "graphics/CameraData.hpp"
 #include "graphics/primitives.hpp"
+#include "game/camera_comp.hpp"
 
 using namespace pge;
-
-class DebugEditor : public IEntity
-{};
 
 class InputHandlerComp : public IComponent
 {
@@ -31,11 +29,6 @@ public:
             Engine::window.set_should_close(true);
         }
     }
-};
-
-class Cube : public IEntity
-{
-
 };
 
 class MeshRenderer : public IComponent
@@ -68,58 +61,6 @@ public:
 private:
     size_t m_mesh_id;
     std::vector<glm::mat4> m_instances;
-};
-
-class Player : public IEntity
-{
-
-};
-
-class CameraComp : public IComponent
-{
-public:
-    void on_start() override
-    {
-        camera.position.z = 3;
-        Engine::renderer->set_camera(&camera);
-    }
-    void update(double delta_time) override
-    {
-        camera.update();
-    }
-
-    void move_forward(float mod = 1)
-    {
-        camera.position += speed * camera.front * mod;
-    }
-
-    void move_backward(float mod = 1)
-    {
-        camera.position -= speed * camera.front * mod;
-    }
-
-    void move_right(float mod = 1)
-    {
-        camera.position += glm::normalize(glm::cross(camera.front, camera.up)) * speed * mod;
-    }
-
-    void move_left(float mod = 1)
-    {
-        camera.position -= glm::normalize(glm::cross(camera.front, camera.up)) * speed * mod;
-    }
-
-    void move_up(float mod = 1)
-    {
-        camera.position += camera.up * speed * mod;
-    }
-
-    void move_down(float mod = 1)
-    {
-        camera.position -= camera.up * speed * mod;
-    }
-
-    float speed = 2.5f;
-    Camera camera;
 };
 
 class PlayerController : public IComponent
@@ -209,14 +150,14 @@ public:
         x_offset *= mouse_sensitivity;
         y_offset *= mouse_sensitivity;
 
-        m_camera->camera.yaw += x_offset;
-        m_camera->camera.pitch += y_offset;
+        m_camera->data.yaw += x_offset;
+        m_camera->data.pitch += y_offset;
 
-        m_camera->camera.pitch = std::clamp(m_camera->camera.pitch, -90.0f, 90.0f);
+        m_camera->data.pitch = std::clamp(m_camera->data.pitch, -90.0f, 90.0f);
 
         if (auto scroll = get_scroll(); scroll)
         {
-            m_camera->camera.zoom += scroll->y;
+            m_camera->data.zoom += scroll->y;
         }
     }
 
@@ -244,7 +185,7 @@ public:
 
     void on_start() override
     {
-        m_player = (Player*)Engine::entity_manager.find("Player");
+        m_player = Engine::entity_manager.find("Player");
         m_camera = m_player->find<CameraComp>();
 
         auto ground_ent = Engine::entity_manager.find("Ground");
@@ -362,27 +303,27 @@ public:
 
                     ImGui::SeparatorText("Camera");
 
-                    static float fov = m_camera->camera.fov;
+                    static float fov = m_camera->data.fov;
 
                     if (ImGui::SliderFloat("FOV", &fov, 1, 135))
                     {
-                        m_camera->camera.fov = fov;
+                        m_camera->data.fov = fov;
                     }
 
-                    static float camera_near = m_camera->camera.near;
+                    static float camera_near = m_camera->data.near;
                     if (ImGui::SliderFloat("Near", &camera_near, 0.01, 1000))
                     {
-                        m_camera->camera.near = camera_near;
+                        m_camera->data.near = camera_near;
                     }
 
-                    static float camera_far = m_camera->camera.near;
+                    static float camera_far = m_camera->data.near;
 
                     if (ImGui::SliderFloat("Far", &camera_far, 0.01, 1000))
                     {
-                        m_camera->camera.far = camera_far;
+                        m_camera->data.far = camera_far;
                     }
 
-                    ImGui::DragFloat("Zoom", &m_camera->camera.zoom, 0.1);
+                    ImGui::DragFloat("Zoom", &m_camera->data.zoom, 0.1);
 
                     static bool framerate_cap = false;
 
@@ -438,7 +379,7 @@ public:
     }
 private:
     CameraComp *m_camera;
-    Player *m_player;
+    Entity *m_player;
 };
 
 class ObjectRotator : public IComponent
@@ -473,9 +414,9 @@ int main()
             .graphics_api = GraphicsApi::OpenGl,
         }));
 
-    Engine::entity_manager.create<DebugEditor, InputHandlerComp, DebugUiComp>("Debug Editor");
+    Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, ObjectRotator, LightComp>("Light");
+    auto light_ent = Engine::entity_manager.create<MeshRenderer, ObjectRotator, LightComp>("Light");
 
     light_ent->transform.translate({0, 3, -10});
     light_ent->transform.scale(glm::vec3{0.5});
@@ -487,7 +428,7 @@ int main()
     light_mesh->material.specular_texture.enabled = false;
     light_mesh->material.color = glm::vec3{1.0f};
 
-    auto ground_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Ground");
+    auto ground_ent = Engine::entity_manager.create<MeshRenderer>("Ground");
 
     ground_ent->transform.scale({100, 0.5, 100});
     ground_ent->transform.translate({0, -3, 0});
@@ -498,7 +439,7 @@ int main()
 
     ground_mesh->material.diffuse_texture.scale = 10.0f;
 
-    auto box_ent = Engine::entity_manager.create<Cube, MeshRenderer>("Box");
+    auto box_ent = Engine::entity_manager.create<MeshRenderer>("Box");
 
     box_ent->transform.translate({-2, -0.8, -10});
 
@@ -525,9 +466,9 @@ int main()
 
     for (int i = 0; i < 3; i++)
     {
-        auto light_ent = Engine::entity_manager.create<Cube, MeshRenderer, LightComp>(names[i]);
+        auto light_ent = Engine::entity_manager.create<MeshRenderer, LightComp>(names[i]);
 
-        light_ent->transform.translate({rand_range(-5, 5) + 5.0f, rand_range(1, 10), rand_range(-5, 5) + 5.0f});
+        light_ent->transform.translate({rand_range(-5, 5) + 10.0f, rand_range(1, 10), rand_range(-5, 5) + 10.0f});
         light_ent->transform.scale(glm::vec3{0.5});
 
         auto light_mesh = light_ent->find<MeshRenderer>();
@@ -538,7 +479,7 @@ int main()
         light_mesh->material.color = glm::vec3{1.0f};
     }
 
-    auto player = Engine::entity_manager.create<Player, PlayerController, CameraComp>("Player");
+    auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 
     ASSERT_ERR(Engine::run());
 

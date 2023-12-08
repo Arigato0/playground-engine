@@ -24,7 +24,7 @@ namespace pge
     // TODO implement this when you come up with the serialization scheme
 #define PGE_MAKE_SERIALIZABLE() std::string serialize() override { return {}; } void deserialize(std::string_view data) override {}
 
-    class IEntity;
+    class Entity;
 
     template<class T>
     struct RangeControl
@@ -55,7 +55,7 @@ namespace pge
         virtual void deserialize(std::string_view data) {}
         virtual std::vector<EditorProperty> editor_properties() { return {}; }
 
-        void set_parent(IEntity *parent)
+        void set_parent(Entity *parent)
         {
             m_parent = parent;
         }
@@ -80,8 +80,8 @@ namespace pge
         }
 
     protected:
-        friend IEntity;
-        IEntity *m_parent = nullptr;
+        friend Entity;
+        Entity *m_parent = nullptr;
         bool m_enabled = true;
     };
 
@@ -91,15 +91,15 @@ namespace pge
         std::derived_from<IComponent, T>;
     };
 
-    class IEntity
+    class Entity
     {
     public:
         using ComponentTable = std::unordered_map<std::string_view, std::unique_ptr<IComponent>>;
         Transform transform;
 
-        virtual ~IEntity() = default;
-        virtual std::string serialize() { return {}; }
-        virtual void deserialize(std::string_view data) {}
+        ~Entity() = default;
+        std::string serialize() { return {}; }
+        void deserialize(std::string_view data) {}
 
         void update_components(double delta_time)
         {
@@ -154,11 +154,5 @@ namespace pge
     protected:
         uint32_t m_id;
         ComponentTable m_components;
-    };
-
-    template<class T>
-    concept IsEntity = requires(T)
-    {
-        std::derived_from<IEntity, T>;
     };
 }

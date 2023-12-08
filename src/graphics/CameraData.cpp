@@ -1,8 +1,8 @@
-#include "camera.hpp"
+#include "CameraData.hpp"
 
 #include "../application/engine.hpp"
 
-void pge::Camera::update()
+void pge::CameraData::process()
 {
     static glm::vec3 direction {};
 
@@ -11,6 +11,7 @@ void pge::Camera::update()
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     front = glm::normalize(direction);
+    right = glm::normalize(glm::cross(up, direction));
     view  = glm::lookAt(position, position + front, up);
     view  = glm::scale(view, glm::vec3{zoom});
 

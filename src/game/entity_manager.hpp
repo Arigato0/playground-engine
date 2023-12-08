@@ -20,24 +20,24 @@ namespace pge
     class EntityManager
     {
     public:
-        using EntityTable = std::unordered_map<std::string_view, std::unique_ptr<IEntity>>;
+        using EntityTable = std::unordered_map<std::string_view, std::unique_ptr<Entity>>;
         void start();
 
         void update(double delta_time);
 
-        IEntity* find(std::string_view name);
+        Entity* find(std::string_view name);
 
-        template<IsEntity T, IsComponent ...C>
-        IEntity* create(std::string_view name)
+        template<IsComponent ...C>
+        Entity* create(std::string_view name)
         {
-            auto [iter, inserted] = m_entities.emplace(name, std::make_unique<T>());
+            auto [iter, inserted] = m_entities.emplace(name, std::make_unique<Entity>());
 
             if (!inserted)
             {
                 return nullptr;
             }
 
-            IEntity *entity = iter->second.get();
+            Entity *entity = iter->second.get();
 
             ((entity->register_component<C>()), ...);
 

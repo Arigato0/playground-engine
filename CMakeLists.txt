@@ -64,8 +64,8 @@ add_library(playgroundEngineLib
         src/graphics/mesh.hpp
         src/graphics/openGL/opengl_renderer.cpp
         src/graphics/openGL/opengl_renderer.hpp
-        src/graphics/camera.cpp
-        src/graphics/camera.hpp
+        src/graphics/CameraData.cpp
+        src/graphics/CameraData.hpp
         src/graphics/primitives.hpp
         src/game/transform.hpp
         src/application/input.cpp
@@ -77,6 +77,7 @@ add_library(playgroundEngineLib
         src/events/signal.hpp
         src/graphics/light.hpp
         src/common_util/random.hpp
+        src/game/camera_comp.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)

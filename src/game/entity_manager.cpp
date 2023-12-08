@@ -16,7 +16,7 @@ void pge::EntityManager::update(double delta_time)
     }
 }
 
-pge::IEntity* pge::EntityManager::find(std::string_view name)
+pge::Entity* pge::EntityManager::find(std::string_view name)
 {
     auto iter = m_entities.find(name);
 
