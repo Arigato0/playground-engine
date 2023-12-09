@@ -10,7 +10,7 @@ namespace pge
     public:
         void on_start() override
         {
-            Engine::renderer->set_camera(&data);
+            set_active();
         }
 
         void set_active()

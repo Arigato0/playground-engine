@@ -56,12 +56,57 @@ public:
         Engine::renderer->set_material(&material, m_mesh_id);
     }
 
+    std::vector<EditorProperty> editor_properties() override
+    {
+        return
+        {
+            {"Recieve light", &material.recieve_lighting},
+            {"Color", ColorEdit(glm::value_ptr(material.color))},
+            {"Shininess", DragControl(&material.shininess)},
+            {"Texture scale",  DragControl(&material.diffuse_texture.scale)},
+            {"Enable texture", &material.diffuse_texture.enabled}
+        };
+    }
+
     Material material;
 
 private:
     size_t m_mesh_id;
     std::vector<glm::mat4> m_instances;
 };
+
+void render_properties(const std::vector<EditorProperty> &properties)
+{
+    for (const auto &prop : properties)
+    {
+        std::visit(overload
+            {
+                [&prop](bool *value)
+                {
+                    ImGui::Checkbox(prop.name.data(), value);
+                },
+                [&prop](Drag3Control<float> value)
+                {
+                    ImGui::DragFloat3(prop.name.data(), value.value, value.speed, value.min, value.max, value.format);
+                },
+                [&prop](DragControl<float> value)
+                {
+                    ImGui::DragFloat(prop.name.data(), value.value, value.speed, value.min, value.max, value.format);
+                },
+                [&prop](ColorEdit<float> value)
+               {
+                   ImGui::ColorEdit3(prop.name.data(), value.value);
+               },
+                [&prop](ButtonControl button)
+                {
+                    if (ImGui::Button(prop.name.data()))
+                    {
+                        button();
+                    }
+                },
+            }, prop.control_type);
+    }
+}
 
 class PlayerController : public IComponent
 {
@@ -255,6 +300,7 @@ public:
                     {
                         if (ImGui::TreeNode(comp_name.data()))
                         {
+                            render_properties(comp->editor_properties());
                             ImGui::TreePop();
                         }
                     }
@@ -398,12 +444,50 @@ class LightComp : public IComponent
 public:
     void on_start() override
     {
-        m_light.position = &m_parent->transform.position;
-        Light::table.emplace_back(&m_light);
+        data.position = &m_parent->transform.position;
+        Light::table.emplace_back(&data);
     }
 
-private:
-    Light m_light;
+    Light data;
+};
+
+class ControlTest : public IComponent
+{
+public:
+    bool show_window = false;
+    float f_value = 10.0f;
+    glm::vec3 my_vec3;
+
+    std::vector<EditorProperty> editor_properties() override
+    {
+        return
+        {
+            {"Enabled", &show_window},
+            {"My vec3", Drag3Control(glm::value_ptr(my_vec3))},
+            {"Drag", DragControl(&f_value)},
+            {"Hello", hello}
+        };
+    }
+
+    static void hello()
+    {
+        Logger::info("hello!");
+    }
+
+    void update(double delta_time) override
+    {
+        if (!show_window)
+        {
+            return;
+        }
+
+        ImGui::Begin("Test window", &show_window);
+
+        ImGui::InputFloat3("my vec3", glm::value_ptr(my_vec3));
+        ImGui::InputFloat("my vec3", &f_value);
+
+        ImGui::End();
+    }
 };
 
 int main()
@@ -414,6 +498,7 @@ int main()
             .graphics_api = GraphicsApi::OpenGl,
         }));
 
+    Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
     auto light_ent = Engine::entity_manager.create<MeshRenderer, ObjectRotator, LightComp>("Light");
@@ -422,11 +507,15 @@ int main()
     light_ent->transform.scale(glm::vec3{0.5});
 
     auto light_mesh = light_ent->find<MeshRenderer>();
+    auto light_comp = light_ent->find<LightComp>();
+
+    light_comp->data.is_dir = false;
 
     light_mesh->set_mesh(CUBE_MESH, {""});
     light_mesh->material.diffuse_texture.enabled = false;
     light_mesh->material.specular_texture.enabled = false;
     light_mesh->material.color = glm::vec3{1.0f};
+    light_mesh->material.recieve_lighting = false;
 
     auto ground_ent = Engine::entity_manager.create<MeshRenderer>("Ground");
 
@@ -435,7 +524,7 @@ int main()
 
     auto ground_mesh = ground_ent->find<MeshRenderer>();
 
-    ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg"});
+    ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg", "assets/plaster.jpg"});
 
     ground_mesh->material.diffuse_texture.scale = 10.0f;
 
@@ -457,26 +546,28 @@ int main()
         box_mesh->add_instance(trans);
     }
 
-    const char *names[] =
-        {
-        "light1",
-        "light2",
-        "light3"
-        };
-
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
-        auto light_ent = Engine::entity_manager.create<MeshRenderer, LightComp>(names[i]);
+        auto light_ent = Engine::entity_manager.create<MeshRenderer, LightComp>(fmt::format("Light_{}", i+1));
 
         light_ent->transform.translate({rand_range(-5, 5) + 10.0f, rand_range(1, 10), rand_range(-5, 5) + 10.0f});
         light_ent->transform.scale(glm::vec3{0.5});
 
         auto light_mesh = light_ent->find<MeshRenderer>();
+        auto light_comp = light_ent->find<LightComp>();
 
         light_mesh->set_mesh(CUBE_MESH, {""});
-        light_mesh->material.diffuse_texture.enabled = false;
-        light_mesh->material.specular_texture.enabled = false;
-        light_mesh->material.color = glm::vec3{1.0f};
+
+        auto &material = light_mesh->material;
+        auto &light_data =  light_comp->data;
+
+        auto color = rand_vec3(0.1, 1);
+
+        material.diffuse_texture.enabled = false;
+        material.specular_texture.enabled = false;
+        material.color = color;
+        light_data.ambient = color;
+        light_data.diffuse = color;
     }
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");

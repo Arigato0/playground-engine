@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <memory>
 #include <variant>
@@ -11,19 +12,6 @@
 
 namespace pge
 {
-#define PGE_CREATE_PROP_TABLE(prop_names...) \
-    enum PROPERTY_NAME                  \
-    {                                   \
-        prop_names,                      \
-        PROP_SIZE,                       \
-    };                                  \
-    std::array<std::any, PROP_SIZE> m_props; \
-    template<class T> \
-    T& get(int index) { return std::any_cast<T>(m_props[index]); } \
-
-    // TODO implement this when you come up with the serialization scheme
-#define PGE_MAKE_SERIALIZABLE() std::string serialize() override { return {}; } void deserialize(std::string_view data) override {}
-
     class Entity;
 
     template<class T>
@@ -33,13 +21,42 @@ namespace pge
         T max;
     };
 
+    template<class T>
+    struct Drag3Control
+    {
+        T *value;
+
+        float speed = 1;
+        float min = 0;
+        float max = 0;
+        const char* format = "%.3f";
+    };
+
+    template<class T>
+    struct DragControl
+    {
+        T *value;
+
+        float speed = 1;
+        float min = 0;
+        float max = 0;
+        const char* format = "%.3f";
+    };
+
+    template<class T>
+    struct ColorEdit
+    {
+        T *value;
+    };
+
+    typedef void(*ButtonControl)();
+
     using EditorControl = std::variant<
-        RangeControl<float>, RangeControl<double>, RangeControl<int>, bool, glm::vec3>;
+        bool*, Drag3Control<float>, DragControl<float>, ButtonControl, ColorEdit<float>>;
 
         struct EditorProperty
         {
             std::string_view name;
-            void *ptr;
             EditorControl control_type;
         };
 
@@ -97,6 +114,10 @@ namespace pge
         using ComponentTable = std::unordered_map<std::string_view, std::unique_ptr<IComponent>>;
         Transform transform;
 
+        Entity(const std::string &name) :
+            m_name(name)
+        {}
+
         ~Entity() = default;
         std::string serialize() { return {}; }
         void deserialize(std::string_view data) {}
@@ -118,6 +139,11 @@ namespace pge
             {
                 comp->on_start();
             }
+        }
+
+        const std::string& name() const
+        {
+            return m_name;
         }
 
         [[nodiscard]]
@@ -151,8 +177,9 @@ namespace pge
             return m_components;
         }
 
-    protected:
+    private:
         uint32_t m_id;
         ComponentTable m_components;
+        std::string m_name;
     };
 }

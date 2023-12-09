@@ -9,7 +9,7 @@ namespace pge
 {
     struct Transform
     {
-        glm::vec3 position;
+        glm::vec3 position {};
         float     rotation;
         glm::mat4 transform {1.0f};
 

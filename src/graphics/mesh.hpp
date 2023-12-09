@@ -22,6 +22,7 @@ namespace pge
         Texture specular_texture;
         glm::vec3 specular {0.1};
         glm::vec3 color {0.0f};
+        bool recieve_lighting = true;
     };
 
     struct Vertex

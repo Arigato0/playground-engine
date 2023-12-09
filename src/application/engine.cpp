@@ -21,7 +21,7 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
 
     set_graphics_api(info.graphics_api);
 
-    renderer->clear_color = {0.f, 0.5f, 0.6f, 1.f};
+    renderer->clear_color = {0.f, 0.f, 0.f, 1.f};
 
     auto result = renderer->init();
 

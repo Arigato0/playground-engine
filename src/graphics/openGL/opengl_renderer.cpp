@@ -139,6 +139,7 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
         m_shader.set("texture_scale", material->diffuse_texture.scale);
         m_shader.set("material.diffuse.enabled", material->diffuse_texture.enabled);
         m_shader.set("material.specular.enabled", material->specular_texture.enabled);
+        m_shader.set("recieve_lighting", material->recieve_lighting);
 
         for (int i = 0; i < Light::table.size(); i++)
         {
@@ -153,7 +154,7 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
 
             auto start = sprintf(name_buffer, "lights[%i].", i);
 
-            static auto field = [&name_buffer, start](std::string_view name) -> const char*
+            static auto field = [start](std::string_view name) -> const char*
             {
                 sprintf(name_buffer + start, "%s", name.data());
                 return name_buffer;
