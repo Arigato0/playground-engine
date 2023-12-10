@@ -37,7 +37,7 @@ public:
 
     void update(double delta_time) override
     {
-        Engine::renderer->draw(m_mesh_id, m_parent->transform.transform);
+        Engine::renderer->draw(m_mesh_id, m_parent->transform.model);
 
         for (auto instance : m_instances)
         {
@@ -285,12 +285,21 @@ public:
                     {
                         auto &trans = entity->transform;
 
-                        auto *pos = glm::value_ptr(trans.position);
+                        auto pos = trans.get_position();
+                        auto scale = trans.get_scale();
+                        auto euler = glm::eulerAngles(glm::quat_cast(trans.model));
 
-                        if (ImGui::DragFloat3("Position", pos))
+                        if (ImGui::DragFloat3("Position", glm::value_ptr(pos)))
                         {
-                            auto vec3 = glm::make_vec3(pos);
-                            trans.transform[3] = {vec3, 1.0f};
+                            trans.set_position(pos);
+                        }
+                        if (ImGui::DragFloat3("Scale", glm::value_ptr(scale)))
+                        {
+                            trans.set_scale(scale);
+                        }
+                        if (ImGui::DragFloat3("Rotation", glm::value_ptr(euler)))
+                        {
+                            trans.model = glm::rotate(trans.model, glm::radians(1.0f), euler);
                         }
 
                         ImGui::TreePop();
@@ -446,6 +455,17 @@ public:
     {
         data.position = &m_parent->transform.position;
         Light::table.emplace_back(&data);
+    }
+
+    std::vector<EditorProperty> editor_properties() override
+    {
+        return
+        {
+            {"Spotlight", &data.is_dir},
+            {"Ambient", ColorEdit(glm::value_ptr(data.ambient))},
+            {"diffuse", ColorEdit(glm::value_ptr(data.diffuse))},
+            {"specular", ColorEdit(glm::value_ptr(data.specular))},
+        };
     }
 
     Light data;
