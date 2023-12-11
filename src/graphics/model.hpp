@@ -28,7 +28,7 @@ namespace pge
     struct Vertex
     {
         glm::vec3 position;
-        glm::vec3 normals;
+        glm::vec3 normal;
         glm::vec2 uv;
     };
 
@@ -36,6 +36,7 @@ namespace pge
     {
         uint32_t id;
         std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
         std::vector<Texture> textures;
     };
 }

@@ -305,8 +305,18 @@ public:
                         ImGui::TreePop();
                     }
 
-                    for (const auto &[comp_name, comp] : entity.get_components())
+                    // TODO the second component cant be toggled off for some reason
+                    for (auto &[comp_name, comp] : entity.get_components())
                     {
+                        auto is_enabled = comp->is_enabled();
+
+                        if (ImGui::Checkbox("-", &is_enabled))
+                        {
+                            comp->set_enabled(is_enabled);
+                        }
+
+                        ImGui::SameLine();
+
                         if (ImGui::TreeNode(comp_name.data()))
                         {
                             render_properties(comp->editor_properties());
@@ -457,14 +467,26 @@ public:
         Light::table.emplace_back(&data);
     }
 
+    void on_disable() override
+    {
+        data.is_active = false;
+    }
+
+    void on_enable() override
+    {
+        data.is_active = true;
+    }
+
     std::vector<EditorProperty> editor_properties() override
     {
         return
         {
             {"Spotlight", &data.is_spot},
-            {"Ambient", ColorEdit(glm::value_ptr(data.ambient))},
-            {"diffuse", ColorEdit(glm::value_ptr(data.diffuse))},
-            {"specular", ColorEdit(glm::value_ptr(data.specular))},
+            {"Color", ColorEdit(glm::value_ptr(data.color))},
+            {"Power", DragControl(&data.power)},
+            {"Ambient", DragControl(&data.ambient)},
+            {"diffuse", DragControl(&data.diffuse)},
+            {"specular", DragControl(&data.specular)},
         };
     }
 
@@ -521,21 +543,21 @@ int main()
     Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    auto light_ent = Engine::entity_manager.create<MeshRenderer, ObjectRotator, LightComp>("Light");
+    auto light_ent = Engine::entity_manager.create<ObjectRotator, LightComp>("Light");
 
     light_ent->transform.translate({0, 3, -10});
     light_ent->transform.scale(glm::vec3{0.5});
 
-    auto light_mesh = light_ent->find<MeshRenderer>();
+   // auto light_mesh = light_ent->find<MeshRenderer>();
     auto light_comp = light_ent->find<LightComp>();
 
     light_comp->data.is_spot = false;
 
-    light_mesh->set_mesh(CUBE_MESH, {""});
-    light_mesh->material.diffuse_texture.enabled = false;
-    light_mesh->material.specular_texture.enabled = false;
-    light_mesh->material.color = glm::vec3{1.0f};
-    light_mesh->material.recieve_lighting = false;
+    // light_mesh->set_mesh(CUBE_MESH, {""});
+    // light_mesh->material.diffuse_texture.enabled = false;
+    // light_mesh->material.specular_texture.enabled = false;
+    // light_mesh->material.color = glm::vec3{1.0f};
+    // light_mesh->material.recieve_lighting = false;
 
     auto ground_ent = Engine::entity_manager.create<MeshRenderer>("Ground");
 
@@ -568,26 +590,28 @@ int main()
 
     for (int i = 0; i < 4; i++)
     {
-        auto light_ent = Engine::entity_manager.create<MeshRenderer, LightComp>(fmt::format("Light_{}", i+1));
+        auto light_ent = Engine::entity_manager.create<LightComp>(fmt::format("Light_{}", i+1));
 
         light_ent->transform.translate({rand_range(-5, 5) + 10.0f, rand_range(1, 10), rand_range(-5, 5) + 10.0f});
         light_ent->transform.scale(glm::vec3{0.5});
 
-        auto light_mesh = light_ent->find<MeshRenderer>();
+        //auto light_mesh = light_ent->find<MeshRenderer>();
         auto light_comp = light_ent->find<LightComp>();
 
-        light_mesh->set_mesh(CUBE_MESH, {""});
-
-        auto &material = light_mesh->material;
+        // light_mesh->set_mesh(CUBE_MESH, {""});
+        //
+        // auto &material = light_mesh->material;
         auto &light_data =  light_comp->data;
 
         auto color = rand_vec3(0.1, 1);
-
-        material.diffuse_texture.enabled = false;
-        material.specular_texture.enabled = false;
-        material.color = color;
-        light_data.ambient = color;
-        light_data.diffuse = color;
+        light_data.color = color;
+        //
+        // material.diffuse_texture.enabled = false;
+        // material.specular_texture.enabled = false;
+        // material.recieve_lighting = false;
+        // material.color = color;
+        // light_data.ambient = color;
+        // light_data.diffuse = color;
     }
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");

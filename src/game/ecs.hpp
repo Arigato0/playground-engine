@@ -77,6 +77,7 @@ namespace pge
             m_parent = parent;
         }
 
+        [[nodiscard]]
         bool is_enabled() const
         {
             return m_enabled;
@@ -123,13 +124,11 @@ namespace pge
         {}
 
         ~Entity() = default;
-        // std::string serialize() { return {}; }
-        // void deserialize(std::string_view data) {}
 
         Entity(Entity &&other) noexcept :
             m_id(other.m_id),
             m_components(std::move(other.m_components)),
-            m_name(std::move(other.m_name))
+            m_name(other.m_name)
         {}
 
         void update_components(double delta_time)
@@ -182,7 +181,7 @@ namespace pge
             comp->second->set_parent(this);
         }
 
-        const ComponentTable& get_components() const
+        ComponentTable& get_components()
         {
             return m_components;
         }

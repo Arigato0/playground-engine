@@ -11,7 +11,7 @@ void pge::CameraData::process()
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     front = glm::normalize(direction);
-    right = glm::normalize(glm::cross(up, direction));
+    right = glm::normalize(glm::cross(front, up));
     view  = glm::lookAt(position, position + front, up);
     view  = glm::scale(view, glm::vec3{zoom});
 

@@ -35,12 +35,12 @@ namespace pge
 
         void move_right(float mod = 1)
         {
-            data.position += glm::normalize(glm::cross(data.front, data.up)) * speed * mod;
+            data.position += data.right * speed * mod;
         }
 
         void move_left(float mod = 1)
         {
-            data.position -= glm::normalize(glm::cross(data.front, data.up)) * speed * mod;
+            data.position -= data.right * speed * mod;
         }
 
         void move_up(float mod = 1)

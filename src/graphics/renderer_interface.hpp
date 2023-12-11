@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "graphics_api.hpp"
-#include "mesh.hpp"
+#include "model.hpp"
 #include "shaders.hpp"
 #include "../application/fmt.hpp"
 #include "CameraData.hpp"

@@ -5,6 +5,8 @@
 #define CONCAT(a, b) __CONCAT__(a, b)
 #define __CONCAT__(a, b) a##b
 
+#define PGE_SUPPORTED_PLATFORM defined(__linux__) || defined(WIN32)
+
 #define EXPAND_VEC4(vec) vec.x, vec.y, vec.z, vec.w
 #define EXPAND_VEC3(vec) vec.x, vec.y, vec.z
 #define EXPAND_VEC2(vec) vec.x, vec.y

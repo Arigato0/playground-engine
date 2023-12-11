@@ -160,9 +160,12 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
                 return name_buffer;
             };
 
+            m_shader.set(field("is_active"), light->is_active);
+            m_shader.set(field("color"), light->color);
             m_shader.set(field("diffuse"), light->diffuse);
             m_shader.set(field("specular"), light->specular);
             m_shader.set(field("ambient"), light->ambient);
+            m_shader.set(field("power"), light->power);
             m_shader.set(field("direction"), m_camera->front);
             m_shader.set(field("cutoff"), light->inner_cutoff);
             m_shader.set(field("outer_cutoff"), light->outer_cutoff);

@@ -3,9 +3,10 @@ project(playgroundEngineLib)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm)
+include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm lib/assimp/include)
 add_subdirectory("lib")
 add_subdirectory("lib/glm/")
+add_subdirectory("lib/assimp")
 
 add_library(playgroundEngineLib
         lib/glad/src/glad.c
@@ -61,7 +62,7 @@ add_library(playgroundEngineLib
         src/application/dialog.cpp
         src/application/dialog.hpp
         src/graphics/renderer_interface.hpp
-        src/graphics/mesh.hpp
+        src/graphics/model.hpp
         src/graphics/openGL/opengl_renderer.cpp
         src/graphics/openGL/opengl_renderer.hpp
         src/graphics/CameraData.cpp
@@ -80,4 +81,4 @@ add_library(playgroundEngineLib
         src/game/camera_comp.hpp
 )
 
-target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm)
+target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)
