@@ -4,13 +4,15 @@
 #include <unordered_map>
 
 #include "ecs.hpp"
+#include "../common_util/misc.hpp"
 
 namespace pge
 {
+
     class EntityManager
     {
     public:
-        using EntityTable = std::unordered_map<std::string_view, std::unique_ptr<Entity>>;
+        using EntityTable = std::unordered_map<std::string, Entity, ENABLE_TRANSPARENT_HASH>;
         void start();
 
         void update(double delta_time);
@@ -18,31 +20,30 @@ namespace pge
         Entity* find(std::string_view name);
 
         template<IsComponent ...C>
-        Entity* create(std::string_view name)
+        Entity* create(std::string &&name)
         {
-            auto ptr = std::make_unique<Entity>(std::string{ name });
-
-            auto [iter, inserted] = m_entities.emplace(ptr->name(), std::move(ptr));
+            auto [iter, inserted] = m_entities.emplace(std::forward<std::string>(name), Entity{});
 
             if (!inserted)
             {
                 return nullptr;
             }
 
-            Entity *entity = iter->second.get();
+            Entity &entity = iter->second;
 
-            ((entity->register_component<C>()), ...);
+            entity.m_name = iter->first;
 
-            return entity;
+            ((entity.register_component<C>()), ...);
+
+            return &entity;
         }
 
-        const EntityTable& get_entities() const
+        EntityTable& get_entities()
         {
             return m_entities;
         }
 
     private:
         EntityTable m_entities;
-
     };
 }

@@ -169,7 +169,7 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
             m_shader.set(field("constant"),  light->constant);
             m_shader.set(field("linear"),    light->linear);
             m_shader.set(field("quadratic"), light->quadratic);
-            m_shader.set(field("is_dir"), light->is_dir);
+            m_shader.set(field("is_spot"), light->is_spot);
 
             if (light->position)
             {

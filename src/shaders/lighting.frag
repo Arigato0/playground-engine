@@ -29,7 +29,7 @@ struct Material
 
 struct Light
 {
-    bool is_dir;
+    bool is_spot;
     vec3 position;
     vec3 direction;
     float cutoff;
@@ -162,7 +162,7 @@ void main()
     {
         for (int i = 0; i < light_count; i++)
         {
-            if (lights[i].is_dir)
+            if (lights[i].is_spot)
             {
                 result += calc_dir_light(lights[i], lighting_data);
             }

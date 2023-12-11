@@ -277,13 +277,13 @@ public:
         {
             ImGui::Begin("Objects", &show_object_control);
 
-            for (const auto &[name, entity] : Engine::entity_manager.get_entities())
+            for (auto &[name, entity] : Engine::entity_manager.get_entities())
             {
                 if (ImGui::TreeNode(name.data()))
                 {
                     if (ImGui::TreeNode("Transform"))
                     {
-                        auto &trans = entity->transform;
+                        auto &trans = entity.transform;
 
                         auto pos = trans.get_position();
                         auto scale = trans.get_scale();
@@ -305,7 +305,7 @@ public:
                         ImGui::TreePop();
                     }
 
-                    for (const auto &[comp_name, comp] : entity->get_components())
+                    for (const auto &[comp_name, comp] : entity.get_components())
                     {
                         if (ImGui::TreeNode(comp_name.data()))
                         {
@@ -461,7 +461,7 @@ public:
     {
         return
         {
-            {"Spotlight", &data.is_dir},
+            {"Spotlight", &data.is_spot},
             {"Ambient", ColorEdit(glm::value_ptr(data.ambient))},
             {"diffuse", ColorEdit(glm::value_ptr(data.diffuse))},
             {"specular", ColorEdit(glm::value_ptr(data.specular))},
@@ -529,7 +529,7 @@ int main()
     auto light_mesh = light_ent->find<MeshRenderer>();
     auto light_comp = light_ent->find<LightComp>();
 
-    light_comp->data.is_dir = false;
+    light_comp->data.is_spot = false;
 
     light_mesh->set_mesh(CUBE_MESH, {""});
     light_mesh->material.diffuse_texture.enabled = false;

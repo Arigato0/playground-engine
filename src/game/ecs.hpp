@@ -108,19 +108,29 @@ namespace pge
         std::derived_from<IComponent, T>;
     };
 
+    class EntityManager;
+
     class Entity
     {
     public:
         using ComponentTable = std::unordered_map<std::string_view, std::unique_ptr<IComponent>>;
         Transform transform;
 
-        Entity(const std::string &name) :
+        Entity() = default;
+
+        Entity(std::string_view name) :
             m_name(name)
         {}
 
         ~Entity() = default;
-        std::string serialize() { return {}; }
-        void deserialize(std::string_view data) {}
+        // std::string serialize() { return {}; }
+        // void deserialize(std::string_view data) {}
+
+        Entity(Entity &&other) noexcept :
+            m_id(other.m_id),
+            m_components(std::move(other.m_components)),
+            m_name(std::move(other.m_name))
+        {}
 
         void update_components(double delta_time)
         {
@@ -141,7 +151,7 @@ namespace pge
             }
         }
 
-        const std::string& name() const
+        std::string_view name() const
         {
             return m_name;
         }
@@ -178,8 +188,9 @@ namespace pge
         }
 
     private:
+        friend EntityManager;
         uint32_t m_id;
         ComponentTable m_components;
-        std::string m_name;
+        std::string_view m_name;
     };
 }

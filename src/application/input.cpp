@@ -41,7 +41,6 @@ void mouse_callback(GLFWwindow *_, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
 {
-    Logger::info("{} {}", xoffset, yoffset);
     g_scroll_offsets =
     {
         xoffset,

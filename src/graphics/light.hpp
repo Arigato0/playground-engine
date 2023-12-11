@@ -7,7 +7,7 @@ namespace pge
     {
         glm::vec3 *position;
 
-        bool is_dir ;
+        bool is_spot ;
         glm::vec3 direction;
         float inner_cutoff = glm::cos(glm::radians(12.5f));
         float outer_cutoff = glm::cos(glm::radians(14.f));

@@ -4,7 +4,7 @@ void pge::EntityManager::start()
 {
     for (auto &[_, entity] : m_entities)
     {
-        entity->start_components();
+        entity.start_components();
     }
 }
 
@@ -12,7 +12,7 @@ void pge::EntityManager::update(double delta_time)
 {
     for (auto &[_, entity] : m_entities)
     {
-        entity->update_components(delta_time);
+        entity.update_components(delta_time);
     }
 }
 
@@ -25,5 +25,5 @@ pge::Entity* pge::EntityManager::find(std::string_view name)
         return nullptr;
     }
 
-    return iter->second.get();
+    return &iter->second;
 }

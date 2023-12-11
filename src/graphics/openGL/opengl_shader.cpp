@@ -19,12 +19,12 @@ inline uint32_t opengl_shader_type(pge::ShaderType type)
     }
 }
 
-pge::OpenGlShader::~OpenGlShader()
+pge::GlShader::~GlShader()
 {
     glDeleteProgram(m_program);
 }
 
-uint32_t pge::OpenGlShader::create(std::initializer_list<std::pair<const std::filesystem::path, ShaderType>> shaders)
+uint32_t pge::GlShader::create(std::initializer_list<std::pair<const std::filesystem::path, ShaderType>> shaders)
 {
     std::vector<uint32_t> cleanup;
 
@@ -60,7 +60,7 @@ uint32_t pge::OpenGlShader::create(std::initializer_list<std::pair<const std::fi
     return OPENGL_ERROR_OK;
 }
 
-pge::Result<unsigned, pge::OpenGlErrorCode> pge::OpenGlShader::load_file(const std::filesystem::path& path,
+pge::Result<unsigned, pge::OpenGlErrorCode> pge::GlShader::load_file(const std::filesystem::path& path,
     ShaderType type)
 {
     auto contents = util::read_file(path);

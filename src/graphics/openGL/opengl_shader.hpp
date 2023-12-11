@@ -13,10 +13,10 @@
 
 namespace pge
 {
-    class OpenGlShader : public IShader
+    class GlShader : public IShader
     {
     public:
-        ~OpenGlShader() override;
+        ~GlShader() override;
 
         uint32_t create(
             std::initializer_list<

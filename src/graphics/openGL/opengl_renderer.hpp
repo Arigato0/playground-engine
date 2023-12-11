@@ -61,6 +61,6 @@ namespace pge
     private:
         uint32_t m_missing_texture;
         std::vector<OpenGlMesh> m_meshes;
-        OpenGlShader m_shader;
+        GlShader m_shader;
     };
 }

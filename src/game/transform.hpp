@@ -20,7 +20,13 @@ namespace pge
         [[nodiscard]]
         glm::vec3 get_scale() const
         {
-            return { model[0][0], model[1][1], model[2][2] };
+            glm::vec3 output;
+
+            output.x = glm::length(glm::vec3(model[0]));
+            output.y = glm::length(glm::vec3(model[1]));
+            output.z = glm::length(glm::vec3(model[2]));
+
+            return output;
         }
 
         void set_scale(glm::vec3 vec)
