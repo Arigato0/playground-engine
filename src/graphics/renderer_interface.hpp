@@ -40,14 +40,12 @@ namespace pge
         // creates a shader program using the underlying graphics api
         virtual IShader* create_shader(ShaderList shaders) = 0;
 
-        virtual size_t create_mesh(std::span<float> data, std::array<std::string_view, 2> textures) = 0;
+        virtual size_t create_mesh(const Mesh &mesh) = 0;
 
         virtual void new_frame() = 0;
 
         // draws the given mesh
         virtual uint32_t draw(size_t mesh_id, glm::mat4 transform) = 0;
-
-        virtual void set_material(Material *material, size_t mesh_id) = 0;
 
         // sets if wireframe mode is active
         virtual void set_wireframe_mode(bool value) = 0;

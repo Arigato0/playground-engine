@@ -59,55 +59,44 @@ pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
     return nullptr;
 }
 
-size_t pge::OpenglRenderer::create_mesh(std::span<float> data, std::array<std::string_view, 2> textures)
+size_t pge::OpenglRenderer::create_mesh(const Mesh &mesh)
 {
-    OpenGlMesh mesh;
+    GlMesh gl_mesh;
 
-    create_texture(textures[0], mesh.texture1);
-    create_texture(textures[1], mesh.texture2);
+    glGenVertexArrays(1, &gl_mesh.vao);
+    glGenBuffers(1, &gl_mesh.vbo);
+    glGenBuffers(1, &gl_mesh.ebo);
 
-    mesh.vertex_size = data.size() / 5;
+    glBindVertexArray(gl_mesh.vao);
 
-    glGenVertexArrays(1, &mesh.vao);
-    glGenBuffers(1, &mesh.vbo);
-    glGenBuffers(1, &mesh.ebo);
+    glBindBuffer(GL_ARRAY_BUFFER, gl_mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
 
-    glBindVertexArray(mesh.vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), data.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_mesh.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t),
+                 mesh.indices.data(), GL_STATIC_DRAW);
 
     // vertex position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
     glEnableVertexAttribArray(0);
 
     // normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
 
-    // uv
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    // coords
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, coord));
     glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 
+    gl_mesh.data = &mesh;
+
     auto idx = m_meshes.size();
 
-    m_meshes.emplace_back(mesh);
+    m_meshes.emplace_back(gl_mesh);
 
     return idx;
-}
-
-void pge::OpenglRenderer::set_material(Material *material, size_t mesh_id)
-{
-    if (mesh_id >= m_meshes.size())
-    {
-        return;
-    }
-
-    auto &mesh = m_meshes[mesh_id];
-
-    mesh.material = material;
 }
 
 void pge::OpenglRenderer::new_frame()
@@ -127,57 +116,60 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
 
     auto mesh = m_meshes[mesh_id];
 
+    if (mesh.data == nullptr)
+    {
+        return OPENGL_ERROR_MESH_NOT_FOUND;
+    }
+
     m_shader.use();
 
     m_shader.set("light_count", (int)Light::table.size());
 
-    if (auto material = mesh.material; material)
+    auto material = mesh.data->material;
+
+    m_shader.set("object_color", material.color);
+    m_shader.set("material.shininess", material.shininess);
+    m_shader.set("texture_scale", material.diffuse.scale);
+    m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
+    m_shader.set("material.specular.enabled", material.specular.enabled);
+    m_shader.set("recieve_lighting", material.recieve_lighting);
+
+    for (int i = 0; i < Light::table.size(); i++)
     {
-        m_shader.set("object_color", material->color);
-        m_shader.set("material.specular", material->specular);
-        m_shader.set("material.shininess", material->shininess);
-        m_shader.set("texture_scale", material->diffuse_texture.scale);
-        m_shader.set("material.diffuse.enabled", material->diffuse_texture.enabled);
-        m_shader.set("material.specular.enabled", material->specular_texture.enabled);
-        m_shader.set("recieve_lighting", material->recieve_lighting);
+        auto *light = Light::table[i];
 
-        for (int i = 0; i < Light::table.size(); i++)
+        if (light == nullptr)
         {
-            auto *light = Light::table[i];
+            continue;
+        }
 
-            if (light == nullptr)
-            {
-                continue;
-            }
+        static char name_buffer[256];
 
-            static char name_buffer[256];
+        auto start = sprintf(name_buffer, "lights[%i].", i);
 
-            auto start = sprintf(name_buffer, "lights[%i].", i);
+        static auto field = [start](std::string_view name) -> const char*
+        {
+            sprintf(name_buffer + start, "%s", name.data());
+            return name_buffer;
+        };
 
-            static auto field = [start](std::string_view name) -> const char*
-            {
-                sprintf(name_buffer + start, "%s", name.data());
-                return name_buffer;
-            };
+        m_shader.set(field("is_active"), light->is_active);
+        m_shader.set(field("color"), light->color);
+        m_shader.set(field("diffuse"), light->diffuse);
+        m_shader.set(field("specular"), light->specular);
+        m_shader.set(field("ambient"), light->ambient);
+        m_shader.set(field("power"), light->power);
+        m_shader.set(field("direction"), m_camera->front);
+        m_shader.set(field("cutoff"), light->inner_cutoff);
+        m_shader.set(field("outer_cutoff"), light->outer_cutoff);
+        m_shader.set(field("constant"),  light->constant);
+        m_shader.set(field("linear"),    light->linear);
+        m_shader.set(field("quadratic"), light->quadratic);
+        m_shader.set(field("is_spot"), light->is_spot);
 
-            m_shader.set(field("is_active"), light->is_active);
-            m_shader.set(field("color"), light->color);
-            m_shader.set(field("diffuse"), light->diffuse);
-            m_shader.set(field("specular"), light->specular);
-            m_shader.set(field("ambient"), light->ambient);
-            m_shader.set(field("power"), light->power);
-            m_shader.set(field("direction"), m_camera->front);
-            m_shader.set(field("cutoff"), light->inner_cutoff);
-            m_shader.set(field("outer_cutoff"), light->outer_cutoff);
-            m_shader.set(field("constant"),  light->constant);
-            m_shader.set(field("linear"),    light->linear);
-            m_shader.set(field("quadratic"), light->quadratic);
-            m_shader.set(field("is_spot"), light->is_spot);
-
-            if (light->position)
-            {
-                m_shader.set(field("position"), *light->position);
-            }
+        if (light->position)
+        {
+            m_shader.set(field("position"), *light->position);
         }
     }
 
@@ -189,22 +181,23 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
     m_shader.set("view_pos", m_camera->position);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, mesh.texture1);
+    glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, mesh.texture2);
+    glBindTexture(GL_TEXTURE_2D, material.specular.id);
 
     glBindVertexArray(mesh.vao);
-    glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_size);
+    glDrawElements(GL_TRIANGLES, mesh.data->indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 
     Engine::statistics.report_draw_call();
-    Engine::statistics.report_verticies(mesh.vertex_size);
+    Engine::statistics.report_verticies(mesh.data->vertices.size());
 
     return OPENGL_ERROR_OK;
 }
 
 uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture)
 {
-    stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(false);
     int width, height, channels;
 
     uint8_t *data = stbi_load(path.data(), &width, &height, &channels, 0);
@@ -232,7 +225,7 @@ uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &ou
 
     auto format = channels > 3 ? GL_RGBA : GL_RGB;
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     out_texture = id;

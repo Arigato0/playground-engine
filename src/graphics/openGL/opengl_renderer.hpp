@@ -8,18 +8,13 @@
 
 namespace pge
 {
-    struct OpenGlMesh
+    struct GlMesh
     {
         uint32_t vbo;
         uint32_t vao;
         uint32_t ebo;
 
-        uint32_t texture1;
-        uint32_t texture2;
-
-        uint32_t vertex_size;
-
-        Material *material = nullptr;
+        const Mesh *data = nullptr;
     };
 
     class OpenglRenderer : public IRenderer
@@ -29,9 +24,7 @@ namespace pge
 
         IShader* create_shader(ShaderList shaders) override;
 
-        size_t create_mesh(std::span<float> data, std::array<std::string_view, 2> textures) override;
-
-        void set_material(Material *material, size_t mesh_id) override;
+        size_t create_mesh(const Mesh &mesh) override;
 
         void new_frame() override;
 
@@ -60,7 +53,7 @@ namespace pge
 
     private:
         uint32_t m_missing_texture;
-        std::vector<OpenGlMesh> m_meshes;
+        std::vector<GlMesh> m_meshes;
         GlShader m_shader;
     };
 }

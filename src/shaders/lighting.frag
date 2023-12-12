@@ -8,6 +8,7 @@ uniform vec3 view_pos;
 uniform float texture_scale;
 uniform bool enable_specular;
 uniform bool recieve_lighting;
+uniform sampler2D diffuse;
 
 in vec3 frag_pos;
 in vec3 normals;
@@ -125,6 +126,7 @@ vec3 calculate_lighting(Light light, LightingData data)
 
 void main()
 {
+    //FragColor = texture(diffuse, text_cord);
     vec3 result;
 
     LightingData lighting_data =

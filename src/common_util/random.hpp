@@ -10,13 +10,13 @@ namespace pge
         return rand() % (max + T(1) - min) + min;
     }
 
-    float rand_float(float min, float max)
+    static float rand_float(float min, float max)
     {
-        return min + ((float)(rand()) / RAND_MAX * (max - min));
+        return min + (float)(rand()) / RAND_MAX * (max - min);
     }
 
     static glm::vec3 rand_vec3(float min, float max)
     {
-        return {rand_float(min, max), rand_float(min, max),rand_float(min, max)};
+        return {rand_float(min, max), rand_float(min, max), rand_float(min, max)};
     }
 }

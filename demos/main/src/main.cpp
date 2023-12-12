@@ -37,42 +37,47 @@ public:
 
     void update(double delta_time) override
     {
-        Engine::renderer->draw(m_mesh_id, m_parent->transform.model);
-
-        for (auto instance : m_instances)
+        for (auto id : m_mesh_ids)
         {
-            Engine::renderer->draw(m_mesh_id, instance);
+            Engine::renderer->draw(id, m_parent->transform.model);
         }
     }
 
-    void add_instance(glm::mat4 transform)
+
+    void set_mesh(std::string_view path)
     {
-        m_instances.push_back(transform);
+        m_model.load_model(path);
+
+        for (auto &mesh : m_model.meshes)
+        {
+            auto id = Engine::renderer->create_mesh(mesh);
+            m_mesh_ids.push_back(id);
+        }
     }
 
-    void set_mesh(std::span<float> mesh, std::array<std::string_view, 2> textures)
-    {
-        m_mesh_id = Engine::renderer->create_mesh(mesh, textures);
-        Engine::renderer->set_material(&material, m_mesh_id);
-    }
-
+    // TODO fix this
     std::vector<EditorProperty> editor_properties() override
     {
+        if (m_model.meshes.empty())
+        {
+            return {};
+        }
+
+        auto material = m_model.meshes.front().material;
+
         return
         {
             {"Recieve light", &material.recieve_lighting},
             {"Color", ColorEdit(glm::value_ptr(material.color))},
             {"Shininess", DragControl(&material.shininess)},
-            {"Texture scale",  DragControl(&material.diffuse_texture.scale)},
-            {"Enable texture", &material.diffuse_texture.enabled}
+            {"Texture scale",  DragControl(&material.diffuse.scale)},
+            {"Enable texture", &material.diffuse.enabled}
         };
     }
 
-    Material material;
-
 private:
-    size_t m_mesh_id;
-    std::vector<glm::mat4> m_instances;
+    std::vector<size_t> m_mesh_ids;
+    Model m_model;
 };
 
 void render_properties(const std::vector<EditorProperty> &properties)
@@ -120,7 +125,7 @@ public:
         last_x = window_width / 2;
         last_y = window_height / 2;
 
-        Engine::window.set_cursor(CursorMode::Disabled);
+        //Engine::window.set_cursor(CursorMode::Disabled);
     }
     void update(double delta_time) override
     {
@@ -226,16 +231,10 @@ public:
     bool demo_window_open     = false;
     bool show_object_control  = false;
 
-    MeshRenderer *ground_mesh;
-
     void on_start() override
     {
         m_player = Engine::entity_manager.find("Player");
         m_camera = m_player->find<CameraComp>();
-
-        auto ground_ent = Engine::entity_manager.find("Ground");
-
-        ground_mesh = ground_ent->find<MeshRenderer>();
     }
 
     void update(double delta_time) override
@@ -319,7 +318,11 @@ public:
 
                         if (ImGui::TreeNode(comp_name.data()))
                         {
-                            render_properties(comp->editor_properties());
+                            auto properties = comp->editor_properties();
+                            if (!properties.empty())
+                            {
+                                render_properties(properties);
+                            }
                             ImGui::TreePop();
                         }
                     }
@@ -543,76 +546,44 @@ int main()
     Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    auto light_ent = Engine::entity_manager.create<ObjectRotator, LightComp>("Light");
+    auto light_ent = Engine::entity_manager.create<LightComp>("Light");
 
-    light_ent->transform.translate({0, 3, -10});
+    light_ent->transform.translate({2, 2, -1});
     light_ent->transform.scale(glm::vec3{0.5});
 
-   // auto light_mesh = light_ent->find<MeshRenderer>();
-    auto light_comp = light_ent->find<LightComp>();
+    auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
 
-    light_comp->data.is_spot = false;
+    backpack_ent->transform.translate(glm::vec3{0, 0, -3});
 
-    // light_mesh->set_mesh(CUBE_MESH, {""});
-    // light_mesh->material.diffuse_texture.enabled = false;
-    // light_mesh->material.specular_texture.enabled = false;
-    // light_mesh->material.color = glm::vec3{1.0f};
-    // light_mesh->material.recieve_lighting = false;
+    auto backpack_mesh = backpack_ent->find<MeshRenderer>();
 
-    auto ground_ent = Engine::entity_manager.create<MeshRenderer>("Ground");
+    backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
 
-    ground_ent->transform.scale({100, 0.5, 100});
-    ground_ent->transform.translate({0, -3, 0});
-
-    auto ground_mesh = ground_ent->find<MeshRenderer>();
-
-    ground_mesh->set_mesh(CUBE_MESH, {"assets/plaster.jpg", "assets/plaster.jpg"});
-
-    ground_mesh->material.diffuse_texture.scale = 10.0f;
-
-    auto box_ent = Engine::entity_manager.create<MeshRenderer>("Box");
-
-    box_ent->transform.translate({-2, -0.8, -10});
-
-    auto box_mesh = box_ent->find<MeshRenderer>();
-
-    box_mesh->set_mesh(CUBE_MESH, {"assets/container2.png", "assets/container2_specular.png"});
-
-    for (int i = 0; i < 100; i++)
-    {
-        glm::mat4 trans {1.0f};
-
-        trans = glm::rotate(trans, glm::radians(20.0f * i), glm::vec3{0, 1, 0});
-        trans = glm::translate(trans, glm::vec3{1 + i, -0.8, 1 + i});
-
-        box_mesh->add_instance(trans);
-    }
-
-    for (int i = 0; i < 4; i++)
-    {
-        auto light_ent = Engine::entity_manager.create<LightComp>(fmt::format("Light_{}", i+1));
-
-        light_ent->transform.translate({rand_range(-5, 5) + 10.0f, rand_range(1, 10), rand_range(-5, 5) + 10.0f});
-        light_ent->transform.scale(glm::vec3{0.5});
-
-        //auto light_mesh = light_ent->find<MeshRenderer>();
-        auto light_comp = light_ent->find<LightComp>();
-
-        // light_mesh->set_mesh(CUBE_MESH, {""});
-        //
-        // auto &material = light_mesh->material;
-        auto &light_data =  light_comp->data;
-
-        auto color = rand_vec3(0.1, 1);
-        light_data.color = color;
-        //
-        // material.diffuse_texture.enabled = false;
-        // material.specular_texture.enabled = false;
-        // material.recieve_lighting = false;
-        // material.color = color;
-        // light_data.ambient = color;
-        // light_data.diffuse = color;
-    }
+    // for (int i = 0; i < 4; i++)
+    // {
+    //     auto light_ent = Engine::entity_manager.create<LightComp>(fmt::format("Light_{}", i+1));
+    //
+    //     light_ent->transform.translate({rand_range(-5, 5) + 10.0f, rand_range(1, 10), rand_range(-5, 5) + 10.0f});
+    //     light_ent->transform.scale(glm::vec3{0.5});
+    //
+    //     //auto light_mesh = light_ent->find<MeshRenderer>();
+    //     auto light_comp = light_ent->find<LightComp>();
+    //
+    //     // light_mesh->set_mesh(CUBE_MESH, {""});
+    //     //
+    //     // auto &material = light_mesh->material;
+    //     auto &light_data =  light_comp->data;
+    //
+    //     auto color = rand_vec3(0.1, 1);
+    //     light_data.color = color;
+    //     //
+    //     // material.diffuse_texture.enabled = false;
+    //     // material.specular_texture.enabled = false;
+    //     // material.recieve_lighting = false;
+    //     // material.color = color;
+    //     // light_data.ambient = color;
+    //     // light_data.diffuse = color;
+    // }
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 
