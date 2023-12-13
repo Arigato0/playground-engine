@@ -409,6 +409,13 @@ public:
 
                     ImGui::SeparatorText("Viewport");
 
+                    static bool visualize_depth = false;
+
+                    if (ImGui::Checkbox("Visualize depth buffer", &visualize_depth))
+                    {
+                        Engine::renderer->set_visualize_depth(visualize_depth);
+                    }
+
                     auto clear_color_vec = Engine::renderer->clear_color;
                     static float colors[3]{clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
 
@@ -421,7 +428,7 @@ public:
 
                     static float fov = m_camera->data.fov;
 
-                    if (ImGui::SliderFloat("FOV", &fov, 1, 135))
+                    if (ImGui::SliderAngle("FOV", &fov, 1, 155))
                     {
                         m_camera->data.fov = fov;
                     }
@@ -432,7 +439,7 @@ public:
                         m_camera->data.near = camera_near;
                     }
 
-                    static float camera_far = m_camera->data.near;
+                    static float camera_far = m_camera->data.far;
 
                     if (ImGui::SliderFloat("Far", &camera_far, 0.01, 1000))
                     {

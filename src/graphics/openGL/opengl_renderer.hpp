@@ -27,6 +27,8 @@ namespace pge
 
         void delete_buffers(Mesh &mesh) override;
 
+        void set_visualize_depth(bool value) override;
+
         void new_frame() override;
 
         uint32_t draw(const Mesh &mesh, glm::mat4 transform) override;

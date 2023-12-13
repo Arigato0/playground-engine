@@ -2,13 +2,10 @@
 
 out vec4 FragColor;
 
-uniform vec3 object_color;
-uniform vec3 light_color;
 uniform vec3 view_pos;
 uniform float texture_scale;
-uniform bool enable_specular;
 uniform bool recieve_lighting;
-uniform sampler2D diffuse;
+uniform bool visualize_depth;
 
 in vec3 frag_pos;
 in vec3 normals;
@@ -17,7 +14,6 @@ in vec2 text_cord;
 struct Texture
 {
     sampler2D sampler;
-    float scale;
     bool enabled;
 };
 
@@ -26,6 +22,7 @@ struct Material
     Texture diffuse;
     Texture specular;
     float shininess;
+    vec3 color;
 };
 
 struct Light
@@ -77,7 +74,7 @@ vec3 create_texture(Texture text)
 {
     if (!text.enabled)
     {
-        return object_color;
+        return material.color;
     }
 
     return vec3(texture(text.sampler, text_cord * texture_scale));
@@ -124,9 +121,25 @@ vec3 calculate_lighting(Light light, LightingData data)
     return ambient + diffuse + specular;
 }
 
+uniform float near;
+uniform float far;
+
+vec4 calculate_depth()
+{
+    float z = gl_FragCoord.z * 2.0 - 1.0;
+    float linear_depth = (2.0 * near * far) / (far + near - z * (far - near));
+
+    return vec4(vec3(linear_depth / far), 1.0);
+}
+
 void main()
 {
-    //FragColor = texture(diffuse, text_cord);
+    if (visualize_depth)
+    {
+        FragColor = calculate_depth();
+        return;
+    }
+
     vec3 result;
 
     LightingData lighting_data =
@@ -151,13 +164,13 @@ void main()
         result += lighting_data.diffuse_texture;
     }
 
-    if (any(greaterThan(object_color, vec3(0.0))))
+    if (any(greaterThan(material.color, vec3(0.0))))
     {
         if (result.x == 0 && result.y == 0 && result.z == 0)
         {
             result = vec3(1);
         }
-        result *= object_color;
+        result *= material.color;
     }
 
     FragColor = vec4(result, 1.0);

@@ -126,7 +126,6 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
     }
 
     aiString path;
-
     // TODO handle embeded textures
     material->GetTexture(type, 0, &path);
 

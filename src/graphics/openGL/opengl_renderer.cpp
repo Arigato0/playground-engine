@@ -100,6 +100,12 @@ void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
     mesh.id = UINT32_MAX;
 }
 
+void pge::OpenglRenderer::set_visualize_depth(bool value)
+{
+    m_shader.use();
+    m_shader.set("visualize_depth", value);
+}
+
 void pge::OpenglRenderer::new_frame()
 {
     glfwSwapBuffers(WINDOW_PTR);
@@ -123,7 +129,7 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
 
     auto material = mesh.material;
 
-    m_shader.set("object_color", material.color);
+    m_shader.set("material.color", material.color);
     m_shader.set("material.shininess", material.shininess);
     m_shader.set("texture_scale", material.diffuse.scale);
     m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
@@ -175,6 +181,8 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
     m_shader.set("projection", m_camera->projection);
     m_shader.set("view", m_camera->view);
     m_shader.set("view_pos", m_camera->position);
+    m_shader.set("near", m_camera->near);
+    m_shader.set("far", m_camera->far);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
