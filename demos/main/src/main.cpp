@@ -13,6 +13,7 @@
 #include "application/input.hpp"
 #include "application/misc.hpp"
 #include "common_util/random.hpp"
+#include "data/id_table.hpp"
 #include "events/signal.hpp"
 #include "graphics/CameraData.hpp"
 #include "graphics/primitives.hpp"
@@ -557,6 +558,13 @@ public:
     }
 };
 
+struct Test
+{
+    ~Test()
+    {
+        fmt::println("destructor called");
+    }
+};
 int main()
 {
     ASSERT_ERR(Engine::init({

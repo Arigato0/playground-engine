@@ -91,9 +91,13 @@ void pge::OpenglRenderer::create_buffers(Mesh &mesh)
 
     glBindVertexArray(0);
 
-    mesh.id = m_buffers.size();
+    mesh.id = m_buffers.create(gl_mesh);
+}
 
-    m_buffers.emplace_back(gl_mesh);
+void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
+{
+    m_buffers.remove(mesh.id);
+    mesh.id = UINT32_MAX;
 }
 
 void pge::OpenglRenderer::new_frame()
@@ -106,12 +110,12 @@ void pge::OpenglRenderer::new_frame()
 
 uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
 {
-    if (mesh.id >= m_buffers.size())
+    if (!m_buffers.valid_id(mesh.id))
     {
         return OPENGL_ERROR_MESH_NOT_FOUND;
     }
 
-    auto buffers = m_buffers[mesh.id];
+    auto buffers = m_buffers.get(mesh.id);
 
     m_shader.use();
 

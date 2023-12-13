@@ -79,9 +79,11 @@ add_library(playgroundEngineLib
         src/graphics/light.hpp
         src/common_util/random.hpp
         src/game/camera_comp.hpp
-        src/graphics/model.cpp
         src/data/asset_manager.cpp
         src/data/asset_manager.hpp
+        src/data/model_loader.cpp
+        src/data/model_loader.hpp
+        src/data/id_table.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

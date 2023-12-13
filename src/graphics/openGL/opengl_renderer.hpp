@@ -5,6 +5,7 @@
 
 #include "opengl_shader.hpp"
 #include "../renderer_interface.hpp"
+#include "../../data/id_table.hpp"
 
 namespace pge
 {
@@ -23,6 +24,8 @@ namespace pge
         IShader* create_shader(ShaderList shaders) override;
 
         void create_buffers(Mesh &mesh) override;
+
+        void delete_buffers(Mesh &mesh) override;
 
         void new_frame() override;
 
@@ -51,7 +54,7 @@ namespace pge
 
     private:
         uint32_t m_missing_texture;
-        std::vector<GlBuffers> m_buffers;
+        IdTable<GlBuffers> m_buffers;
         GlShader m_shader;
     };
 }
