@@ -37,6 +37,14 @@ class MeshRenderer : public IComponent
 {
 public:
 
+    ~MeshRenderer()
+    {
+        if (model)
+        {
+            Engine::asset_manager.free_asset(m_path);
+        }
+    }
+
     void update(double delta_time) override
     {
         if (model == nullptr)
@@ -59,7 +67,7 @@ public:
     {
         model = Engine::asset_manager.get_model(path);
 
-        Logger::info("{}", model->meshes.front().id);
+        m_path = path;
     }
 
     EditorProperties editor_properties() override
@@ -93,6 +101,8 @@ public:
     }
 
     Model *model;
+private:
+    std::string_view m_path;
 };
 
 void render_properties(const EditorProperties &properties)
@@ -573,36 +583,11 @@ int main()
 
     auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
 
-    backpack_ent2->transform.translate(glm::vec3{3, 0, -3});
+    backpack_ent2->transform.translate(glm::vec3{4, 0, -3});
 
     auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
 
     backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
-    // for (int i = 0; i < 4; i++)
-    // {
-    //     auto light_ent = Engine::entity_manager.create<LightComp>(fmt::format("Light_{}", i+1));
-    //
-    //     light_ent->transform.translate({rand_range(-5, 5) + 10.0f, rand_range(1, 10), rand_range(-5, 5) + 10.0f});
-    //     light_ent->transform.scale(glm::vec3{0.5});
-    //
-    //     //auto light_mesh = light_ent->find<MeshRenderer>();
-    //     auto light_comp = light_ent->find<LightComp>();
-    //
-    //     // light_mesh->set_mesh(CUBE_MESH, {""});
-    //     //
-    //     // auto &material = light_mesh->material;
-    //     auto &light_data =  light_comp->data;
-    //
-    //     auto color = rand_vec3(0.1, 1);
-    //     light_data.color = color;
-    //     //
-    //     // material.diffuse_texture.enabled = false;
-    //     // material.specular_texture.enabled = false;
-    //     // material.recieve_lighting = false;
-    //     // material.color = color;
-    //     // light_data.ambient = color;
-    //     // light_data.diffuse = color;
-    // }
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

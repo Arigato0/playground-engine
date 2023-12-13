@@ -8,6 +8,8 @@
 #include "../common_util/macros.hpp"
 #include "../application/engine.hpp"
 
+namespace fs = std::filesystem;
+
 struct ModelLoader
 {
     bool load(std::string_view path)
@@ -138,69 +140,90 @@ struct ModelLoader
 
             root.replace_filename(path.C_Str()).c_str();
 
-            auto iter = m_textures.find(root);
-
-            if (iter != m_textures.end())
-            {
-                pge::Texture texture;
-                texture.id = iter->second;
-                return texture;
-            }
-
-            pge::Texture texture {root.c_str()};
-
-            m_textures.emplace(root, texture.id);
-
-            return texture;
+            return *pge::Engine::asset_manager.get_texture(root.c_str());
         }
 
     pge::Model model;
-    std::filesystem::path root;
-    std::unordered_map<std::filesystem::path, uint32_t> m_textures;
+    fs::path root;
 };
 
-pge::Model* pge::AssetManager::get_model(const std::filesystem::path& path)
+pge::Model* pge::AssetManager::get_model(std::string_view path)
 {
-    if (!exists(path))
+    if (!fs::exists(path))
     {
         return nullptr;
     }
 
-    const auto key = canonical(path);
+    auto key = fs::canonical(path);
 
     auto iter = m_assets.find(key);
 
     if (iter == m_assets.end())
     {
-        auto model_opt = load_model(path.c_str());
+        auto model_opt = load_model(path);
 
         if (!model_opt)
         {
             return nullptr;
         }
 
-        const auto &[iter, inserted] = m_assets.emplace(key, model_opt.value());
+        auto *model = set_asset(key, model_opt.value());
 
-        if (!inserted)
-        {
-            return nullptr;
-        }
-
-        auto &model = std::get<Model>(iter->second.asset);
-
-        for (auto &mesh : model.meshes)
+        for (auto &mesh : model->meshes)
         {
             Engine::renderer->create_buffers(mesh);
         }
 
-        return &model;
+        return model;
     }
 
-    auto &data = iter->second;
+    return increment_asset<Model>(iter);
+}
 
-    data.in_use++;
+pge::Texture* pge::AssetManager::get_texture(std::string_view path)
+{
+    if (!fs::exists(path))
+    {
+        return nullptr;
+    }
 
-    return &std::get<Model>(data.asset);
+    auto key = fs::canonical(path);
+
+    auto iter = m_assets.find(key);
+
+    if (iter == m_assets.end())
+    {
+        Texture texture;
+
+        auto result = Engine::renderer->create_texture(path, texture.id);
+
+        if (result != 0)
+        {
+            return nullptr;
+        }
+
+        return set_asset(key, texture);
+    }
+
+    return increment_asset<Texture>(iter);
+}
+
+void pge::AssetManager::free_asset(std::string_view path)
+{
+    auto key = fs::canonical(path);
+    auto iter = m_assets.find(key);
+
+    if (iter == m_assets.end())
+    {
+        return;
+    }
+
+    iter->second.in_use--;
+
+    if (iter->second.in_use <= 0)
+    {
+        m_assets.erase(key);
+    }
 }
 
 std::optional<pge::Model> pge::AssetManager::load_model(std::string_view path)
