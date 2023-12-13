@@ -17,6 +17,7 @@
 #include "graphics/CameraData.hpp"
 #include "graphics/primitives.hpp"
 #include "game/camera_comp.hpp"
+#include "graphics/light.hpp"
 
 using namespace pge;
 
@@ -38,34 +39,41 @@ public:
 
     void update(double delta_time) override
     {
-        for (const auto &mesh : model.meshes)
+        if (model == nullptr)
         {
-            Engine::renderer->draw(mesh, m_parent->transform.model);
+            return;
+        }
+
+        for (const auto &mesh : model->meshes)
+        {
+            auto result = Engine::renderer->draw(mesh, m_parent->transform.model);
+
+            if (result != 0)
+            {
+                Logger::fatal("could not draw mesh");
+            }
         }
     }
 
     void set_mesh(std::string_view path)
     {
-        model.load_model(path);
+        model = Engine::asset_manager.get_model(path);
 
-        for (auto &mesh : model.meshes)
-        {
-            mesh.id = Engine::renderer->create_mesh(mesh);
-        }
+        Logger::info("{}", model->meshes.front().id);
     }
 
     EditorProperties editor_properties() override
     {
-        if (model.meshes.empty())
+        if (model == nullptr || model->meshes.empty())
         {
             return {};
         }
 
         EditorProperties properties;
 
-        properties.reserve(model.meshes.size());
+        properties.reserve(model->meshes.size());
 
-        for (auto &mesh : model.meshes)
+        for (auto &mesh : model->meshes)
         {
             auto &material = mesh.material;
 
@@ -84,8 +92,7 @@ public:
         return properties;
     }
 
-    Model model;
-private:
+    Model *model;
 };
 
 void render_properties(const EditorProperties &properties)
@@ -564,7 +571,13 @@ int main()
 
     backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
 
+    auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
 
+    backpack_ent2->transform.translate(glm::vec3{3, 0, -3});
+
+    auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
+
+    backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
     // for (int i = 0; i < 4; i++)
     // {
     //     auto light_ent = Engine::entity_manager.create<LightComp>(fmt::format("Light_{}", i+1));
@@ -596,5 +609,4 @@ int main()
     ASSERT_ERR(Engine::run());
 
     Engine::shutdown();
-
 }

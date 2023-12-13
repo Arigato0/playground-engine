@@ -40,7 +40,7 @@ namespace pge
         // creates a shader program using the underlying graphics api
         virtual IShader* create_shader(ShaderList shaders) = 0;
 
-        virtual size_t create_mesh(const Mesh &mesh) = 0;
+        virtual void create_buffers(Mesh &mesh) = 0;
 
         virtual void new_frame() = 0;
 

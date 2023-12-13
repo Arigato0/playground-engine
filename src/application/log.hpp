@@ -3,6 +3,7 @@
 #include "fmt.hpp"
 
 #include <ctime>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 
@@ -39,6 +40,18 @@ public:
 		m_flags = flags;
 	}
 
+	static void start_timer()
+	{
+		m_start = std::chrono::high_resolution_clock::now();
+	}
+
+	template<typename... A>
+	static void end_timer(std::string_view fmt, A&&... a)
+	{
+		auto diff = std::chrono::high_resolution_clock::now()-m_start;
+		do_log("TIME", stdout, fmt::format("<{}ms> {}", diff.count() / 100000, fmt, a...));
+	}
+
 	template<typename... A>
     static void info(std::string_view fmt, A&&... a)
     {
@@ -69,6 +82,7 @@ public:
 private:
 	static FILE *m_file;
 	static uint8_t m_flags;
+	inline static std::chrono::time_point<std::chrono::system_clock> m_start;
 
 	template<typename... A>
 	static void do_log(std::string_view level, FILE *file, std::string_view fmt, A&&... a)

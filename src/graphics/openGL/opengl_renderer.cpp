@@ -9,6 +9,7 @@
 #include "opengl_error.hpp"
 
 #include "../../application/engine.hpp"
+#include "../light.hpp"
 
 #define WINDOW_PTR (GLFWwindow*)Engine::window.handle()
 
@@ -59,7 +60,7 @@ pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
     return nullptr;
 }
 
-size_t pge::OpenglRenderer::create_mesh(const Mesh &mesh)
+void pge::OpenglRenderer::create_buffers(Mesh &mesh)
 {
     GlBuffers gl_mesh;
 
@@ -90,11 +91,9 @@ size_t pge::OpenglRenderer::create_mesh(const Mesh &mesh)
 
     glBindVertexArray(0);
 
-    auto idx = m_buffers.size();
+    mesh.id = m_buffers.size();
 
     m_buffers.emplace_back(gl_mesh);
-
-    return idx;
 }
 
 void pge::OpenglRenderer::new_frame()

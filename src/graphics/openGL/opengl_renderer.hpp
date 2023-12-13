@@ -22,7 +22,7 @@ namespace pge
 
         IShader* create_shader(ShaderList shaders) override;
 
-        size_t create_mesh(const Mesh &mesh) override;
+        void create_buffers(Mesh &mesh) override;
 
         void new_frame() override;
 

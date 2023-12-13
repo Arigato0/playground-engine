@@ -8,6 +8,7 @@
 #include "../graphics/renderer_interface.hpp"
 #include "../graphics/vulkan/vulkan_manager.hpp"
 #include "window.hpp"
+#include "../data/asset_manager.hpp"
 
 namespace pge
 {
@@ -33,6 +34,7 @@ namespace pge
 		inline static EntityManager	entity_manager;
 		inline static IRenderer	   *renderer;
 		inline static Statistics	statistics;
+		inline static AssetManager	asset_manager;
 		inline static float			time_scale = 1;
 	private:
 		inline static bool m_initialized = false;
