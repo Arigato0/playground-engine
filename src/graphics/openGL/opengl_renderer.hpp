@@ -8,13 +8,11 @@
 
 namespace pge
 {
-    struct GlMesh
+    struct GlBuffers
     {
         uint32_t vbo;
         uint32_t vao;
         uint32_t ebo;
-
-        const Mesh *data = nullptr;
     };
 
     class OpenglRenderer : public IRenderer
@@ -28,7 +26,7 @@ namespace pge
 
         void new_frame() override;
 
-        uint32_t draw(size_t mesh_id, glm::mat4 transform) override;
+        uint32_t draw(const Mesh &mesh, glm::mat4 transform) override;
 
         uint32_t create_texture(std::string_view path, uint32_t &out_texture) override;
 
@@ -53,7 +51,7 @@ namespace pge
 
     private:
         uint32_t m_missing_texture;
-        std::vector<GlMesh> m_meshes;
+        std::vector<GlBuffers> m_buffers;
         GlShader m_shader;
     };
 }

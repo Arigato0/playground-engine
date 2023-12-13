@@ -61,7 +61,7 @@ pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
 
 size_t pge::OpenglRenderer::create_mesh(const Mesh &mesh)
 {
-    GlMesh gl_mesh;
+    GlBuffers gl_mesh;
 
     glGenVertexArrays(1, &gl_mesh.vao);
     glGenBuffers(1, &gl_mesh.vbo);
@@ -90,11 +90,9 @@ size_t pge::OpenglRenderer::create_mesh(const Mesh &mesh)
 
     glBindVertexArray(0);
 
-    gl_mesh.data = &mesh;
+    auto idx = m_buffers.size();
 
-    auto idx = m_meshes.size();
-
-    m_meshes.emplace_back(gl_mesh);
+    m_buffers.emplace_back(gl_mesh);
 
     return idx;
 }
@@ -107,25 +105,20 @@ void pge::OpenglRenderer::new_frame()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
+uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
 {
-    if (mesh_id >= m_meshes.size())
+    if (mesh.id >= m_buffers.size())
     {
         return OPENGL_ERROR_MESH_NOT_FOUND;
     }
 
-    auto mesh = m_meshes[mesh_id];
-
-    if (mesh.data == nullptr)
-    {
-        return OPENGL_ERROR_MESH_NOT_FOUND;
-    }
+    auto buffers = m_buffers[mesh.id];
 
     m_shader.use();
 
     m_shader.set("light_count", (int)Light::table.size());
 
-    auto material = mesh.data->material;
+    auto material = mesh.material;
 
     m_shader.set("object_color", material.color);
     m_shader.set("material.shininess", material.shininess);
@@ -185,12 +178,12 @@ uint32_t pge::OpenglRenderer::draw(size_t mesh_id, glm::mat4 transform)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, material.specular.id);
 
-    glBindVertexArray(mesh.vao);
-    glDrawElements(GL_TRIANGLES, mesh.data->indices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(buffers.vao);
+    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     Engine::statistics.report_draw_call();
-    Engine::statistics.report_verticies(mesh.data->vertices.size());
+    Engine::statistics.report_verticies(mesh.vertices.size());
 
     return OPENGL_ERROR_OK;
 }

@@ -51,14 +51,18 @@ namespace pge
 
     typedef void(*ButtonControl)();
 
+    struct EditorProperty;
+
+    using EditorProperties = std::vector<EditorProperty>;
+
     using EditorControl = std::variant<
         bool*, Drag3Control<float>, DragControl<float>, ButtonControl, ColorEdit<float>>;
 
-        struct EditorProperty
-        {
-            std::string_view name;
-            EditorControl control_type;
-        };
+    struct EditorProperty
+    {
+        std::string_view name;
+        EditorControl control;
+    };
 
     class IComponent
     {
@@ -70,7 +74,7 @@ namespace pge
         virtual void update(double delta_time) {}
         virtual std::string serialize() { return {}; }
         virtual void deserialize(std::string_view data) {}
-        virtual std::vector<EditorProperty> editor_properties() { return {}; }
+        virtual EditorProperties editor_properties() { return {}; }
 
         void set_parent(Entity *parent)
         {

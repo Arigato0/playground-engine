@@ -47,6 +47,8 @@ namespace pge
 
     struct Mesh
     {
+        uint32_t id;
+        std::string name;
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         Material material {};
@@ -79,7 +81,6 @@ namespace pge
 
         std::vector<Mesh> meshes;
     private:
-        uint32_t m_id;
         std::filesystem::path m_path;
         std::unordered_map<std::filesystem::path, uint32_t> m_textures;
 
@@ -107,7 +108,13 @@ namespace pge
             {
                 auto pos = mesh->mVertices[i];
                 auto norm = mesh->mNormals[i];
-                auto coord = mesh->mTextureCoords[0][i];
+
+                glm::vec2 coord {};
+
+                if (mesh->mTextureCoords[0])
+                {
+                    coord = {EXPAND_VEC2(mesh->mTextureCoords[0][i])};
+                }
 
                 output.emplace_back
                 (
@@ -115,7 +122,7 @@ namespace pge
                     {
                         {EXPAND_VEC3(pos)},
                         {EXPAND_VEC3(norm)},
-                        {EXPAND_VEC2(coord)}
+                        coord
                     }
                 );
             }
@@ -149,9 +156,19 @@ namespace pge
             output.vertices = load_mesh_vertices(mesh);
             output.indices  = load_mesh_indices(mesh);
 
+            output.name = mesh->mName.C_Str();
+
             if (mesh->mMaterialIndex >= 0)
             {
                 auto *material = scene->mMaterials[mesh->mMaterialIndex];
+
+                aiColor3D color {};
+                float shininess;
+                material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+                material->Get(AI_MATKEY_SHININESS, shininess);
+
+                output.material.color = {color.r, color.g, color.b};
+                output.material.shininess = shininess;
 
                 output.material.diffuse = load_material(material, aiTextureType_DIFFUSE);
                 output.material.specular = load_material(material, aiTextureType_SPECULAR);
@@ -173,6 +190,8 @@ namespace pge
             material->GetTexture(type, 0, &path);
 
             m_path.replace_filename(path.C_Str()).c_str();
+
+            Logger::info("{}", m_path);
 
             auto iter = m_textures.find(m_path);
 

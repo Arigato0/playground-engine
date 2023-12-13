@@ -5,6 +5,7 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/compatibility.hpp>
 #include <any>
+#include <thread>
 
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
@@ -37,50 +38,57 @@ public:
 
     void update(double delta_time) override
     {
-        for (auto id : m_mesh_ids)
+        for (const auto &mesh : model.meshes)
         {
-            Engine::renderer->draw(id, m_parent->transform.model);
+            Engine::renderer->draw(mesh, m_parent->transform.model);
         }
     }
-
 
     void set_mesh(std::string_view path)
     {
-        m_model.load_model(path);
+        model.load_model(path);
 
-        for (auto &mesh : m_model.meshes)
+        for (auto &mesh : model.meshes)
         {
-            auto id = Engine::renderer->create_mesh(mesh);
-            m_mesh_ids.push_back(id);
+            mesh.id = Engine::renderer->create_mesh(mesh);
         }
     }
 
-    // TODO fix this
-    std::vector<EditorProperty> editor_properties() override
+    EditorProperties editor_properties() override
     {
-        if (m_model.meshes.empty())
+        if (model.meshes.empty())
         {
             return {};
         }
 
-        auto material = m_model.meshes.front().material;
+        EditorProperties properties;
 
-        return
+        properties.reserve(model.meshes.size());
+
+        for (auto &mesh : model.meshes)
         {
-            {"Recieve light", &material.recieve_lighting},
-            {"Color", ColorEdit(glm::value_ptr(material.color))},
-            {"Shininess", DragControl(&material.shininess)},
-            {"Texture scale",  DragControl(&material.diffuse.scale)},
-            {"Enable texture", &material.diffuse.enabled}
-        };
+            auto &material = mesh.material;
+
+            EditorProperties prop
+            {
+                {"Recieve light", &material.recieve_lighting},
+                {"Color", ColorEdit(glm::value_ptr(material.color))},
+                {"Shininess", DragControl(&material.shininess)},
+                {"Texture scale",  DragControl(&material.diffuse.scale)},
+                {"Enable texture", &material.diffuse.enabled}
+            };
+
+            util::concat(properties, prop);
+        }
+
+        return properties;
     }
 
+    Model model;
 private:
-    std::vector<size_t> m_mesh_ids;
-    Model m_model;
 };
 
-void render_properties(const std::vector<EditorProperty> &properties)
+void render_properties(const EditorProperties &properties)
 {
     for (const auto &prop : properties)
     {
@@ -109,7 +117,7 @@ void render_properties(const std::vector<EditorProperty> &properties)
                         button();
                     }
                 },
-            }, prop.control_type);
+            }, prop.control);
     }
 }
 
@@ -319,10 +327,7 @@ public:
                         if (ImGui::TreeNode(comp_name.data()))
                         {
                             auto properties = comp->editor_properties();
-                            if (!properties.empty())
-                            {
-                                render_properties(properties);
-                            }
+                            render_properties(properties);
                             ImGui::TreePop();
                         }
                     }
@@ -503,16 +508,16 @@ public:
     float f_value = 10.0f;
     glm::vec3 my_vec3;
 
-    std::vector<EditorProperty> editor_properties() override
-    {
-        return
-        {
-            {"Enabled", &show_window},
-            {"My vec3", Drag3Control(glm::value_ptr(my_vec3))},
-            {"Drag", DragControl(&f_value)},
-            {"Hello", hello}
-        };
-    }
+    // std::vector<EditorProperty> editor_properties() override
+    // {
+    //     return
+    //     {
+    //         {"Enabled", &show_window},
+    //         {"My vec3", Drag3Control(glm::value_ptr(my_vec3))},
+    //         {"Drag", DragControl(&f_value)},
+    //         {"Hello", hello}
+    //     };
+    // }
 
     static void hello()
     {
@@ -558,6 +563,7 @@ int main()
     auto backpack_mesh = backpack_ent->find<MeshRenderer>();
 
     backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
+
 
     // for (int i = 0; i < 4; i++)
     // {
