@@ -42,6 +42,8 @@ namespace pge
 
         virtual void create_buffers(Mesh &mesh) = 0;
 
+        virtual void delete_buffers(Mesh &mesh) = 0;
+
         virtual void new_frame() = 0;
 
         // draws the given mesh

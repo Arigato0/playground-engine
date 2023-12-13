@@ -182,6 +182,7 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
     glBindTexture(GL_TEXTURE_2D, material.specular.id);
 
     glBindVertexArray(buffers.vao);
+    //glDrawArrays(GL_TRIANGLES, 0, mesh.vertices.size());
     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
@@ -193,7 +194,7 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
 
 uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture)
 {
-    stbi_set_flip_vertically_on_load(false);
+    stbi_set_flip_vertically_on_load(true);
     int width, height, channels;
 
     uint8_t *data = stbi_load(path.data(), &width, &height, &channels, 0);

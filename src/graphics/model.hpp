@@ -12,6 +12,7 @@ namespace pge
         uint32_t id;
         float scale = 1;
         bool enabled = true;
+        std::string_view path;
     };
 
     struct Material

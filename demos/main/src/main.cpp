@@ -4,6 +4,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/compatibility.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <any>
 #include <thread>
 
@@ -40,7 +41,7 @@ public:
 
     ~MeshRenderer()
     {
-        if (model)
+        if (m_model)
         {
             Engine::asset_manager.free_asset(m_path);
         }
@@ -48,12 +49,12 @@ public:
 
     void update(double delta_time) override
     {
-        if (model == nullptr)
+        if (m_model == nullptr)
         {
             return;
         }
 
-        for (const auto &mesh : model->meshes)
+        for (const auto &mesh : m_model->meshes)
         {
             auto result = Engine::renderer->draw(mesh, m_parent->transform.model);
 
@@ -66,23 +67,28 @@ public:
 
     void set_mesh(std::string_view path)
     {
-        model = Engine::asset_manager.get_model(path);
+        if (m_model != nullptr)
+        {
+            Engine::asset_manager.free_asset(m_path);
+        }
+
+        m_model = Engine::asset_manager.get_model(path);
 
         m_path = path;
     }
 
     EditorProperties editor_properties() override
     {
-        if (model == nullptr || model->meshes.empty())
+        if (m_model == nullptr || m_model->meshes.empty())
         {
             return {};
         }
 
         EditorProperties properties;
 
-        properties.reserve(model->meshes.size());
+        properties.reserve(m_model->meshes.size());
 
-        for (auto &mesh : model->meshes)
+        for (auto &mesh : m_model->meshes)
         {
             auto &material = mesh.material;
 
@@ -101,8 +107,13 @@ public:
         return properties;
     }
 
-    Model *model;
+    Model* get_model() const
+    {
+        return m_model;
+    }
+
 private:
+    Model *m_model = nullptr;
     std::string_view m_path;
 };
 
@@ -322,10 +333,24 @@ public:
                         {
                             trans.set_scale(scale);
                         }
-                        if (ImGui::DragFloat3("Rotation", glm::value_ptr(euler)))
+                        ImGui::Text("Rotation");
+                        if (ImGui::SliderAngle("X", &euler.x))
                         {
-                            trans.model = glm::rotate(trans.model, glm::radians(1.0f), euler);
+                            trans.model = glm::mat4{1.0f} * glm::eulerAngleXYZ(euler.x, 0.0f, 0.0f);
                         }
+                        if (ImGui::SliderAngle("Y", &euler.y))
+                        {
+                            trans.model = glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, euler.y, 0.0f);
+                        }
+                        if (ImGui::SliderAngle("Z", &euler.z))
+                        {
+                            trans.model = glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, 0.0f, euler.z);
+                        }
+
+                        // if (ImGui::DragFloat3("Rotation", glm::value_ptr(euler)))
+                        // {
+                        //     trans.model = glm::rotate(trans.model, glm::radians(1.0f), euler);
+                        // }
 
                         ImGui::TreePop();
                     }
@@ -589,13 +614,13 @@ int main()
 
     backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
 
-    auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
-
-    backpack_ent2->transform.translate(glm::vec3{4, 0, -3});
-
-    auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
-
-    backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
+    // auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
+    //
+    // backpack_ent2->transform.translate(glm::vec3{4, 0, -3});
+    //
+    // auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
+    //
+    // backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

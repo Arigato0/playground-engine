@@ -82,6 +82,21 @@ void pge::AssetManager::free_asset(std::string_view path)
 
     if (iter->second.in_use <= 0)
     {
+        std::visit(overload
+        {
+            [](Model &model)
+            {
+                for (auto &mesh : model.meshes)
+                {
+                    Engine::asset_manager.free_asset(mesh.material.diffuse.path);
+                }
+            },
+            [](Texture texture)
+            {
+                Engine::renderer->delete_texture(texture.id);
+            }
+        }, iter->second.asset);
+
         m_assets.erase(key);
     }
 }

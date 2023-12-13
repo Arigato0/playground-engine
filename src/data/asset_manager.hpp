@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <variant>
 
+#include "id_table.hpp"
 #include "../graphics/model.hpp"
 
 namespace pge
@@ -44,6 +45,11 @@ namespace pge
             if (!inserted)
             {
                 return nullptr;
+            }
+
+            if constexpr (std::same_as<T, Texture>)
+            {
+                asset.path = iter->first.c_str();
             }
 
             return &std::get<T>(iter->second.asset);
