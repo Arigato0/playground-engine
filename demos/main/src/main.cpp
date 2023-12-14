@@ -39,6 +39,10 @@ class MeshRenderer : public IComponent
 {
 public:
 
+    MeshRenderer()
+    {
+        options.outline.color = glm::vec4{0.3, 0.05, 0.6, 1.0};
+    }
     ~MeshRenderer()
     {
         if (m_model)
@@ -56,7 +60,7 @@ public:
 
         for (const auto &mesh : m_model->meshes)
         {
-            auto result = Engine::renderer->draw(mesh, m_parent->transform.model);
+            auto result = Engine::renderer->draw(mesh, m_parent->transform.model, options);
 
             if (result != 0)
             {
@@ -86,14 +90,13 @@ public:
 
         EditorProperties properties;
 
-        properties.reserve(m_model->meshes.size());
-
         for (auto &mesh : m_model->meshes)
         {
             auto &material = mesh.material;
 
             EditorProperties prop
             {
+                SEPERATOR(mesh.name),
                 {"Recieve light", &material.recieve_lighting},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
@@ -112,6 +115,8 @@ public:
         return m_model;
     }
 
+    DrawOptions options;
+
 private:
     Model *m_model = nullptr;
     std::string_view m_path;
@@ -122,31 +127,35 @@ void render_properties(const EditorProperties &properties)
     for (const auto &prop : properties)
     {
         std::visit(overload
+        {
+            [&prop](bool *value)
             {
-                [&prop](bool *value)
+                ImGui::Checkbox(prop.name.data(), value);
+            },
+            [&prop](Drag3Control<float> value)
+            {
+                ImGui::DragFloat3(prop.name.data(), value.value, value.speed, value.min, value.max, value.format);
+            },
+            [&prop](DragControl<float> value)
+            {
+                ImGui::DragFloat(prop.name.data(), value.value, value.speed, value.min, value.max, value.format);
+            },
+            [&prop](ColorEdit<float> value)
+           {
+               ImGui::ColorEdit3(prop.name.data(), value.value);
+           },
+            [&prop](ButtonControl button)
+            {
+                if (ImGui::Button(prop.name.data()))
                 {
-                    ImGui::Checkbox(prop.name.data(), value);
-                },
-                [&prop](Drag3Control<float> value)
-                {
-                    ImGui::DragFloat3(prop.name.data(), value.value, value.speed, value.min, value.max, value.format);
-                },
-                [&prop](DragControl<float> value)
-                {
-                    ImGui::DragFloat(prop.name.data(), value.value, value.speed, value.min, value.max, value.format);
-                },
-                [&prop](ColorEdit<float> value)
-               {
-                   ImGui::ColorEdit3(prop.name.data(), value.value);
-               },
-                [&prop](ButtonControl button)
-                {
-                    if (ImGui::Button(prop.name.data()))
-                    {
-                        button();
-                    }
-                },
-            }, prop.control);
+                    button();
+                }
+            },
+            [&prop](SeperatorControl _)
+            {
+                ImGui::SeparatorText(prop.name.data());
+            },
+        }, prop.control);
     }
 }
 
@@ -336,15 +345,15 @@ public:
                         ImGui::Text("Rotation");
                         if (ImGui::SliderAngle("X", &euler.x))
                         {
-                            trans.model = glm::mat4{1.0f} * glm::eulerAngleXYZ(euler.x, 0.0f, 0.0f);
+                            trans.model *= glm::mat4{1.0f} * glm::eulerAngleXYZ(euler.x, 0.0f, 0.0f);
                         }
                         if (ImGui::SliderAngle("Y", &euler.y))
                         {
-                            trans.model = glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, euler.y, 0.0f);
+                            trans.model *= glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, euler.y, 0.0f);
                         }
                         if (ImGui::SliderAngle("Z", &euler.z))
                         {
-                            trans.model = glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, 0.0f, euler.z);
+                            trans.model *= glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, 0.0f, euler.z);
                         }
 
                         // if (ImGui::DragFloat3("Rotation", glm::value_ptr(euler)))
@@ -360,7 +369,7 @@ public:
                     {
                         auto is_enabled = comp->is_enabled();
 
-                        if (ImGui::Checkbox("-", &is_enabled))
+                        if (ImGui::Checkbox("##", &is_enabled))
                         {
                             comp->set_enabled(is_enabled);
                         }
@@ -428,7 +437,7 @@ public:
 
                     static float fov = m_camera->data.fov;
 
-                    if (ImGui::SliderAngle("FOV", &fov, 1, 155))
+                    if (ImGui::SliderFloat("FOV", &fov, 1, 135))
                     {
                         m_camera->data.fov = fov;
                     }
@@ -558,16 +567,17 @@ public:
     float f_value = 10.0f;
     glm::vec3 my_vec3;
 
-    // std::vector<EditorProperty> editor_properties() override
-    // {
-    //     return
-    //     {
-    //         {"Enabled", &show_window},
-    //         {"My vec3", Drag3Control(glm::value_ptr(my_vec3))},
-    //         {"Drag", DragControl(&f_value)},
-    //         {"Hello", hello}
-    //     };
-    // }
+    std::vector<EditorProperty> editor_properties() override
+    {
+        return
+        {
+            {"Enabled", &show_window},
+            {"My vec3", Drag3Control(glm::value_ptr(my_vec3))},
+            {"Drag", DragControl(&f_value)},
+            {"Drag", DragControl(&f_value)},
+            {"Hello", hello},
+        };
+    }
 
     static void hello()
     {
@@ -615,19 +625,31 @@ int main()
 
     auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
 
-    backpack_ent->transform.translate(glm::vec3{0, 0, -3});
+    backpack_ent->transform.translate(glm::vec3{-2, 0.6, -3});
+    backpack_ent->transform.rotate(45, {0, 1, 0});
+    backpack_ent->transform.scale(glm::vec3{0.4f});
 
     auto backpack_mesh = backpack_ent->find<MeshRenderer>();
 
     backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
 
-    // auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
-    //
-    // backpack_ent2->transform.translate(glm::vec3{4, 0, -3});
-    //
-    // auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
-    //
-    // backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
+    backpack_mesh->options.enable_outline = true;
+
+    auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
+
+    backpack_ent2->transform.translate(glm::vec3{3, 0.6, -3});
+
+    auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
+
+    backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
+
+    auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
+
+    auto room_mesh = room_ent->find<MeshRenderer>();
+
+    room_mesh->options.cull_faces = false;
+
+    room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

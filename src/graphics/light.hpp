@@ -16,7 +16,7 @@ namespace pge
         glm::vec3 color {1.0f};
         float ambient = 0.5;
         float diffuse = 4;
-        float specular = 4;
+        float specular = 1;
         float power = 1;
 
         float constant  = 1.0f;

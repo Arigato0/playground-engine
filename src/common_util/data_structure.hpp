@@ -14,11 +14,11 @@ namespace util
     }
 
     template<class T, class O>
-    static void concat(std::vector<T> &vector, const O &other)
+    static void concat(std::vector<T> &vector, O &other)
     {
         for (auto &item : other)
         {
-            vector.push_back(item);
+            vector.push_back(std::move(item));
         }
     }
 }

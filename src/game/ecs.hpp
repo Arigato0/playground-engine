@@ -49,6 +49,11 @@ namespace pge
         T *value;
     };
 
+    struct SeperatorControl
+    {};
+
+#define SEPERATOR(name) {(name), SeperatorControl{}}
+
     typedef void(*ButtonControl)();
 
     struct EditorProperty;
@@ -56,7 +61,8 @@ namespace pge
     using EditorProperties = std::vector<EditorProperty>;
 
     using EditorControl = std::variant<
-        bool*, Drag3Control<float>, DragControl<float>, ButtonControl, ColorEdit<float>>;
+        bool*, Drag3Control<float>, DragControl<float>, ButtonControl, ColorEdit<float>,
+        SeperatorControl>;
 
     struct EditorProperty
     {

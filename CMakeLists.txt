@@ -84,6 +84,7 @@ add_library(playgroundEngineLib
         src/data/model_loader.cpp
         src/data/model_loader.hpp
         src/data/id_table.hpp
+        src/graphics/render_options.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

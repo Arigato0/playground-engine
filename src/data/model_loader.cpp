@@ -50,10 +50,14 @@ std::vector<pge::Vertex> pge::ModelLoader::load_mesh_vertices(aiMesh* mesh)
     for (uint32_t i = 0; i < mesh->mNumVertices; ++i)
     {
         auto pos = mesh->mVertices[i];
-        auto norm = mesh->mNormals[i];
-
+        glm::vec3 norm {};
         glm::vec2 coord {};
 
+        if (mesh->HasNormals())
+        {
+            auto vec = mesh->mNormals[i];
+            norm = {EXPAND_VEC3(vec)};
+        }
         if (mesh->mTextureCoords[0])
         {
             coord = {EXPAND_VEC2(mesh->mTextureCoords[0][i])};
@@ -64,7 +68,7 @@ std::vector<pge::Vertex> pge::ModelLoader::load_mesh_vertices(aiMesh* mesh)
             Vertex
             {
                 {EXPAND_VEC3(pos)},
-                {EXPAND_VEC3(norm)},
+                norm,
                 coord
             }
         );
@@ -131,5 +135,12 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
 
     m_path.replace_filename(path.C_Str()).c_str();
 
-    return *pge::Engine::asset_manager.get_texture(m_path.c_str());
+    auto *texture = pge::Engine::asset_manager.get_texture(m_path.c_str());
+
+    if (texture == nullptr)
+    {
+        return {};
+    }
+
+    return *texture;
 }

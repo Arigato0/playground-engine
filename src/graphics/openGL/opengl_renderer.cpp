@@ -40,9 +40,17 @@ uint32_t pge::OpenglRenderer::init()
        {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
    });
 
+    m_outline_shader.create
+   ({
+       {PGE_FIND_SHADER("extrude_from_normals.vert"), ShaderType::Vertex},
+       {PGE_FIND_SHADER("color.frag"), ShaderType::Fragment}
+   });
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
+    glEnable(GL_STENCIL_TEST);
+
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
@@ -96,6 +104,12 @@ void pge::OpenglRenderer::create_buffers(Mesh &mesh)
 
 void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
 {
+    auto buffers = m_buffers.get(mesh.id);
+
+    glDeleteVertexArrays(1, &buffers.vbo);
+    glDeleteBuffers(1, &buffers.vao);
+    glDeleteBuffers(1, &buffers.ebo);
+
     m_buffers.remove(mesh.id);
     mesh.id = UINT32_MAX;
 }
@@ -111,14 +125,53 @@ void pge::OpenglRenderer::new_frame()
     glfwSwapBuffers(WINDOW_PTR);
 
     glClearColor(EXPAND_VEC4(clear_color));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glDepthFunc(GL_LESS);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
+void set_uniforms(pge::Material material)
+{
+
+}
+
+void draw_mesh(const pge::Mesh &mesh)
+{
+    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+    pge::Engine::statistics.report_draw_call();
+}
+
+void disable_stencil()
+{
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+}
+
+void enable_stencil()
+{
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+}
+
+void default_stencil()
+{
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+}
+
+uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 model, DrawOptions options)
 {
     if (!m_buffers.valid_id(mesh.id))
     {
         return OPENGL_ERROR_MESH_NOT_FOUND;
+    }
+
+    if (options.cull_faces)
+    {
+        glEnable(GL_CULL_FACE);
     }
 
     auto buffers = m_buffers.get(mesh.id);
@@ -177,7 +230,7 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
 
     m_shader.set("material.diffuse.sampler", 0);
     m_shader.set("material.specular.sampler", 1);
-    m_shader.set("model", transform);
+    m_shader.set("model", model);
     m_shader.set("projection", m_camera->projection);
     m_shader.set("view", m_camera->view);
     m_shader.set("view_pos", m_camera->position);
@@ -190,11 +243,35 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 transform)
     glBindTexture(GL_TEXTURE_2D, material.specular.id);
 
     glBindVertexArray(buffers.vao);
-    //glDrawArrays(GL_TRIANGLES, 0, mesh.vertices.size());
-    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+
+    default_stencil();
+    draw_mesh(mesh);
+
+    if (options.enable_outline)
+    {
+        enable_stencil();
+        glDisable(GL_DEPTH_TEST);
+
+        m_outline_shader.use();
+
+        m_outline_shader.set("projection", m_camera->projection);
+        m_outline_shader.set("view", m_camera->view);
+        m_outline_shader.set("model", model);
+        m_outline_shader.set("color", options.outline.color);
+        m_outline_shader.set("extrude_mul", options.outline.line_thickness);
+
+        draw_mesh(mesh);
+
+        disable_stencil();
+        glEnable(GL_DEPTH_TEST);
+
+        glClear(GL_STENCIL_BUFFER_BIT);
+    }
+
     glBindVertexArray(0);
 
-    Engine::statistics.report_draw_call();
+    glDisable(GL_CULL_FACE);
+
     Engine::statistics.report_verticies(mesh.vertices.size());
 
     return OPENGL_ERROR_OK;
