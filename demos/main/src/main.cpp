@@ -8,6 +8,7 @@
 #include <any>
 #include <thread>
 
+#include "application/dialog.hpp"
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
@@ -88,7 +89,11 @@ public:
             return {};
         }
 
-        EditorProperties properties;
+        EditorProperties properties
+        {
+            {"Enable outline", &options.enable_outline},
+            {"Outline thickness", DragControl(&options.outline.line_thickness)}
+        };
 
         for (auto &mesh : m_model->meshes)
         {
@@ -101,7 +106,29 @@ public:
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
-                {"Enable texture", &material.diffuse.enabled}
+                {"Enable texture", &material.diffuse.enabled},
+                {"Set Diffuse", [&mesh]
+                {
+                    auto path = native_file_dialog("~");
+
+                    if (!path)
+                    {
+                        return;
+                    }
+
+                    mesh.material.diffuse = *Engine::asset_manager.get_texture(path->c_str());
+                }},
+                {"Set Specular", [&mesh]
+                {
+                    auto path = native_file_dialog("~");
+
+                    if (!path)
+                    {
+                        return;
+                    }
+
+                    mesh.material.specular = *Engine::asset_manager.get_texture(path->c_str());
+                }}
             };
 
             util::concat(properties, prop);
@@ -322,10 +349,17 @@ public:
         {
             ImGui::Begin("Objects", &show_object_control);
 
+            // delete later to avoid corrupting stuff
+            std::vector<std::string> to_delete;
+
             for (auto &[name, entity] : Engine::entity_manager.get_entities())
             {
                 if (ImGui::TreeNode(name.data()))
                 {
+                    if (ImGui::Button("Delete"))
+                    {
+                        to_delete.push_back(name);
+                    }
                     if (ImGui::TreeNode("Transform"))
                     {
                         auto &trans = entity.transform;
@@ -387,6 +421,10 @@ public:
                 }
             }
 
+            for (auto &name : to_delete)
+            {
+                Engine::entity_manager.erase(name);
+            }
             ImGui::End();
         }
 
@@ -600,13 +638,6 @@ public:
     }
 };
 
-struct Test
-{
-    ~Test()
-    {
-        fmt::println("destructor called");
-    }
-};
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -618,38 +649,57 @@ int main()
     Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
+    Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
     auto light_ent = Engine::entity_manager.create<LightComp>("Light");
 
-    light_ent->transform.translate({2, 2, -1});
+    light_ent->transform.translate({2, 100, -1});
     light_ent->transform.scale(glm::vec3{0.5});
 
-    auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
+    auto light_data = light_ent->find<LightComp>();
+    light_data->data.power = 80;
 
-    backpack_ent->transform.translate(glm::vec3{-2, 0.6, -3});
-    backpack_ent->transform.rotate(45, {0, 1, 0});
-    backpack_ent->transform.scale(glm::vec3{0.4f});
+    auto ground_ent = Engine::entity_manager.create<MeshRenderer>("ground");
 
-    auto backpack_mesh = backpack_ent->find<MeshRenderer>();
+    ground_ent->transform.scale(glm::vec3{100});
+    ground_ent->transform.translate({0, -0.01, 0});
 
-    backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
+    auto ground_mesh = ground_ent->find<MeshRenderer>();
 
-    backpack_mesh->options.enable_outline = true;
+    ground_mesh->set_mesh("assets/models/primitives/plane.glb");
 
-    auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
+    auto &material = ground_mesh->get_model()->meshes.front().material;
+    material.diffuse = *Engine::asset_manager.get_texture("assets/grass_ground.jpg");
+    material.diffuse.scale = 60;
+    material.shininess = 1;
 
-    backpack_ent2->transform.translate(glm::vec3{3, 0.6, -3});
-
-    auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
-
-    backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
-
-    auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
-
-    auto room_mesh = room_ent->find<MeshRenderer>();
-
-    room_mesh->options.cull_faces = false;
-
-    room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
+    // auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
+    //
+    // backpack_ent->transform.translate(glm::vec3{-2, 0.6, -3});
+    // backpack_ent->transform.rotate(45, {0, 1, 0});
+    // backpack_ent->transform.scale(glm::vec3{0.4f});
+    //
+    // auto backpack_mesh = backpack_ent->find<MeshRenderer>();
+    //
+    // backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
+    //
+    // backpack_mesh->options.enable_outline = true;
+    // backpack_mesh->options.outline.depth_test = true;
+    //
+    // auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
+    //
+    // backpack_ent2->transform.translate(glm::vec3{3, 0.6, -3});
+    //
+    // auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
+    //
+    // backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
+    //
+    // auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
+    //
+    // auto room_mesh = room_ent->find<MeshRenderer>();
+    //
+    // room_mesh->options.cull_faces = false;
+    //
+    // room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

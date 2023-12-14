@@ -3,6 +3,7 @@
 #include <vector>
 #include <string_view>
 #include <string>
+#include <span>
 #include <glm/glm.hpp>
 
 namespace pge
@@ -42,7 +43,7 @@ namespace pge
 
     struct Model
     {
-        uint32_t id;
+        uint32_t id = UINT32_MAX;
         std::vector<Mesh> meshes;
     };
 }

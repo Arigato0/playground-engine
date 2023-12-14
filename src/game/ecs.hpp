@@ -54,7 +54,7 @@ namespace pge
 
 #define SEPERATOR(name) {(name), SeperatorControl{}}
 
-    typedef void(*ButtonControl)();
+    using ButtonControl = std::function<void()>;
 
     struct EditorProperty;
 

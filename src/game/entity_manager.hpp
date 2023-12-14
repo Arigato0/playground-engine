@@ -38,6 +38,17 @@ namespace pge
             return &entity;
         }
 
+        void erase(std::string_view name)
+        {
+            auto iter = m_entities.find(name);
+            m_entities.erase(iter);
+        }
+
+        void clear()
+        {
+            m_entities.clear();
+        }
+
         EntityTable& get_entities()
         {
             return m_entities;

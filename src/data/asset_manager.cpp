@@ -57,6 +57,8 @@ pge::Texture* pge::AssetManager::get_texture(std::string_view path)
 
         auto result = Engine::renderer->create_texture(path, texture.id);
 
+        texture.path = path;
+
         if (result != 0)
         {
             return nullptr;
@@ -89,6 +91,7 @@ void pge::AssetManager::free_asset(std::string_view path)
                 for (auto &mesh : model.meshes)
                 {
                     Engine::asset_manager.free_asset(mesh.material.diffuse.path);
+                    Engine::renderer->delete_buffers(mesh);
                 }
             },
             [](Texture texture)
@@ -97,7 +100,7 @@ void pge::AssetManager::free_asset(std::string_view path)
             }
         }, iter->second.asset);
 
-        m_assets.erase(key);
+        m_assets.erase(iter);
     }
 }
 

@@ -250,7 +250,11 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 model, DrawOption
     if (options.enable_outline)
     {
         enable_stencil();
-        glDisable(GL_DEPTH_TEST);
+
+        if (!options.outline.depth_test)
+        {
+            glDisable(GL_DEPTH_TEST);
+        }
 
         m_outline_shader.use();
 
@@ -263,6 +267,7 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 model, DrawOption
         draw_mesh(mesh);
 
         disable_stencil();
+
         glEnable(GL_DEPTH_TEST);
 
         glClear(GL_STENCIL_BUFFER_BIT);
@@ -307,7 +312,7 @@ uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &ou
 
     auto format = channels > 3 ? GL_RGBA : GL_RGB;
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     out_texture = id;
