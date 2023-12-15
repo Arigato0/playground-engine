@@ -22,6 +22,9 @@
 #include "game/camera_comp.hpp"
 #include "graphics/light.hpp"
 
+#include "misc/cpp/imgui_stdlib.h"
+
+class LightComp;
 using namespace pge;
 
 class InputHandlerComp : public IComponent
@@ -40,11 +43,14 @@ class MeshRenderer : public IComponent
 {
 public:
 
-    MeshRenderer()
+    PGE_BOILERPLATE(MeshRenderer);
+
+    void on_construct() override
     {
         options.outline.color = glm::vec4{0.3, 0.05, 0.6, 1.0};
     }
-    ~MeshRenderer()
+
+    ~MeshRenderer() override
     {
         if (m_model)
         {
@@ -84,9 +90,25 @@ public:
 
     EditorProperties editor_properties() override
     {
-        if (m_model == nullptr || m_model->meshes.empty())
+        if (m_model == nullptr)
         {
-            return {};
+            return
+            {
+                {
+                    "Load mesh",
+                    [&]
+                    {
+                        auto path = native_file_dialog("~");
+
+                        if (!path)
+                        {
+                            return;
+                        }
+
+                        set_mesh(path->c_str());
+                    }
+                }
+            };
         }
 
         EditorProperties properties
@@ -95,12 +117,15 @@ public:
             {"Outline thickness", DragControl(&options.outline.line_thickness)}
         };
 
+        auto id = 0;
+
         for (auto &mesh : m_model->meshes)
         {
             auto &material = mesh.material;
 
             EditorProperties prop
             {
+                START_GROUP,
                 SEPERATOR(mesh.name),
                 {"Recieve light", &material.recieve_lighting},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
@@ -128,7 +153,8 @@ public:
                     }
 
                     mesh.material.specular = *Engine::asset_manager.get_texture(path->c_str());
-                }}
+                }},
+                END_GROUP
             };
 
             util::concat(properties, prop);
@@ -146,11 +172,13 @@ public:
 
 private:
     Model *m_model = nullptr;
-    std::string_view m_path;
+    std::string m_path;
 };
 
 void render_properties(const EditorProperties &properties)
 {
+    auto id = 0;
+
     for (const auto &prop : properties)
     {
         std::visit(overload
@@ -181,6 +209,14 @@ void render_properties(const EditorProperties &properties)
             [&prop](SeperatorControl _)
             {
                 ImGui::SeparatorText(prop.name.data());
+            },
+            [&id](StartGroup _)
+            {
+                ImGui::PushID(id++);
+            },
+            [](EndGroup _)
+            {
+                ImGui::PopID();
             },
         }, prop.control);
     }
@@ -350,16 +386,68 @@ public:
             ImGui::Begin("Objects", &show_object_control);
 
             // delete later to avoid corrupting stuff
-            std::vector<std::string> to_delete;
+            std::vector<std::string_view> entities_to_delete;
+            std::vector<std::pair<Entity*, std::string_view>> components_to_delete;
+
+            static auto modal_open = false;
+
+            if (ImGui::Button("New"))
+            {
+                modal_open = true;
+                ImGui::OpenPopup("Create new entity");
+            }
+
+            if (ImGui::BeginPopupModal("Create new entity", &modal_open, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                static std::string name;
+
+                ImGui::InputText("Name", &name);
+
+                if (ImGui::Button("Create") && !name.empty())
+                {
+                    modal_open = false;
+                    Engine::entity_manager.create(std::move(name));
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            ImGui::Separator();
 
             for (auto &[name, entity] : Engine::entity_manager.get_entities())
             {
                 if (ImGui::TreeNode(name.data()))
                 {
+                    if (ImGui::Button("Add"))
+                    {
+                        ImGui::OpenPopup("Add component");
+                    }
+
+                    if (ImGui::BeginPopup("Add component"))
+                    {
+                        auto &prototypes = Engine::entity_manager.get_comp_prototypes();
+
+                        for (auto &[name, comp] : prototypes)
+                        {
+                            if (ImGui::Selectable(name.data()))
+                            {
+                                entity.add_component_prototype(name, comp.get()->clone());
+                            }
+                        }
+
+                        ImGui::EndPopup();
+                    }
+
+                    ImGui::SameLine();
+
                     if (ImGui::Button("Delete"))
                     {
-                        to_delete.push_back(name);
+                        entities_to_delete.push_back(name);
                     }
+
+                    ImGui::Separator();
+
                     if (ImGui::TreeNode("Transform"))
                     {
                         auto &trans = entity.transform;
@@ -403,10 +491,12 @@ public:
                     {
                         auto is_enabled = comp->is_enabled();
 
-                        if (ImGui::Checkbox("##", &is_enabled))
+                        if (ImGui::Checkbox("##enabled", &is_enabled))
                         {
                             comp->set_enabled(is_enabled);
                         }
+
+
 
                         ImGui::SameLine();
 
@@ -416,15 +506,27 @@ public:
                             render_properties(properties);
                             ImGui::TreePop();
                         }
+
+                        ImGui::SameLine();
+
+                        if (ImGui::Button("Delete##component"))
+                        {
+                            components_to_delete.emplace_back(&entity, comp_name);
+                        }
                     }
                     ImGui::TreePop();
                 }
             }
 
-            for (auto &name : to_delete)
+            for (auto &[entity, name] : components_to_delete)
+            {
+                entity->remove_component(name);
+            }
+            for (auto &name : entities_to_delete)
             {
                 Engine::entity_manager.erase(name);
             }
+
             ImGui::End();
         }
 
@@ -566,10 +668,18 @@ public:
 class LightComp : public IComponent
 {
 public:
-    void on_start() override
+
+    PGE_BOILERPLATE(LightComp)
+
+    void on_construct() override
     {
         data.position = &m_parent->transform.position;
         Light::table.emplace_back(&data);
+    }
+
+    ~LightComp() override
+    {
+        Light::table.remove(&data);
     }
 
     void on_disable() override
@@ -596,6 +706,7 @@ public:
     }
 
     Light data;
+private:
 };
 
 class ControlTest : public IComponent
@@ -640,6 +751,7 @@ public:
 
 int main()
 {
+
     ASSERT_ERR(Engine::init({
             .title = "playground engine",
             .window_size = {1920, 1080},
@@ -652,56 +764,56 @@ int main()
     Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
     auto light_ent = Engine::entity_manager.create<LightComp>("Light");
 
-    light_ent->transform.translate({2, 100, -1});
-    light_ent->transform.scale(glm::vec3{0.5});
+    // light_ent->transform.translate({2, 100, -1});
+    //
+    // auto light_data = light_ent->find<LightComp>();
+    // light_data->data.power = 80;
+    //
+    // auto ground_ent = Engine::entity_manager.create<MeshRenderer>("ground");
+    //
+    // ground_ent->transform.scale(glm::vec3{100});
+    // ground_ent->transform.translate({0, -0.01, 0});
+    //
+    // auto ground_mesh = ground_ent->find<MeshRenderer>();
+    //
+    // ground_mesh->set_mesh("assets/models/primitives/plane.glb");
+    //
+    // auto &material = ground_mesh->get_model()->meshes.front().material;
+    // material.diffuse = *Engine::asset_manager.get_texture("assets/grass_ground.jpg");
+    // material.diffuse.scale = 60;
+    // material.shininess = 1;
 
-    auto light_data = light_ent->find<LightComp>();
-    light_data->data.power = 80;
+    auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
 
-    auto ground_ent = Engine::entity_manager.create<MeshRenderer>("ground");
+    backpack_ent->transform.translate(glm::vec3{-2, 0.6, -3});
+    backpack_ent->transform.rotate(45, {0, 1, 0});
+    backpack_ent->transform.scale(glm::vec3{0.4f});
 
-    ground_ent->transform.scale(glm::vec3{100});
-    ground_ent->transform.translate({0, -0.01, 0});
+    auto backpack_mesh = backpack_ent->find<MeshRenderer>();
 
-    auto ground_mesh = ground_ent->find<MeshRenderer>();
+    backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
 
-    ground_mesh->set_mesh("assets/models/primitives/plane.glb");
+    backpack_mesh->options.enable_outline = true;
+    backpack_mesh->options.outline.depth_test = true;
 
-    auto &material = ground_mesh->get_model()->meshes.front().material;
-    material.diffuse = *Engine::asset_manager.get_texture("assets/grass_ground.jpg");
-    material.diffuse.scale = 60;
-    material.shininess = 1;
+    auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
 
-    // auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
-    //
-    // backpack_ent->transform.translate(glm::vec3{-2, 0.6, -3});
-    // backpack_ent->transform.rotate(45, {0, 1, 0});
-    // backpack_ent->transform.scale(glm::vec3{0.4f});
-    //
-    // auto backpack_mesh = backpack_ent->find<MeshRenderer>();
-    //
-    // backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
-    //
-    // backpack_mesh->options.enable_outline = true;
-    // backpack_mesh->options.outline.depth_test = true;
-    //
-    // auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
-    //
-    // backpack_ent2->transform.translate(glm::vec3{3, 0.6, -3});
-    //
-    // auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
-    //
-    // backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
-    //
-    // auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
-    //
-    // auto room_mesh = room_ent->find<MeshRenderer>();
-    //
-    // room_mesh->options.cull_faces = false;
-    //
-    // room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
+    backpack_ent2->transform.translate(glm::vec3{3, 0.6, -3});
+
+    auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
+
+    backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
+
+    auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
+
+    auto room_mesh = room_ent->find<MeshRenderer>();
+
+    room_mesh->options.cull_faces = false;
+
+    room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
+
 
     ASSERT_ERR(Engine::run());
 

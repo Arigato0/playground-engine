@@ -38,6 +38,36 @@ namespace pge
             return &entity;
         }
 
+        template<class T>
+        bool register_prototype(const T &component)
+        {
+            auto name = type_name<T>();
+
+            if (m_comp_prototypes.contains(name))
+            {
+                return false;
+            }
+
+            auto [_, created] = m_comp_prototypes.emplace(name, std::make_unique<T>(component));
+
+            return created;
+        }
+
+        template<class T>
+        IComponent* create_from_prototype()
+        {
+            auto name = type_name<T>();
+
+            auto iter = m_comp_prototypes.find(name);
+
+            if (iter == m_comp_prototypes.end())
+            {
+                return nullptr;
+            }
+
+            return iter->second->clone();
+        }
+
         void erase(std::string_view name)
         {
             auto iter = m_entities.find(name);
@@ -54,7 +84,27 @@ namespace pge
             return m_entities;
         }
 
+        Entity::ComponentTable& get_comp_prototypes()
+        {
+            return m_comp_prototypes;
+        }
+
+        std::vector<std::string_view> get_comp_protype_names()
+        {
+            std::vector<std::string_view> output;
+
+            output.reserve(m_comp_prototypes.size());
+
+            for (auto &[name, _] : m_comp_prototypes)
+            {
+                output.push_back(name);
+            }
+
+            return output;
+        }
+
     private:
         EntityTable m_entities;
+        Entity::ComponentTable m_comp_prototypes;
     };
 }

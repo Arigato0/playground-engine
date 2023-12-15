@@ -8,7 +8,7 @@ namespace pge
         bool is_active = true;
         glm::vec3 *position;
 
-        bool is_spot ;
+        bool is_spot = false;
         glm::vec3 direction;
         float inner_cutoff = glm::cos(glm::radians(12.5f));
         float outer_cutoff = glm::cos(glm::radians(14.f));
@@ -23,6 +23,7 @@ namespace pge
         float linear    = 0.09f;
         float quadratic = 0.032f;
 
-        inline static std::vector<Light*> table;
+        using LightTable = std::list<Light*>;
+        inline static LightTable table;
     };
 }

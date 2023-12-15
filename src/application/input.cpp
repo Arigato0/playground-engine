@@ -98,6 +98,13 @@ uint32_t translate_glfw_key(int key)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    auto &io = ImGui::GetIO();
+
+    if (io.WantCaptureKeyboard)
+    {
+        return;
+    }
+
     auto index = translate_glfw_key(key);
     auto &key_event = g_key_cache[index];
 

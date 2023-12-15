@@ -189,9 +189,10 @@ uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 model, DrawOption
     m_shader.set("material.specular.enabled", material.specular.enabled);
     m_shader.set("recieve_lighting", material.recieve_lighting);
 
+    auto light_iter = Light::table.begin();
     for (int i = 0; i < Light::table.size(); i++)
     {
-        auto *light = Light::table[i];
+        auto *light = *(light_iter++);
 
         if (light == nullptr)
         {

@@ -52,7 +52,13 @@ namespace pge
     struct SeperatorControl
     {};
 
-#define SEPERATOR(name) {(name), SeperatorControl{}}
+    struct StartGroup {};
+
+    struct EndGroup {};
+
+#define SEPERATOR(name) {(name), SeperatorControl{} }
+#define START_GROUP {"", StartGroup{} }
+#define END_GROUP {"", EndGroup{} }
 
     using ButtonControl = std::function<void()>;
 
@@ -62,7 +68,7 @@ namespace pge
 
     using EditorControl = std::variant<
         bool*, Drag3Control<float>, DragControl<float>, ButtonControl, ColorEdit<float>,
-        SeperatorControl>;
+        SeperatorControl, StartGroup, EndGroup>;
 
     struct EditorProperty
     {
@@ -70,17 +76,39 @@ namespace pge
         EditorControl control;
     };
 
+// generates boilerplate for components such as a clone method and registers it as a prototype for the editor to use
+#define PGE_BOILERPLATE(classname)                          \
+    classname()                                             \
+    {                                                       \
+        Engine::entity_manager.register_prototype(*this);   \
+    }                                                       \
+                                                            \
+    IComponent* clone() override                            \
+    {                                                       \
+        auto ptr = new classname(*this);                    \
+        ptr->on_construct();                                \
+        return ptr;                                         \
+    }                                                       \
+
     class IComponent
     {
     public:
         virtual ~IComponent() = default;
+        // will be called at the start of the scene. this garantuees all other components will exist and be initialized when this is called
         virtual void on_start() {}
         virtual void on_enable() {}
         virtual void on_disable() {}
+        // on_construct is a replacement for the components constructor so the engine can reserve doing stupid things with the constructor
+        virtual void on_construct() {}
         virtual void update(double delta_time) {}
+        // The editor_update is for adding functionality to a component so that it will only be run in the editors pause game view
+        // This is particularly useful for mesh renderers that should render the mesh even while the game is not running in the editor
+        virtual void editor_update(double delta_time) {}
         virtual std::string serialize() { return {}; }
         virtual void deserialize(std::string_view data) {}
         virtual EditorProperties editor_properties() { return {}; }
+
+        virtual IComponent* clone() { return nullptr; }
 
         void set_parent(Entity *parent)
         {
@@ -184,11 +212,22 @@ namespace pge
             return (T*)iter->second.get();
         }
 
+        void add_component_prototype(std::string_view name, IComponent *component)
+        {
+            auto [comp, _] = m_components.emplace(name, component);
+            init_comp(comp->second.get());
+        }
+
         template<IsComponent T>
         void register_component()
         {
             auto [comp, _] = m_components.emplace(type_name<T>(), std::make_unique<T>());
-            comp->second->set_parent(this);
+            init_comp(comp->second.get());
+        }
+
+        void remove_component(std::string_view name)
+        {
+            m_components.erase(name);
         }
 
         ComponentTable& get_components()
@@ -201,5 +240,11 @@ namespace pge
         uint32_t m_id;
         ComponentTable m_components;
         std::string_view m_name;
+
+        void init_comp(IComponent *comp)
+        {
+            comp->set_parent(this);
+            comp->on_construct();
+        }
     };
 }
