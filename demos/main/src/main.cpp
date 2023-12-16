@@ -39,13 +39,11 @@ public:
     }
 };
 
-class MeshRenderer : public IComponent
+PGE_COMPONENT(MeshRenderer)
 {
 public:
 
-    PGE_BOILERPLATE(MeshRenderer);
-
-    void on_construct() override
+    MeshRenderer()
     {
         options.outline.color = glm::vec4{0.3, 0.05, 0.6, 1.0};
     }
@@ -432,7 +430,7 @@ public:
                         {
                             if (ImGui::Selectable(name.data()))
                             {
-                                entity.add_component_prototype(name, comp.get()->clone());
+                                entity.add_component_prototype(name, comp.get());
                             }
                         }
 
@@ -495,8 +493,6 @@ public:
                         {
                             comp->set_enabled(is_enabled);
                         }
-
-
 
                         ImGui::SameLine();
 
@@ -665,13 +661,11 @@ public:
     }
 };
 
-class LightComp : public IComponent
+PGE_COMPONENT(LightComp)
 {
 public:
 
-    PGE_BOILERPLATE(LightComp)
-
-    void on_construct() override
+    LightComp()
     {
         data.position = &m_parent->transform.position;
         Light::table.emplace_back(&data);
@@ -751,7 +745,6 @@ public:
 
 int main()
 {
-
     ASSERT_ERR(Engine::init({
             .title = "playground engine",
             .window_size = {1920, 1080},

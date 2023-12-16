@@ -76,20 +76,6 @@ namespace pge
         EditorControl control;
     };
 
-// generates boilerplate for components such as a clone method and registers it as a prototype for the editor to use
-#define PGE_BOILERPLATE(classname)                          \
-    classname()                                             \
-    {                                                       \
-        Engine::entity_manager.register_prototype(*this);   \
-    }                                                       \
-                                                            \
-    IComponent* clone() override                            \
-    {                                                       \
-        auto ptr = new classname(*this);                    \
-        ptr->on_construct();                                \
-        return ptr;                                         \
-    }                                                       \
-
     class IComponent
     {
     public:
@@ -98,8 +84,6 @@ namespace pge
         virtual void on_start() {}
         virtual void on_enable() {}
         virtual void on_disable() {}
-        // on_construct is a replacement for the components constructor so the engine can reserve doing stupid things with the constructor
-        virtual void on_construct() {}
         virtual void update(double delta_time) {}
         // The editor_update is for adding functionality to a component so that it will only be run in the editors pause game view
         // This is particularly useful for mesh renderers that should render the mesh even while the game is not running in the editor
@@ -139,6 +123,26 @@ namespace pge
         friend Entity;
         Entity *m_parent = nullptr;
         bool m_enabled = true;
+    };
+
+#define PGE_COMPONENT(name) class name : public Component<name>
+    // i dont like doing this but without modules my hands are tied
+    void __proxy_register_comp__(std::string_view name, IComponent *comp);
+
+    template<class T>
+    class Component : public IComponent
+    {
+    public:
+        Component()
+        {
+            __proxy_register_comp__(type_name<T>(), this);
+        }
+
+        IComponent* clone() override
+        {
+            auto ptr = new T();
+            return ptr;
+        }
     };
 
     template<class T>
@@ -214,7 +218,7 @@ namespace pge
 
         void add_component_prototype(std::string_view name, IComponent *component)
         {
-            auto [comp, _] = m_components.emplace(name, component);
+            auto [comp, _] = m_components.emplace(name, component->clone());
             init_comp(comp->second.get());
         }
 
@@ -244,7 +248,6 @@ namespace pge
         void init_comp(IComponent *comp)
         {
             comp->set_parent(this);
-            comp->on_construct();
         }
     };
 }

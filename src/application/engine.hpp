@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../game/entity_manager.hpp"
-#include "../game/ecs.hpp"
 #include "glfw_window.hpp"
 #include "error.hpp"
 #include "statistics.hpp"

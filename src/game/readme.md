@@ -4,17 +4,14 @@ all the code for game logic stuff is stored here
 ## Entity compontent system
 
 ```c++
-class Player : public Entity
-{}
-
-class HealthComp : public IComponent
+PGE_COMPONENT(HealthComp)
 {
 public:
     void update(double _) override
     {
         if (m_amount <= 0)
         {
-            // handle death logic
+            on_death();
         }
     }
 
@@ -27,13 +24,23 @@ public:
     {
         return m_amount;
     }
+    
+    pge::Signal<void()> on_death;
 private:
     int m_amount = 100;
 };
 
-class PlayerInputComp : public IComponent
+PGE_COMPONENT(PlayerInputComp)
 {
-    // handle input 
+public:
+    void update(double _) override
+    {
+        if (pge:key_pressed(pge:Key::Space))
+        {
+            jump()
+        }
+    }
+
 };
 
 void main()
@@ -41,11 +48,12 @@ void main()
     // init engine
        
        // create entity
-       Engine::entity_manager.create<Player, HealthComp, PlayerInputComp>("Player");
+       pge:Engine::entity_manager.create<HealthComp, PlayerInputComp>("Player");
        
     // run engine
 }
 ```
-`PGE_CREATE_PROP_TABLE` creates a table of properties along with a utility get function and `PGE_MAKE_SERIALIZABLE` generates functions to serialize the property table.
-
+`PGE_COMPONENT` is a macro that expands to `class Name : public Component<Name>` pge components use The Curiously Recurring Template Pattern
+as a form of reflection to register the component as a prototype so the editor can view and clone it.
+for storing components use `IComponent*` to avoid dealing with templates.
 

@@ -38,6 +38,21 @@ namespace pge
             return &entity;
         }
 
+        bool register_prototype(std::string_view name, IComponent *component)
+        {
+            if (m_comp_prototypes.contains(name))
+            {
+                return false;
+            }
+
+            auto [iter, created] = m_comp_prototypes.emplace(name, nullptr);
+
+            // sets the pointer later otherwise it will get stuck in recursion
+            iter->second.reset(component->clone());
+
+            return created;
+        }
+
         template<class T>
         bool register_prototype(const T &component)
         {
