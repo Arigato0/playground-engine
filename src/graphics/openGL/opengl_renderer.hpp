@@ -64,7 +64,7 @@ namespace pge
         IdTable<GlBuffers> m_buffers;
         GlShader m_shader;
         GlShader m_outline_shader;
-        std::map<float, DrawData> m_sorted_meshes;
+        std::multimap<float, DrawData> m_sorted_meshes;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 

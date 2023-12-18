@@ -22,6 +22,7 @@ namespace pge
     {
         bool is_transparent = false;
         float shininess = 32;
+        float transparency = 1;
         Texture diffuse;
         Texture specular;
         glm::vec3 color {0.0f};

@@ -22,6 +22,7 @@ struct Material
     Texture diffuse;
     Texture specular;
     float shininess;
+    float transparency;
     vec3 color;
 };
 
@@ -180,5 +181,5 @@ void main()
         result *= material.color;
     }
 
-    FragColor = vec4(result, tex.a);
+    FragColor = vec4(result, tex.a * material.transparency);
 }

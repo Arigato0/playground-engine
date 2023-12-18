@@ -366,6 +366,7 @@ uint32_t pge::OpenglRenderer::handle_draw(const MeshView&mesh, glm::mat4 model, 
     m_shader.set("texture_scale", material.diffuse.scale);
     m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
     m_shader.set("material.specular.enabled", material.specular.enabled);
+    m_shader.set("material.transparency", material.transparency);
     m_shader.set("recieve_lighting", material.recieve_lighting);
     m_shader.set("material.diffuse.sampler", 0);
     m_shader.set("material.specular.sampler", 1);

@@ -133,6 +133,8 @@ public:
                 {"Recieve light", &material.recieve_lighting},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
+                {"Is transparent", &material.is_transparent},
+                {"Transparency", DragControl(&material.transparency)},
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
                 {"Enable texture", &material.diffuse.enabled},
                 {"Set Diffuse", [&mesh]
@@ -781,7 +783,6 @@ void init_room_scene()
     window_material.recieve_lighting = false;
     window_material.is_transparent = true;
 
-
     auto [window_ent2, window_mesh2] = create_mesh("Window2", "assets/models/primitives/plane.glb");
 
     window_ent2->transform.translate({1, 2, -4});
@@ -799,6 +800,12 @@ void init_room_scene()
 
     skull_ent->transform.translate({-2, 1.5, -3});
     skull_ent->transform.rotate(30, {0, 1, 0});
+
+    for (auto &mesh : skull_mesh->model.meshes)
+    {
+        mesh.material.is_transparent = true;
+        mesh.material.transparency = 0.5f;
+    }
 }
 
 void init_grass_scene()
