@@ -38,7 +38,7 @@ namespace pge
                 m_is_init = true;
             }
 
-            m_window = glfwCreateWindow(width, height, title.data(), glfwGetPrimaryMonitor(), nullptr);
+            m_window = glfwCreateWindow(width, height, title.data(), m_monitor, nullptr);
 
             glfwMakeContextCurrent(m_window);
 
@@ -179,6 +179,11 @@ namespace pge
             {
                 glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, value);
             }
+        }
+
+        bool is_fullscreen() const
+        {
+            return m_monitor != nullptr;
         }
 
     private:

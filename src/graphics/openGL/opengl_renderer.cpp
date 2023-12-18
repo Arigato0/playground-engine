@@ -138,7 +138,7 @@ void set_uniforms(pge::Material material)
 
 }
 
-void draw_mesh(const pge::Mesh &mesh)
+void draw_mesh(const pge::MeshView &mesh)
 {
     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
     pge::Engine::statistics.report_draw_call();
@@ -162,7 +162,7 @@ void default_stencil()
     glStencilMask(0xFF);
 }
 
-uint32_t pge::OpenglRenderer::draw(const Mesh &mesh, glm::mat4 model, DrawOptions options)
+uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOptions options)
 {
     if (!m_buffers.valid_id(mesh.id))
     {
@@ -343,4 +343,18 @@ pge::RendererProperties pge::OpenglRenderer::properties()
     glGetIntegerv(GL_MINOR_VERSION, (GLint*)&output.version_minor);
 
     return output;
+}
+
+void pge::OpenglRenderer::draw_shaded_wireframe(const Mesh& mesh, glm::mat4 model)
+{
+    m_outline_shader.use();
+    m_outline_shader.set("projection", m_camera->projection);
+    m_outline_shader.set("view", m_camera->view);
+    m_outline_shader.set("model", model);
+    m_outline_shader.set("color", glm::vec4{});
+    m_outline_shader.set("extrude_mul", 0.005f);
+
+    set_wireframe_mode(true);
+    draw_mesh(mesh);
+    set_wireframe_mode(false);
 }

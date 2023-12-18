@@ -6,6 +6,8 @@
 #include <span>
 #include <glm/glm.hpp>
 
+#include "../common_util/data_structure.hpp"
+
 namespace pge
 {
     struct Texture
@@ -34,16 +36,49 @@ namespace pge
 
     struct Mesh
     {
-        uint32_t id;
+        uint32_t id = UINT32_MAX;
         std::string name;
         std::vector<Vertex> vertices;
         std::vector<uint32_t> indices;
         Material material {};
     };
 
-    struct Model
+    // a read only view of a mesh with owned materials
+    struct MeshView
+    {
+        const uint32_t id;
+        const std::string_view name;
+        const std::span<const Vertex> vertices;
+        const std::span<const uint32_t> indices;
+        Material material {};
+
+        MeshView(const Mesh &mesh) :
+            id(mesh.id),
+            name(mesh.name),
+            vertices(mesh.vertices),
+            indices(mesh.indices),
+            material(mesh.material)
+        {}
+    };
+
+    template<class T>
+    struct ModelBase
     {
         uint32_t id = UINT32_MAX;
-        std::vector<Mesh> meshes;
+        std::vector<T> meshes;
     };
+
+    using Model = ModelBase<Mesh>;
+    using ModelView = ModelBase<MeshView>;
+
+    static ModelView make_model_view(const Model &model)
+    {
+        ModelView view;
+
+        view.id = model.id;
+
+        util::concat(view.meshes, model.meshes);
+
+        return view;
+    }
 }

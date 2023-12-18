@@ -132,12 +132,29 @@ vec4 calculate_depth()
     return vec4(vec3(linear_depth / far), 1.0);
 }
 
+void blend_test()
+{
+    vec4 tex = texture(material.diffuse.sampler, text_cord);
+
+    if (tex.a < 0.1)
+    {
+        discard;
+    }
+}
+
 void main()
 {
     if (visualize_depth)
     {
         FragColor = calculate_depth();
         return;
+    }
+
+    vec4 tex = texture(material.diffuse.sampler, text_cord);
+
+    if (tex.a < 0.1)
+    {
+        discard;
     }
 
     vec3 result;

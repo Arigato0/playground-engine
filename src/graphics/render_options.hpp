@@ -25,8 +25,15 @@ namespace pge
         bool cull_faces = true;
     };
 
+    enum class WireframeMode : uint8_t
+    {
+        Lines,
+        Shaded,
+    };
+
     struct RendererSettings
     {
-
+        bool enable_wireframe = false;
+        WireframeMode wireframe_mode = WireframeMode::Lines;
     };
 }

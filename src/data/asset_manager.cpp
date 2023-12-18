@@ -7,11 +7,11 @@
 
 namespace fs = std::filesystem;
 
-pge::Model* pge::AssetManager::get_model(std::string_view path)
+std::optional<pge::ModelView> pge::AssetManager::get_model(std::string_view path)
 {
     if (!fs::exists(path))
     {
-        return nullptr;
+        return std::nullopt;
     }
 
     auto key = fs::canonical(path);
@@ -24,7 +24,7 @@ pge::Model* pge::AssetManager::get_model(std::string_view path)
 
         if (!model_opt)
         {
-            return nullptr;
+            return std::nullopt;
         }
 
         auto *model = set_asset(key, model_opt.value());
@@ -34,10 +34,12 @@ pge::Model* pge::AssetManager::get_model(std::string_view path)
             Engine::renderer->create_buffers(mesh);
         }
 
-        return model;
+        return make_model_view(*model);
     }
 
-    return increment_asset<Model>(iter);
+    auto model = increment_asset<Model>(iter);
+
+    return make_model_view(*model);
 }
 
 pge::Texture* pge::AssetManager::get_texture(std::string_view path)

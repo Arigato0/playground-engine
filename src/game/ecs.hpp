@@ -85,6 +85,8 @@ namespace pge
         virtual void on_enable() {}
         virtual void on_disable() {}
         virtual void update(double delta_time) {}
+        // on_init is called when a component is added to an entity
+        virtual void on_init() {}
         // The editor_update is for adding functionality to a component so that it will only be run in the editors pause game view
         // This is particularly useful for mesh renderers that should render the mesh even while the game is not running in the editor
         virtual void editor_update(double delta_time) {}
@@ -248,6 +250,7 @@ namespace pge
         void init_comp(IComponent *comp)
         {
             comp->set_parent(this);
+            comp->on_init();
         }
     };
 }

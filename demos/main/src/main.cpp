@@ -50,20 +50,17 @@ public:
 
     ~MeshRenderer() override
     {
-        if (m_model)
-        {
-            Engine::asset_manager.free_asset(m_path);
-        }
-    }
-
-    void update(double delta_time) override
-    {
-        if (m_model == nullptr)
+        if (model.meshes.empty())
         {
             return;
         }
 
-        for (const auto &mesh : m_model->meshes)
+        Engine::asset_manager.free_asset(m_path);
+    }
+
+    void update(double delta_time) override
+    {
+        for (const auto &mesh : model.meshes)
         {
             auto result = Engine::renderer->draw(mesh, m_parent->transform.model, options);
 
@@ -74,21 +71,29 @@ public:
         }
     }
 
-    void set_mesh(std::string_view path)
+    bool set_mesh(std::string_view path)
     {
-        if (m_model != nullptr)
+        if (!model.meshes.empty())
         {
             Engine::asset_manager.free_asset(m_path);
         }
 
-        m_model = Engine::asset_manager.get_model(path);
+        auto model_opt = Engine::asset_manager.get_model(path);
 
-        m_path = path;
+        if (!model_opt)
+        {
+            return false;
+        }
+
+        model = std::move(model_opt.value());
+        m_path  = path;
+
+        return true;
     }
 
     EditorProperties editor_properties() override
     {
-        if (m_model == nullptr)
+        if (model.meshes.empty())
         {
             return
             {
@@ -117,7 +122,7 @@ public:
 
         auto id = 0;
 
-        for (auto &mesh : m_model->meshes)
+        for (auto &mesh : model.meshes)
         {
             auto &material = mesh.material;
 
@@ -161,15 +166,10 @@ public:
         return properties;
     }
 
-    Model* get_model() const
-    {
-        return m_model;
-    }
-
     DrawOptions options;
 
+    ModelView model;
 private:
-    Model *m_model = nullptr;
     std::string m_path;
 };
 
@@ -534,10 +534,14 @@ public:
         if (stats_window_open)
         {
             auto stats = Engine::statistics.stats();
+
             ImGui::Begin("Statistics", &stats_window_open);
-            ImGui::Text(fmt::format("fps: {}", stats.fps).data());
-            ImGui::Text(fmt::format("draw calls: {}", stats.draw_calls).data());
-            ImGui::Text(fmt::format("vertices: {}", stats.vertices).data());
+
+            auto str = fmt::format("fps: {}\nFrame time: {}\ndraw calls: {}\nvertices: {}",
+                stats.fps, stats.delta_time, stats.draw_calls, stats.vertices);
+
+            ImGui::Text(str.data());
+
             ImGui::End();
         }
 
@@ -600,7 +604,7 @@ public:
                         Engine::window.cap_refresh_rate(framerate_cap);
                     }
 
-                    static bool fullscreen = true;
+                    static bool fullscreen = Engine::window.is_fullscreen();
 
                     if (ImGui::Checkbox("Fullscreen", &fullscreen))
                     {
@@ -665,7 +669,7 @@ PGE_COMPONENT(LightComp)
 {
 public:
 
-    LightComp()
+    void on_init() override
     {
         data.position = &m_parent->transform.position;
         Light::table.emplace_back(&data);
@@ -673,7 +677,8 @@ public:
 
     ~LightComp() override
     {
-        Light::table.remove(&data);
+        data.is_active = false;
+        //Light::table.remove(&data);
     }
 
     void on_disable() override
@@ -700,7 +705,6 @@ public:
     }
 
     Light data;
-private:
 };
 
 class ControlTest : public IComponent
@@ -743,38 +747,11 @@ public:
     }
 };
 
-int main()
+void init_room_scene()
 {
-    ASSERT_ERR(Engine::init({
-            .title = "playground engine",
-            .window_size = {1920, 1080},
-            .graphics_api = GraphicsApi::OpenGl,
-        }));
-
-    Engine::entity_manager.create<ControlTest>("ControlTest");
-    Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
-
-    Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
     auto light_ent = Engine::entity_manager.create<LightComp>("Light");
 
-    // light_ent->transform.translate({2, 100, -1});
-    //
-    // auto light_data = light_ent->find<LightComp>();
-    // light_data->data.power = 80;
-    //
-    // auto ground_ent = Engine::entity_manager.create<MeshRenderer>("ground");
-    //
-    // ground_ent->transform.scale(glm::vec3{100});
-    // ground_ent->transform.translate({0, -0.01, 0});
-    //
-    // auto ground_mesh = ground_ent->find<MeshRenderer>();
-    //
-    // ground_mesh->set_mesh("assets/models/primitives/plane.glb");
-    //
-    // auto &material = ground_mesh->get_model()->meshes.front().material;
-    // material.diffuse = *Engine::asset_manager.get_texture("assets/grass_ground.jpg");
-    // material.diffuse.scale = 60;
-    // material.shininess = 1;
+    light_ent->transform.translate({2, 3, -1});
 
     auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
 
@@ -789,14 +766,6 @@ int main()
     backpack_mesh->options.enable_outline = true;
     backpack_mesh->options.outline.depth_test = true;
 
-    auto backpack_ent2 = Engine::entity_manager.create<MeshRenderer>("Backpack2");
-
-    backpack_ent2->transform.translate(glm::vec3{3, 0.6, -3});
-
-    auto backpack_mesh2 = backpack_ent2->find<MeshRenderer>();
-
-    backpack_mesh2->set_mesh("assets/models/backpack/backpack.obj");
-
     auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
 
     auto room_mesh = room_ent->find<MeshRenderer>();
@@ -804,9 +773,62 @@ int main()
     room_mesh->options.cull_faces = false;
 
     room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
+}
+
+void init_grass_scene()
+{
+    auto light_ent = Engine::entity_manager.create<LightComp>("Light");
+
+    light_ent->transform.translate({2, 100, -1});
+
+    auto light_data = light_ent->find<LightComp>();
+    light_data->data.power = 80;
+
+    auto ground_ent = Engine::entity_manager.create<MeshRenderer>("ground");
+
+    ground_ent->transform.scale(glm::vec3{100});
+    ground_ent->transform.translate({0, -0.01, 0});
+
+    auto ground_mesh = ground_ent->find<MeshRenderer>();
+
+    ground_mesh->set_mesh("assets/models/primitives/plane.glb");
+
+    auto &material = ground_mesh->model.meshes.front().material;
+    material.diffuse = *Engine::asset_manager.get_texture("assets/grass_ground.jpg");
+    material.diffuse.scale = 60;
+    material.shininess = 1;
+
+    auto grass_ent = Engine::entity_manager.create<MeshRenderer>("Grass");
+
+    grass_ent->transform.rotate(90, glm::vec3{1, 0, 0});
+
+    auto grass_mesh = grass_ent->find<MeshRenderer>();
+
+    grass_mesh->set_mesh("assets/models/primitives/plane.glb");
+
+    auto &grass_material = grass_mesh->model.meshes.front().material;
+    grass_material.diffuse = *Engine::asset_manager.get_texture("assets/grass.png");
+    grass_material.shininess = 1;
+    grass_material.recieve_lighting = false;
+}
+
+int main()
+{
+    ASSERT_ERR(Engine::init({
+            .title = "playground engine",
+            .window_size = {1920, 1080},
+            .graphics_api = GraphicsApi::OpenGl,
+        }));
+
+    Engine::entity_manager.create<ControlTest>("ControlTest");
+    Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
+
+    Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
+
+    init_grass_scene();
+    //init_room_scene();
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
-
 
     ASSERT_ERR(Engine::run());
 

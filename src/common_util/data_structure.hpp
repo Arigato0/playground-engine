@@ -18,7 +18,7 @@ namespace util
     {
         for (auto &item : other)
         {
-            vector.push_back(std::move(item));
+            vector.push_back(item);
         }
     }
 }

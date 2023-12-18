@@ -50,7 +50,7 @@ namespace pge
         virtual void new_frame() = 0;
 
         // draws the given mesh
-        virtual uint32_t draw(const Mesh &mesh, glm::mat4 transform, DrawOptions options = {}) = 0;
+        virtual uint32_t draw(const MeshView &mesh, glm::mat4 transform, DrawOptions options = {}) = 0;
 
         // sets if wireframe mode is active
         virtual void set_wireframe_mode(bool value) = 0;

@@ -34,6 +34,8 @@ namespace pge
 
         virtual void resizable(bool value) = 0;
 
+        virtual bool is_fullscreen() const = 0;
+
         virtual void set_graphics_api(GraphicsApi api) = 0;
 
         virtual std::pair<uint32_t, uint32_t> framebuffer_size() = 0;

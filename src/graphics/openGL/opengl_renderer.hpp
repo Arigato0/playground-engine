@@ -32,7 +32,7 @@ namespace pge
 
         void new_frame() override;
 
-        uint32_t draw(const Mesh &mesh, glm::mat4 model, DrawOptions options = {}) override;
+        uint32_t draw(const MeshView &mesh, glm::mat4 model, DrawOptions options = {}) override;
 
         uint32_t create_texture(std::string_view path, uint32_t &out_texture) override;
 
@@ -60,5 +60,7 @@ namespace pge
         IdTable<GlBuffers> m_buffers;
         GlShader m_shader;
         GlShader m_outline_shader;
+
+        void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
     };
 }

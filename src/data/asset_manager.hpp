@@ -24,8 +24,7 @@ namespace pge
             {}
         };
     public:
-
-        Model*   get_model(std::string_view path);
+        std::optional<pge::ModelView> get_model(std::string_view path);
         Texture* get_texture(std::string_view path);
 
         void free_asset(std::string_view path);
