@@ -82,8 +82,8 @@ vec3 create_texture(Texture text)
 
 struct LightingData
 {
-    vec3 diffuse_texture;
-    vec3 specular_texture;
+    vec3 diffuse;
+    vec3 specular;
     vec3 norm;
     vec3 view_dir;
 };
@@ -94,13 +94,13 @@ vec3 calculate_lighting(Light light, LightingData data)
 
     float diff = max(dot(data.norm, light_dir), 0.0);
 
-    vec3 diffuse = light.color * light.diffuse * diff * data.diffuse_texture * light.power;
-    vec3 ambient =  light.color * data.diffuse_texture * light.ambient * light.power;
+    vec3 diffuse = light.color * light.diffuse * diff * data.diffuse * light.power;
+    vec3 ambient =  light.color * data.diffuse * light.ambient * light.power;
 
     vec3 reflect_dir = reflect(-light_dir, data.norm);
 
     float spec = pow(max(dot(data.view_dir, reflect_dir), 0.0), material.shininess);
-    vec3 specular = light.color * data.specular_texture * spec * light.specular * light.power;
+    vec3 specular = light.color * data.specular * spec * light.specular * light.power;
 
     if (light.is_spot)
     {
@@ -130,16 +130,6 @@ vec4 calculate_depth()
     float linear_depth = (2.0 * near * far) / (far + near - z * (far - near));
 
     return vec4(vec3(linear_depth / far), 1.0);
-}
-
-void blend_test()
-{
-    vec4 tex = texture(material.diffuse.sampler, text_cord);
-
-    if (tex.a < 0.1)
-    {
-        discard;
-    }
 }
 
 void main()
@@ -178,7 +168,7 @@ void main()
     }
     else
     {
-        result += lighting_data.diffuse_texture;
+        result += lighting_data.diffuse;
     }
 
     if (any(greaterThan(material.color, vec3(0.0))))
@@ -190,5 +180,5 @@ void main()
         result *= material.color;
     }
 
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4(result, tex.a);
 }

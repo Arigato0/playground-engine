@@ -20,6 +20,7 @@ namespace pge
 
     struct Material
     {
+        bool is_transparent = false;
         float shininess = 32;
         Texture diffuse;
         Texture specular;

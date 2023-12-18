@@ -42,7 +42,7 @@ std::optional<pge::ModelView> pge::AssetManager::get_model(std::string_view path
     return make_model_view(*model);
 }
 
-pge::Texture* pge::AssetManager::get_texture(std::string_view path)
+pge::Texture* pge::AssetManager::get_texture(std::string_view path, bool flip, TextureWrapMode mode)
 {
     if (!fs::exists(path))
     {
@@ -57,7 +57,7 @@ pge::Texture* pge::AssetManager::get_texture(std::string_view path)
     {
         Texture texture;
 
-        auto result = Engine::renderer->create_texture(path, texture.id);
+        auto result = Engine::renderer->create_texture(path, texture.id, flip, mode);
 
         texture.path = path;
 

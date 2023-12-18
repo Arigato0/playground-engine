@@ -20,9 +20,9 @@ namespace pge
         Entity* find(std::string_view name);
 
         template<IsComponent ...C>
-        Entity* create(std::string &&name)
+        Entity* create(std::string_view name)
         {
-            auto [iter, inserted] = m_entities.emplace(std::forward<std::string>(name), Entity{});
+            auto [iter, inserted] = m_entities.emplace(name, Entity{});
 
             if (!inserted)
             {

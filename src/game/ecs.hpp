@@ -153,6 +153,13 @@ namespace pge
         std::derived_from<IComponent, T>;
     };
 
+    // creates an instance of the component to make sure it gets registered as a prototype
+    template<IsComponent ...A>
+    static void register_components()
+    {
+        (A(), ...);
+    }
+
     class EntityManager;
 
     class Entity

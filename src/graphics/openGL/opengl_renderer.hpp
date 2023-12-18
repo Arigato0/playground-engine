@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <set>
 
 #include "opengl_shader.hpp"
@@ -32,9 +33,12 @@ namespace pge
 
         void new_frame() override;
 
+        void end_frame() override;
+
         uint32_t draw(const MeshView &mesh, glm::mat4 model, DrawOptions options = {}) override;
 
-        uint32_t create_texture(std::string_view path, uint32_t &out_texture) override;
+        uint32_t create_texture(std::string_view path, uint32_t &out_texture,
+            bool flip, TextureWrapMode wrap_mode) override;
 
         void delete_texture(uint32_t id) override;
 
@@ -60,7 +64,12 @@ namespace pge
         IdTable<GlBuffers> m_buffers;
         GlShader m_shader;
         GlShader m_outline_shader;
+        std::map<float, DrawData> m_sorted_meshes;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
+
+        void handle_lighting();
+
+        unsigned handle_draw(const MeshView&mesh, glm::mat4 model, DrawOptions options);
     };
 }

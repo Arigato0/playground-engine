@@ -747,32 +747,58 @@ public:
     }
 };
 
+std::pair<Entity*, MeshRenderer*> create_mesh(std::string_view name, std::string_view path)
+{
+    auto entity = Engine::entity_manager.create<MeshRenderer>(name);
+
+    auto mesh = entity->find<MeshRenderer>();
+
+    mesh->set_mesh(path);
+
+    return {entity, mesh};
+}
+
 void init_room_scene()
 {
     auto light_ent = Engine::entity_manager.create<LightComp>("Light");
 
     light_ent->transform.translate({2, 3, -1});
 
-    auto backpack_ent = Engine::entity_manager.create<MeshRenderer>("Backpack");
-
-    backpack_ent->transform.translate(glm::vec3{-2, 0.6, -3});
-    backpack_ent->transform.rotate(45, {0, 1, 0});
-    backpack_ent->transform.scale(glm::vec3{0.4f});
-
-    auto backpack_mesh = backpack_ent->find<MeshRenderer>();
-
-    backpack_mesh->set_mesh("assets/models/backpack/backpack.obj");
-
-    backpack_mesh->options.enable_outline = true;
-    backpack_mesh->options.outline.depth_test = true;
-
-    auto room_ent = Engine::entity_manager.create<MeshRenderer>("Room");
-
-    auto room_mesh = room_ent->find<MeshRenderer>();
+    auto [room_ent, room_mesh] = create_mesh("Room", "/home/arian/Downloads/testing room/room.obj");
 
     room_mesh->options.cull_faces = false;
 
-    room_mesh->set_mesh("/home/arian/Downloads/testing room/room.obj");
+    auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
+
+    window_ent->transform.translate({0, 2, -3});
+    window_ent->transform.rotate(180, glm::vec3{0, 1, 1});
+
+    window_mesh->options.cull_faces = false;
+
+    auto &window_material = window_mesh->model.meshes.front().material;
+    window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
+    window_material.shininess = 1;
+    window_material.recieve_lighting = false;
+    window_material.is_transparent = true;
+
+
+    auto [window_ent2, window_mesh2] = create_mesh("Window2", "assets/models/primitives/plane.glb");
+
+    window_ent2->transform.translate({1, 2, -4});
+    window_ent2->transform.rotate(180, glm::vec3{0, 1, 1});
+
+    window_mesh2->options.cull_faces = false;
+
+    auto &window_material2 = window_mesh2->model.meshes.front().material;
+    window_material2.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
+    window_material2.shininess = 1;
+    window_material2.recieve_lighting = false;
+    window_material2.is_transparent = true;
+
+    auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
+
+    skull_ent->transform.translate({-2, 1.5, -3});
+    skull_ent->transform.rotate(30, {0, 1, 0});
 }
 
 void init_grass_scene()
@@ -800,16 +826,33 @@ void init_grass_scene()
 
     auto grass_ent = Engine::entity_manager.create<MeshRenderer>("Grass");
 
-    grass_ent->transform.rotate(90, glm::vec3{1, 0, 0});
+    grass_ent->transform.rotate(180, glm::vec3{0, 1, 1});
 
     auto grass_mesh = grass_ent->find<MeshRenderer>();
 
     grass_mesh->set_mesh("assets/models/primitives/plane.glb");
 
+    grass_mesh->options.cull_faces = false;
+
     auto &grass_material = grass_mesh->model.meshes.front().material;
-    grass_material.diffuse = *Engine::asset_manager.get_texture("assets/grass.png");
+    grass_material.diffuse = *Engine::asset_manager.get_texture("assets/grass.png", false, TextureWrapMode::ClampToEdge);
     grass_material.shininess = 1;
     grass_material.recieve_lighting = false;
+
+    auto window_ent = Engine::entity_manager.create<MeshRenderer>("Window");
+
+    window_ent->transform.rotate(180, glm::vec3{0, 1, 1});
+
+    auto window_mesh = window_ent->find<MeshRenderer>();
+
+    window_mesh->set_mesh("assets/models/primitives/plane.glb");
+
+    window_mesh->options.cull_faces = false;
+
+    auto &window_material = window_mesh->model.meshes.front().material;
+    window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", false, TextureWrapMode::ClampToEdge);
+    window_material.shininess = 1;
+    window_material.recieve_lighting = false;
 }
 
 int main()
@@ -823,10 +866,14 @@ int main()
     Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
+    MeshRenderer _;
     Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
 
-    init_grass_scene();
-    //init_room_scene();
+    register_components<MeshRenderer, LightComp>();
+
+    //init_grass_scene();
+
+    init_room_scene();
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

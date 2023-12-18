@@ -49,6 +49,8 @@ namespace pge
 
         virtual void new_frame() = 0;
 
+        virtual void end_frame() = 0;
+
         // draws the given mesh
         virtual uint32_t draw(const MeshView &mesh, glm::mat4 transform, DrawOptions options = {}) = 0;
 
@@ -64,7 +66,8 @@ namespace pge
         // translates the underlying graphics apis error code to a string
         virtual std::string_view error_message(uint32_t code) = 0;
 
-        virtual uint32_t create_texture(std::string_view path, uint32_t &out_texture) = 0;
+        virtual uint32_t create_texture(std::string_view path, uint32_t &out_texture,
+            bool flip, TextureWrapMode wrap_mode) = 0;
 
         virtual void delete_texture(uint32_t id) = 0;
 

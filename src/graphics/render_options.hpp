@@ -25,6 +25,22 @@ namespace pge
         bool cull_faces = true;
     };
 
+    // all the data needed to draw a mesh
+    struct DrawData
+    {
+        const MeshView &mesh;
+        const glm::mat4 transform;
+        const DrawOptions options;
+    };
+
+    enum class TextureWrapMode : uint8_t
+    {
+        Repeat,
+        MirroredRepeat,
+        ClampToEdge,
+        ClampToBorder,
+    };
+
     enum class WireframeMode : uint8_t
     {
         Lines,

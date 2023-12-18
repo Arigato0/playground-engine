@@ -65,6 +65,8 @@ pge::ErrorCode pge::Engine::run()
 
         entity_manager.update(statistics.delta_time());
 
+        renderer->end_frame();
+
         imgui_draw();
 
         reset_input();

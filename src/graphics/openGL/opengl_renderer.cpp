@@ -11,6 +11,9 @@
 #include "../../application/engine.hpp"
 #include "../light.hpp"
 
+#include <glm/gtx/norm.hpp>
+#include <ranges>
+
 #define WINDOW_PTR (GLFWwindow*)Engine::window.handle()
 
 uint32_t pge::OpenglRenderer::init()
@@ -32,7 +35,7 @@ uint32_t pge::OpenglRenderer::init()
             glViewport(0, 0, width, height);
         });
 
-    create_texture("assets/missing.jpeg", m_missing_texture);
+    create_texture("assets/missing.jpeg", m_missing_texture, false, TextureWrapMode::Repeat);
 
     m_shader.create
    ({
@@ -48,11 +51,15 @@ uint32_t pge::OpenglRenderer::init()
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
-    //glEnable(GL_CULL_FACE);
     glEnable(GL_STENCIL_TEST);
 
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
 
     return OPENGL_ERROR_OK;
 }
@@ -133,9 +140,15 @@ void pge::OpenglRenderer::new_frame()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void set_uniforms(pge::Material material)
+void pge::OpenglRenderer::end_frame()
 {
+    for (auto &m_sorted_mesh : std::ranges::reverse_view(m_sorted_meshes))
+    {
+        auto [mesh, model, options] = m_sorted_mesh.second;
+        handle_draw(mesh, model, options);
+    }
 
+    m_sorted_meshes.clear();
 }
 
 void draw_mesh(const pge::MeshView &mesh)
@@ -164,35 +177,133 @@ void default_stencil()
 
 uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOptions options)
 {
-    if (!m_buffers.valid_id(mesh.id))
+    if (mesh.material.is_transparent)
     {
-        return OPENGL_ERROR_MESH_NOT_FOUND;
+        float distance = glm::length2(m_camera->position - glm::vec3{model[3]});
+        m_sorted_meshes.emplace(distance, DrawData{mesh, model, options});
+
+        return OPENGL_ERROR_OK;
     }
 
-    if (options.cull_faces)
+    return handle_draw(mesh, model, options);
+}
+
+uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture,
+    bool flip, TextureWrapMode wrap_mode)
+{
+    stbi_set_flip_vertically_on_load(flip);
+
+    int width, height, channels;
+
+    uint8_t *data = stbi_load(path.data(), &width, &height, &channels, 0);
+
+    DEFER([&data]
     {
-        glEnable(GL_CULL_FACE);
+        stbi_image_free(data);
+    });
+
+    if (data == nullptr)
+    {
+        out_texture = m_missing_texture;
+        return OPENGL_ERROR_TEXTURE_LOADING;
     }
 
-    auto buffers = m_buffers.get(mesh.id);
+    uint32_t id;
 
-    m_shader.use();
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
 
+    int wrap;
+    using enum TextureWrapMode;
+
+    switch (wrap_mode)
+    {
+        case Repeat: wrap = GL_REPEAT; break;
+        case MirroredRepeat: wrap = GL_MIRRORED_REPEAT; break;
+        case ClampToEdge: wrap = GL_CLAMP_TO_EDGE; break;
+        case ClampToBorder: wrap = GL_CLAMP_TO_BORDER; break;
+    }
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int format;
+
+    if (channels == 1)
+    {
+        format = GL_RED;
+    }
+    if (channels == 3)
+    {
+        format = GL_RGB;
+    }
+    if (channels == 4)
+    {
+        format = GL_RGBA;
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    out_texture = id;
+
+    return OPENGL_ERROR_OK;
+}
+
+void pge::OpenglRenderer::delete_texture(uint32_t id)
+{
+    if (id == m_missing_texture)
+    {
+        return;
+    }
+
+    glDeleteTextures(1, &id);
+}
+
+pge::RendererProperties pge::OpenglRenderer::properties()
+{
+    RendererProperties output
+    {
+        .device_name = (const char*)glGetString(GL_RENDERER),
+        .api = GraphicsApi::OpenGl
+    };
+
+    glGetIntegerv(GL_MAJOR_VERSION, (GLint*)&output.version_major);
+    glGetIntegerv(GL_MINOR_VERSION, (GLint*)&output.version_minor);
+
+    return output;
+}
+
+void pge::OpenglRenderer::draw_shaded_wireframe(const Mesh& mesh, glm::mat4 model)
+{
+    m_outline_shader.use();
+
+    m_outline_shader.set("projection", m_camera->projection);
+    m_outline_shader.set("view", m_camera->view);
+    m_outline_shader.set("model", model);
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+
+    glPolygonOffset( -1.f, 0);
+
+    draw_mesh(mesh);
+
+    glDisable( GL_POLYGON_OFFSET_FILL );
+    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+}
+
+void pge::OpenglRenderer::handle_lighting()
+{
     m_shader.set("light_count", (int)Light::table.size());
 
-    auto material = mesh.material;
-
-    m_shader.set("material.color", material.color);
-    m_shader.set("material.shininess", material.shininess);
-    m_shader.set("texture_scale", material.diffuse.scale);
-    m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
-    m_shader.set("material.specular.enabled", material.specular.enabled);
-    m_shader.set("recieve_lighting", material.recieve_lighting);
-
     auto light_iter = Light::table.begin();
+
     for (int i = 0; i < Light::table.size(); i++)
     {
-        auto *light = *(light_iter++);
+        auto *light = *light_iter++;
 
         if (light == nullptr)
         {
@@ -228,7 +339,34 @@ uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOp
             m_shader.set(field("position"), *light->position);
         }
     }
+}
 
+uint32_t pge::OpenglRenderer::handle_draw(const MeshView&mesh, glm::mat4 model, DrawOptions options)
+{
+    if (!m_buffers.valid_id(mesh.id))
+    {
+        return OPENGL_ERROR_MESH_NOT_FOUND;
+    }
+
+    if (options.cull_faces)
+    {
+        glEnable(GL_CULL_FACE);
+    }
+
+    auto buffers = m_buffers.get(mesh.id);
+
+    m_shader.use();
+
+    handle_lighting();
+
+    auto material = mesh.material;
+
+    m_shader.set("material.color", material.color);
+    m_shader.set("material.shininess", material.shininess);
+    m_shader.set("texture_scale", material.diffuse.scale);
+    m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
+    m_shader.set("material.specular.enabled", material.specular.enabled);
+    m_shader.set("recieve_lighting", material.recieve_lighting);
     m_shader.set("material.diffuse.sampler", 0);
     m_shader.set("material.specular.sampler", 1);
     m_shader.set("model", model);
@@ -281,80 +419,4 @@ uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOp
     Engine::statistics.report_verticies(mesh.vertices.size());
 
     return OPENGL_ERROR_OK;
-}
-
-uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture)
-{
-    stbi_set_flip_vertically_on_load(true);
-    int width, height, channels;
-
-    uint8_t *data = stbi_load(path.data(), &width, &height, &channels, 0);
-
-    DEFER([&data]
-    {
-        stbi_image_free(data);
-    });
-
-    if (data == nullptr)
-    {
-        out_texture = m_missing_texture;
-        return OPENGL_ERROR_TEXTURE_LOADING;
-    }
-
-    uint32_t id;
-
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    auto format = channels > 3 ? GL_RGBA : GL_RGB;
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    out_texture = id;
-
-    return OPENGL_ERROR_OK;
-}
-
-void pge::OpenglRenderer::delete_texture(uint32_t id)
-{
-    if (id == m_missing_texture)
-    {
-        return;
-    }
-
-    glDeleteTextures(1, &id);
-}
-
-pge::RendererProperties pge::OpenglRenderer::properties()
-{
-    RendererProperties output
-    {
-        .device_name = (const char*)glGetString(GL_RENDERER),
-        .api = GraphicsApi::OpenGl
-    };
-
-    glGetIntegerv(GL_MAJOR_VERSION, (GLint*)&output.version_major);
-    glGetIntegerv(GL_MINOR_VERSION, (GLint*)&output.version_minor);
-
-    return output;
-}
-
-void pge::OpenglRenderer::draw_shaded_wireframe(const Mesh& mesh, glm::mat4 model)
-{
-    m_outline_shader.use();
-    m_outline_shader.set("projection", m_camera->projection);
-    m_outline_shader.set("view", m_camera->view);
-    m_outline_shader.set("model", model);
-    m_outline_shader.set("color", glm::vec4{});
-    m_outline_shader.set("extrude_mul", 0.005f);
-
-    set_wireframe_mode(true);
-    draw_mesh(mesh);
-    set_wireframe_mode(false);
 }
