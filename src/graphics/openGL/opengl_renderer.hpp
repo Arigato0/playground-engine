@@ -13,9 +13,9 @@ namespace pge
 {
     struct GlBuffers
     {
-        uint32_t vbo;
-        uint32_t vao;
-        uint32_t ebo;
+        GLuint vbo;
+        GLuint vao;
+        GLuint ebo;
     };
 
     class OpenglRenderer : public IRenderer

@@ -71,6 +71,11 @@ public:
         }
     }
 
+    void editor_update(double delta_time) override
+    {
+        update(delta_time);
+    }
+
     bool set_mesh(std::string_view path)
     {
         if (!model.meshes.empty())
@@ -770,6 +775,8 @@ void init_room_scene()
 
     room_mesh->options.cull_faces = false;
 
+    create_mesh("Sphere", "assets/models/primitives/sphere.glb");
+
     auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
 
     window_ent->transform.translate({0, 2, -3});
@@ -783,19 +790,6 @@ void init_room_scene()
     window_material.recieve_lighting = false;
     window_material.is_transparent = true;
 
-    auto [window_ent2, window_mesh2] = create_mesh("Window2", "assets/models/primitives/plane.glb");
-
-    window_ent2->transform.translate({1, 2, -4});
-    window_ent2->transform.rotate(180, glm::vec3{0, 1, 1});
-
-    window_mesh2->options.cull_faces = false;
-
-    auto &window_material2 = window_mesh2->model.meshes.front().material;
-    window_material2.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
-    window_material2.shininess = 1;
-    window_material2.recieve_lighting = false;
-    window_material2.is_transparent = true;
-
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
     skull_ent->transform.translate({-2, 1.5, -3});
@@ -804,7 +798,8 @@ void init_room_scene()
     for (auto &mesh : skull_mesh->model.meshes)
     {
         mesh.material.is_transparent = true;
-        mesh.material.transparency = 0.5f;
+        mesh.material.transparency = 0.3f;
+        mesh.material.color = {1, 0.161, 0.933};
     }
 }
 
@@ -845,6 +840,7 @@ void init_grass_scene()
     grass_material.diffuse = *Engine::asset_manager.get_texture("assets/grass.png", false, TextureWrapMode::ClampToEdge);
     grass_material.shininess = 1;
     grass_material.recieve_lighting = false;
+    grass_material.is_transparent = true;
 
     auto window_ent = Engine::entity_manager.create<MeshRenderer>("Window");
 
@@ -860,6 +856,19 @@ void init_grass_scene()
     window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", false, TextureWrapMode::ClampToEdge);
     window_material.shininess = 1;
     window_material.recieve_lighting = false;
+    window_material.is_transparent = true;
+
+    auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
+
+    skull_ent->transform.translate({-2, 1.5, -3});
+    skull_ent->transform.rotate(30, {0, 1, 0});
+
+    for (auto &mesh : skull_mesh->model.meshes)
+    {
+        mesh.material.is_transparent = true;
+        mesh.material.transparency = 0.3f;
+        mesh.material.color = {1, 0.161, 0.933};
+    }
 }
 
 int main()
@@ -873,7 +882,6 @@ int main()
     Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    MeshRenderer _;
     Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
 
     register_components<MeshRenderer, LightComp>();

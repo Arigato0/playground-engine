@@ -48,7 +48,7 @@ namespace pge
     // a read only view of a mesh with owned materials
     struct MeshView
     {
-        const uint32_t id;
+        const uint32_t &id;
         const std::string_view name;
         const std::span<const Vertex> vertices;
         const std::span<const uint32_t> indices;

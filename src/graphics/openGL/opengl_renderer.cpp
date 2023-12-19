@@ -113,8 +113,8 @@ void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
 {
     auto buffers = m_buffers.get(mesh.id);
 
-    glDeleteVertexArrays(1, &buffers.vbo);
-    glDeleteBuffers(1, &buffers.vao);
+    glDeleteVertexArrays(1, &buffers.vao);
+    glDeleteBuffers(1, &buffers.vbo);
     glDeleteBuffers(1, &buffers.ebo);
 
     m_buffers.remove(mesh.id);
@@ -153,7 +153,7 @@ void pge::OpenglRenderer::end_frame()
 
 void draw_mesh(const pge::MeshView &mesh)
 {
-    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
     pge::Engine::statistics.report_draw_call();
 }
 
@@ -341,7 +341,7 @@ void pge::OpenglRenderer::handle_lighting()
     }
 }
 
-uint32_t pge::OpenglRenderer::handle_draw(const MeshView&mesh, glm::mat4 model, DrawOptions options)
+uint32_t pge::OpenglRenderer::handle_draw(const MeshView &mesh, glm::mat4 model, DrawOptions options)
 {
     if (!m_buffers.valid_id(mesh.id))
     {
