@@ -2,6 +2,7 @@
 
 #include "model_loader.hpp"
 
+#include "stb_image.h"
 #include "../common_util/macros.hpp"
 #include "../application/engine.hpp"
 
@@ -108,14 +109,23 @@ pge::Mesh pge::ModelLoader::process_mesh(aiMesh* mesh, const aiScene* scene)
         auto *material = scene->mMaterials[mesh->mMaterialIndex];
 
         aiColor3D color {};
-        float shininess;
+
         material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-        material->Get(AI_MATKEY_SHININESS, shininess);
+        material->Get(AI_MATKEY_SHININESS, output.material.shininess);
+        material->Get(AI_MATKEY_OPACITY, output.material.alpha);
+
+        if (output.material.alpha < 1.0f)
+        {
+            output.material.use_alpha = true;
+        }
+        if (output.material.shininess < 1)
+        {
+            output.material.shininess = 1;
+        }
 
         output.material.color = {color.r, color.g, color.b};
-        output.material.shininess = shininess;
 
-        output.material.diffuse = load_material(material, aiTextureType_DIFFUSE);
+        output.material.diffuse  = load_material(material, aiTextureType_DIFFUSE);
         output.material.specular = load_material(material, aiTextureType_SPECULAR);
     }
 
@@ -135,7 +145,7 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
 
     m_path.replace_filename(path.C_Str()).c_str();
 
-    auto *texture = pge::Engine::asset_manager.get_texture(m_path.c_str());
+    auto *texture = Engine::asset_manager.get_texture(m_path.c_str());
 
     if (texture == nullptr)
     {

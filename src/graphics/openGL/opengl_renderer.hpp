@@ -8,6 +8,7 @@
 #include "../renderer_interface.hpp"
 #include "../render_options.hpp"
 #include "../../data/id_table.hpp"
+#include "../../data/string.hpp"
 
 namespace pge
 {
@@ -37,8 +38,11 @@ namespace pge
 
         uint32_t draw(const MeshView &mesh, glm::mat4 model, DrawOptions options = {}) override;
 
-        uint32_t create_texture(std::string_view path, uint32_t &out_texture,
+        uint32_t create_texture_from_path(std::string_view path, uint32_t &out_texture,
             bool flip, TextureWrapMode wrap_mode) override;
+
+        uint32_t create_texture(ustring_view data, int width, int height, int channels,
+            uint32_t &out_texture, TextureWrapMode wrap_mode) override;
 
         void delete_texture(uint32_t id) override;
 

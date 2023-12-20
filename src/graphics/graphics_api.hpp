@@ -17,7 +17,7 @@ namespace pge
 
         switch (api)
         {
-            case Vulkan: return true;
+            case Vulkan: return false;
             case OpenGl: return true;
             default: return false;
         }

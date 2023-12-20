@@ -8,7 +8,7 @@
 pge::ErrorCode pge::Engine::init(AppInfo info)
 {
     window.set_graphics_api(info.graphics_api);
-	window.resizable(true);
+	window.set_resizable(true);
 
     auto ok = window.open(info.title, info.window_size.x, info.window_size.y);
 
@@ -86,7 +86,6 @@ void pge::Engine::shutdown()
 
     cleanup_imgui();
     delete renderer;
-	glfwTerminate();
 
     m_initialized = false;
 }

@@ -25,7 +25,7 @@ namespace pge
             {}
         };
     public:
-        std::optional<pge::ModelView> get_model(std::string_view path);
+        std::optional<ModelView> get_model(std::string_view path);
         Texture* get_texture(std::string_view path, bool flip = true, TextureWrapMode mode = TextureWrapMode::Repeat);
 
         void free_asset(std::string_view path);

@@ -10,6 +10,7 @@
 #include "../application/fmt.hpp"
 #include "CameraData.hpp"
 #include "render_options.hpp"
+#include "../data/string.hpp"
 
 namespace pge
 {
@@ -66,8 +67,11 @@ namespace pge
         // translates the underlying graphics apis error code to a string
         virtual std::string_view error_message(uint32_t code) = 0;
 
-        virtual uint32_t create_texture(std::string_view path, uint32_t &out_texture,
+        virtual uint32_t create_texture_from_path(std::string_view path, uint32_t &out_texture,
             bool flip, TextureWrapMode wrap_mode) = 0;
+
+        virtual uint32_t create_texture(ustring_view data, int width, int height, int channels,
+            uint32_t &out_texture, TextureWrapMode wrap_mode) = 0;
 
         virtual void delete_texture(uint32_t id) = 0;
 

@@ -14,6 +14,8 @@
 #include <glm/gtx/norm.hpp>
 #include <ranges>
 
+#include "../../data/string.hpp"
+
 #define WINDOW_PTR (GLFWwindow*)Engine::window.handle()
 
 uint32_t pge::OpenglRenderer::init()
@@ -29,13 +31,14 @@ uint32_t pge::OpenglRenderer::init()
 
     glViewport(0, 0, width, height);
 
-    glfwSetFramebufferSizeCallback(WINDOW_PTR,
-        [](GLFWwindow *_, int width, int height)
+    Engine::window.on_framebuffer_resize.connect(
+        [](IWindow*, int width, int height)
         {
             glViewport(0, 0, width, height);
         });
 
-    create_texture("assets/missing.jpeg", m_missing_texture, false, TextureWrapMode::Repeat);
+
+    create_texture_from_path("assets/missing.jpeg", m_missing_texture, false, TextureWrapMode::Repeat);
 
     m_shader.create
    ({
@@ -177,7 +180,7 @@ void default_stencil()
 
 uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOptions options)
 {
-    if (mesh.material.is_transparent)
+    if (mesh.material.use_alpha)
     {
         float distance = glm::length2(m_camera->position - glm::vec3{model[3]});
         m_sorted_meshes.emplace(distance, DrawData{mesh, model, options});
@@ -188,19 +191,14 @@ uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOp
     return handle_draw(mesh, model, options);
 }
 
-uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &out_texture,
-    bool flip, TextureWrapMode wrap_mode)
+uint32_t pge::OpenglRenderer::create_texture_from_path(std::string_view path, uint32_t& out_texture, bool flip,
+    TextureWrapMode wrap_mode)
 {
     stbi_set_flip_vertically_on_load(flip);
 
     int width, height, channels;
 
-    uint8_t *data = stbi_load(path.data(), &width, &height, &channels, 0);
-
-    DEFER([&data]
-    {
-        stbi_image_free(data);
-    });
+    auto *data = stbi_load(path.data(), &width, &height, &channels, 0);
 
     if (data == nullptr)
     {
@@ -208,10 +206,19 @@ uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &ou
         return OPENGL_ERROR_TEXTURE_LOADING;
     }
 
-    uint32_t id;
+    DEFER([&data]
+    {
+        stbi_image_free(data);
+    });
 
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    return create_texture(data, width, height, channels, out_texture, wrap_mode);
+}
+
+uint32_t pge::OpenglRenderer::create_texture(ustring_view data, int width, int height, int channels,
+    uint32_t &out_texture, TextureWrapMode wrap_mode)
+{
+    glGenTextures(1, &out_texture);
+    glBindTexture(GL_TEXTURE_2D, out_texture);
 
     int wrap;
     using enum TextureWrapMode;
@@ -244,10 +251,8 @@ uint32_t pge::OpenglRenderer::create_texture(std::string_view path, uint32_t &ou
         format = GL_RGBA;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data.data());
     glGenerateMipmap(GL_TEXTURE_2D);
-
-    out_texture = id;
 
     return OPENGL_ERROR_OK;
 }
@@ -366,7 +371,7 @@ uint32_t pge::OpenglRenderer::handle_draw(const MeshView &mesh, glm::mat4 model,
     m_shader.set("texture_scale", material.diffuse.scale);
     m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
     m_shader.set("material.specular.enabled", material.specular.enabled);
-    m_shader.set("material.transparency", material.transparency);
+    m_shader.set("material.transparency", material.alpha);
     m_shader.set("recieve_lighting", material.recieve_lighting);
     m_shader.set("material.diffuse.sampler", 0);
     m_shader.set("material.specular.sampler", 1);

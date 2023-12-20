@@ -138,8 +138,8 @@ public:
                 {"Recieve light", &material.recieve_lighting},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
-                {"Is transparent", &material.is_transparent},
-                {"Transparency", DragControl(&material.transparency)},
+                {"Is transparent", &material.use_alpha},
+                {"Transparency", DragControl(&material.alpha)},
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
                 {"Enable texture", &material.diffuse.enabled},
                 {"Set Diffuse", [&mesh]
@@ -385,6 +385,10 @@ public:
 
             ImGui::EndMainMenuBar();
         }
+
+        // auto texture = *Engine::asset_manager.get_texture("assets/mona.jpg");
+        //
+        // ImGui::Image(ImTextureID(texture.id), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 
         if (show_object_control)
         {
@@ -775,7 +779,9 @@ void init_room_scene()
 
     room_mesh->options.cull_faces = false;
 
-    create_mesh("Sphere", "assets/models/primitives/sphere.glb");
+    create_mesh("TransparentCube", "/home/arian/Downloads/transparent.obj");
+    auto [sword_ent, sword_mesh] = create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
+    //sword_mesh->model.meshes.front().material.diffuse = *Engine::asset_manager.get_texture("/home/arian/Downloads/lowpoly-stylized-scimitar/source/Object001_2016-11-10_22-03-18_complete.rpf_converted.jpg", true, TextureWrapMode::ClampToEdge);
 
     auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
 
@@ -788,7 +794,7 @@ void init_room_scene()
     window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
     window_material.shininess = 1;
     window_material.recieve_lighting = false;
-    window_material.is_transparent = true;
+    window_material.use_alpha = true;
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
@@ -797,8 +803,8 @@ void init_room_scene()
 
     for (auto &mesh : skull_mesh->model.meshes)
     {
-        mesh.material.is_transparent = true;
-        mesh.material.transparency = 0.3f;
+        mesh.material.use_alpha = true;
+        mesh.material.alpha = 0.3f;
         mesh.material.color = {1, 0.161, 0.933};
     }
 }
@@ -840,7 +846,7 @@ void init_grass_scene()
     grass_material.diffuse = *Engine::asset_manager.get_texture("assets/grass.png", false, TextureWrapMode::ClampToEdge);
     grass_material.shininess = 1;
     grass_material.recieve_lighting = false;
-    grass_material.is_transparent = true;
+    grass_material.use_alpha = true;
 
     auto window_ent = Engine::entity_manager.create<MeshRenderer>("Window");
 
@@ -856,7 +862,7 @@ void init_grass_scene()
     window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", false, TextureWrapMode::ClampToEdge);
     window_material.shininess = 1;
     window_material.recieve_lighting = false;
-    window_material.is_transparent = true;
+    window_material.use_alpha = true;
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
@@ -865,8 +871,8 @@ void init_grass_scene()
 
     for (auto &mesh : skull_mesh->model.meshes)
     {
-        mesh.material.is_transparent = true;
-        mesh.material.transparency = 0.3f;
+        mesh.material.use_alpha = true;
+        mesh.material.alpha = 0.3f;
         mesh.material.color = {1, 0.161, 0.933};
     }
 }

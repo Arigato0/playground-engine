@@ -20,9 +20,9 @@ namespace pge
 
     struct Material
     {
-        bool is_transparent = false;
+        bool use_alpha = false;
         float shininess = 32;
-        float transparency = 1;
+        float alpha = 1;
         Texture diffuse;
         Texture specular;
         glm::vec3 color {0.0f};

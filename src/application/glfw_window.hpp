@@ -14,187 +14,57 @@
 
 namespace pge
 {
-
     class GlfwWindow : public IWindow
     {
     public:
+        GlfwWindow();
 
-        GlfwWindow()
-        {
-            if (!m_is_init)
-            {
-                glfwInit();
-                m_is_init = true;
-            }
+        bool open(std::string_view title, int width, int height) override;
 
-            glfwSetErrorCallback(glfw_error_cb);
-        }
+        void set_title(std::string_view title) override;
 
-        bool open(std::string_view title, int width, int height) override
-        {
-            if (!m_is_init)
-            {
-                glfwInit();
-                m_is_init = true;
-            }
+        void resize(int width, int height) override;
 
-            m_window = glfwCreateWindow(width, height, title.data(), m_monitor, nullptr);
+        void change(int width, int height, int refresh_rate, int xpos = 0, int ypos = 0) override;
 
-            glfwMakeContextCurrent(m_window);
+        void cap_refresh_rate(bool value) override;
 
-            set_raw_input(true);
+        void set_fullscreen(bool value) override;
 
-            return m_window != nullptr;
-        }
+        void close() override;
 
-        void set_title(std::string_view title) override
-        {
-            glfwSetWindowTitle(m_window, title.data());
-        }
+        bool should_close() override;
 
-        void resize(int width, int height) override
-        {
-            glfwSetWindowSize(m_window, width, height);
-        }
+        void set_should_close(bool value) override;
 
-        void change(int width, int height, int refresh_rate, int xpos = 0, int ypos = 0) override
-        {
-            glfwSetWindowMonitor(m_window, m_monitor, xpos, ypos, width, height, refresh_rate);
-        }
+        ~GlfwWindow() override;
 
-        void cap_refresh_rate(bool value) override
-        {
-            glfwSwapInterval(value);
-        }
+        void* handle() override;
 
-        void set_fullscreen(bool value) override
-        {
-            auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        void set_resizable(bool value) override;
 
-            int xpos, ypos;
-            glfwGetWindowPos(m_window, &xpos, &ypos);
+        void set_graphics_api(GraphicsApi api) override;
 
-            if (value && m_monitor == nullptr)
-            {
-                m_monitor = glfwGetPrimaryMonitor();
-            }
-            if (!value)
-            {
-                m_monitor = nullptr;
-            }
+        std::pair<uint32_t, uint32_t> framebuffer_size() override;
 
-            glfwSetWindowMonitor(m_window,
-                m_monitor, xpos, ypos, mode->width, mode->height, mode->refreshRate);
-        }
+        bool is_key_held(Key key) override;
 
-        void close() override
-        {
-            glfwDestroyWindow(m_window);
-            m_window = nullptr;
-        }
+        glm::dvec2 mouse_xy() override;
 
-        bool should_close() override
-        {
-            return glfwWindowShouldClose(m_window);
-        }
+        void set_cursor(CursorMode mode) override;
 
-        virtual void set_should_close(bool value) override
-        {
-            glfwSetWindowShouldClose(m_window, value);
-        }
+        void set_raw_input(bool value) override;
 
-        ~GlfwWindow()
-        {
-            glfwTerminate();
-            m_is_init = false;
-            close();
-        }
-
-        void* handle() override
-        {
-            return m_window;
-        }
-
-        void resizable(bool value) override
-        {
-            glfwWindowHint(GLFW_RESIZABLE, value);
-        }
-
-        void set_graphics_api(GraphicsApi api) override
-        {
-            assert(is_implemented(api) && "unimplemented graphics api supplied");
-
-            using enum GraphicsApi;
-
-            switch (api)
-            {
-                case Vulkan:
-                {
-                    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-                    break;
-                }
-                case OpenGl:
-                {
-                    glfwWindowHint(GLFW_SAMPLES, 8);
-                    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-                    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-                    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-                    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-                    break;
-                }
-            }
-        }
-
-        std::pair<uint32_t, uint32_t> framebuffer_size() override
-        {
-            uint32_t width, height;
-
-            glfwGetFramebufferSize(m_window, (int*)&width, (int*)&height);
-
-            return { width, height };
-        }
-
-        bool is_key_held(Key key) override
-        {
-            return glfwGetKey(m_window, (int)key) == GLFW_PRESS;
-        }
-
-        glm::dvec2 mouse_xy() override
-        {
-            glm::dvec2 output;
-
-            glfwGetCursorPos(m_window, &output.x, &output.y);
-
-            return output;
-        }
-
-        void set_cursor(CursorMode mode) override
-        {
-            glfwSetInputMode(m_window, GLFW_CURSOR, (int)mode);
-        }
-
-        virtual void set_raw_input(bool value) override
-        {
-            if (glfwRawMouseMotionSupported())
-            {
-                glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, value);
-            }
-        }
-
-        bool is_fullscreen() const
-        {
-            return m_monitor != nullptr;
-        }
+        bool is_fullscreen() const override;
 
     private:
         GLFWmonitor *m_monitor = nullptr;
         GLFWwindow *m_window;
         bool m_is_init = false;
 
-        static void glfw_error_cb(int code, const char* description)
-        {
-            Logger::warn("glfw error [{}]: {}", code, description);
-        }
+        static void glfw_error_cb(int code, const char* description);
+
+        void set_callbacks();
     };
 }    
 
