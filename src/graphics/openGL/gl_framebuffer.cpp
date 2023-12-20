@@ -30,7 +30,6 @@ uint32_t pge::GlFramebuffer::init()
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        Logger::info("{}", glCheckFramebufferStatus(GL_FRAMEBUFFER));
         return OPENGL_ERROR_FRAMEBUFFER_CREATION;
     }
 

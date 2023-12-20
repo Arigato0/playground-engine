@@ -29,7 +29,7 @@ namespace pge
     struct DrawData
     {
         const MeshView &mesh;
-        const glm::mat4 transform;
+        const glm::mat4 model;
         const DrawOptions options;
     };
 

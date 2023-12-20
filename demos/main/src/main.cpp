@@ -63,12 +63,7 @@ public:
     {
         for (const auto &mesh : model.meshes)
         {
-            auto result = Engine::renderer->draw(mesh, m_parent->transform.model, options);
-
-            if (result != 0)
-            {
-                Logger::fatal("could not draw mesh");
-            }
+            Engine::renderer->draw(mesh, m_parent->transform.model, options);
         }
     }
 

@@ -4,6 +4,8 @@
 
 #include <glm/glm.hpp>
 
+#include "CameraData.hpp"
+#include "CameraData.hpp"
 #include "graphics_api.hpp"
 #include "model.hpp"
 #include "shaders.hpp"
@@ -54,7 +56,7 @@ namespace pge
         virtual void end_frame() = 0;
 
         // draws the given mesh
-        virtual uint32_t draw(const MeshView &mesh, glm::mat4 transform, DrawOptions options = {}) = 0;
+        virtual void draw(const MeshView&mesh, glm::mat4 transform, DrawOptions options = {}) = 0;
 
         // sets if wireframe mode is active
         virtual void set_wireframe_mode(bool value) = 0;

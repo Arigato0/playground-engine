@@ -46,3 +46,16 @@ static float CUBE_MESH[] =
     -0.5f,  0.5f,  0.5f,    0.0f,  1.0f,  0.0f,  0.0f, 0.0f  // bottom-left
 };
 
+// quad mesh data mainly used for the screen plane
+static float QUAD_MESH[] =
+ {
+ // positions   // texCoords
+ -1.0f,  1.0f,  0.0f, 1.0f,
+ -1.0f, -1.0f,  0.0f, 0.0f,
+  1.0f, -1.0f,  1.0f, 0.0f,
+
+ -1.0f,  1.0f,  0.0f, 1.0f,
+  1.0f, -1.0f,  1.0f, 0.0f,
+  1.0f,  1.0f,  1.0f, 1.0f
+};
+

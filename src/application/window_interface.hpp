@@ -41,6 +41,8 @@ namespace pge
 
         virtual void set_graphics_api(GraphicsApi api) = 0;
 
+        virtual void swap_buffers() = 0;
+
         virtual std::pair<uint32_t, uint32_t> framebuffer_size() = 0;
 
         virtual bool is_key_held(Key key) = 0;

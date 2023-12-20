@@ -57,6 +57,8 @@ namespace pge
 
         bool is_fullscreen() const override;
 
+        void swap_buffers() override;
+
     private:
         GLFWmonitor *m_monitor = nullptr;
         GLFWwindow *m_window;

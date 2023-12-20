@@ -226,6 +226,11 @@ bool pge::GlfwWindow::is_fullscreen() const
     return m_monitor != nullptr;
 }
 
+void pge::GlfwWindow::swap_buffers()
+{
+    glfwSwapBuffers(m_window);
+}
+
 void pge::GlfwWindow::glfw_error_cb(int code, const char* description)
 {
     Logger::warn("glfw error [{}]: {}", code, description);

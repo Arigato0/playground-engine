@@ -14,9 +14,8 @@
 #include <glm/gtx/norm.hpp>
 #include <ranges>
 
+#include "../primitives.hpp"
 #include "../../data/string.hpp"
-
-#define WINDOW_PTR (GLFWwindow*)Engine::window.handle()
 
 uint32_t pge::OpenglRenderer::init()
 {
@@ -26,7 +25,6 @@ uint32_t pge::OpenglRenderer::init()
     {
         return OPENGL_ERROR_GLAD_INIT;
     }
-
 
     Engine::window.on_framebuffer_resize.connect(
     [](IWindow*, int width, int height)
@@ -48,6 +46,14 @@ uint32_t pge::OpenglRenderer::init()
        {PGE_FIND_SHADER("color.frag"), ShaderType::Fragment}
    });
 
+    m_screen_shader.create
+   ({
+       {PGE_FIND_SHADER("screen.vert"), ShaderType::Vertex},
+       {PGE_FIND_SHADER("screen.frag"), ShaderType::Fragment}
+   });
+
+    create_screen_pane();
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_STENCIL_TEST);
@@ -58,18 +64,18 @@ uint32_t pge::OpenglRenderer::init()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
     return m_framebuffer.init();
 }
 
 pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
 {
-    // auto id = m_shaders.size();
-    //
-    // auto &iter = m_shaders.emplace_back();
-    //
-    // iter.create(shaders);
+    auto &iter = m_shaders.emplace_back();
 
-    return nullptr;
+    iter.create(shaders);
+
+    return &iter;
 }
 
 void pge::OpenglRenderer::create_buffers(Mesh &mesh)
@@ -108,13 +114,7 @@ void pge::OpenglRenderer::create_buffers(Mesh &mesh)
 
 void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
 {
-    auto buffers = m_buffers.get(mesh.id);
-
-    glDeleteVertexArrays(1, &buffers.vao);
-    glDeleteBuffers(1, &buffers.vbo);
-    glDeleteBuffers(1, &buffers.ebo);
-
-    m_buffers.remove(mesh.id);
+    m_delete_queue.push_back(mesh.id);
     mesh.id = UINT32_MAX;
 }
 
@@ -122,40 +122,6 @@ void pge::OpenglRenderer::set_visualize_depth(bool value)
 {
     m_shader.use();
     m_shader.set("visualize_depth", value);
-}
-
-void pge::OpenglRenderer::new_frame()
-{
-    glfwSwapBuffers(WINDOW_PTR);
-
-    glClearColor(EXPAND_VEC4(clear_color));
-
-    glDepthFunc(GL_LESS);
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
-    m_framebuffer.bind();
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-}
-
-void pge::OpenglRenderer::end_frame()
-{
-    for (auto &m_sorted_mesh : std::ranges::reverse_view(m_sorted_meshes))
-    {
-        auto [mesh, model, options] = m_sorted_mesh.second;
-        handle_draw(mesh, model, options);
-    }
-
-    m_sorted_meshes.clear();
-
-    m_framebuffer.unbind();
-}
-
-void draw_mesh(const pge::MeshView &mesh)
-{
-    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
-    pge::Engine::statistics.report_draw_call();
 }
 
 void disable_stencil()
@@ -176,17 +142,42 @@ void default_stencil()
     glStencilMask(0xFF);
 }
 
-uint32_t pge::OpenglRenderer::draw(const MeshView &mesh, glm::mat4 model, DrawOptions options)
+void pge::OpenglRenderer::new_frame()
 {
+    Engine::window.swap_buffers();
+
+    // TODO add function to change clear color instead of changing it every frame
+    glClearColor(EXPAND_VEC4(clear_color));
+
+    enable_stencil();
+}
+
+void pge::OpenglRenderer::end_frame()
+{
+    draw_passes();
+    handle_gl_buffer_delete();
+    clear_buffers();
+}
+
+void draw_mesh(const pge::MeshView &mesh)
+{
+    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
+    pge::Engine::statistics.report_draw_call();
+}
+
+void pge::OpenglRenderer::draw(const MeshView&mesh, glm::mat4 model, DrawOptions options)
+{
+    DrawData data {mesh, model, options};
+
     if (mesh.material.use_alpha)
     {
         float distance = glm::length2(m_camera->position - glm::vec3{model[3]});
-        m_sorted_meshes.emplace(distance, DrawData{mesh, model, options});
-
-        return OPENGL_ERROR_OK;
+        m_sorted_meshes.emplace(distance, std::move(data));
     }
-
-    return handle_draw(mesh, model, options);
+    else
+    {
+        m_render_queue.emplace_back(std::move(data));
+    }
 }
 
 uint32_t pge::OpenglRenderer::create_texture_from_path(std::string_view path, uint32_t& out_texture, bool flip,
@@ -344,8 +335,10 @@ void pge::OpenglRenderer::handle_lighting()
     }
 }
 
-uint32_t pge::OpenglRenderer::handle_draw(const MeshView &mesh, glm::mat4 model, DrawOptions options)
+uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 {
+    auto &[mesh, model, options] = data;
+
     if (!m_buffers.valid_id(mesh.id))
     {
         return OPENGL_ERROR_MESH_NOT_FOUND;
@@ -358,37 +351,70 @@ uint32_t pge::OpenglRenderer::handle_draw(const MeshView &mesh, glm::mat4 model,
 
     auto buffers = m_buffers.get(mesh.id);
 
-    m_shader.use();
-
-    handle_lighting();
-
-    auto material = mesh.material;
-
-    m_shader.set("material.color", material.color);
-    m_shader.set("material.shininess", material.shininess);
-    m_shader.set("texture_scale", material.diffuse.scale);
-    m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
-    m_shader.set("material.specular.enabled", material.specular.enabled);
-    m_shader.set("material.transparency", material.alpha);
-    m_shader.set("recieve_lighting", material.recieve_lighting);
-    m_shader.set("material.diffuse.sampler", 0);
-    m_shader.set("material.specular.sampler", 1);
-    m_shader.set("model", model);
-    m_shader.set("projection", m_camera->projection);
-    m_shader.set("view", m_camera->view);
-    m_shader.set("view_pos", m_camera->position);
-    m_shader.set("near", m_camera->near);
-    m_shader.set("far", m_camera->far);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, material.specular.id);
-
     glBindVertexArray(buffers.vao);
 
-    default_stencil();
     draw_mesh(mesh);
+
+    glBindVertexArray(0);
+
+    glDisable(GL_CULL_FACE);
+
+    return OPENGL_ERROR_OK;
+}
+
+void pge::OpenglRenderer::draw_passes()
+{
+    m_framebuffer.bind();
+
+    glEnable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    draw_everything();
+
+    m_framebuffer.unbind();
+
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+
+    m_screen_shader.use();
+    m_screen_shader.set("screen_texture", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_framebuffer.get_texture());
+
+    glBindVertexArray(m_screen_plane.vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+void pge::OpenglRenderer::draw_everything()
+{
+    for (auto &data : m_render_queue)
+    {
+        set_base_uniforms(data);
+        set_vert_uniforms(data);
+        handle_draw(data);
+    }
+
+    for (auto &m_sorted_mesh : std::ranges::reverse_view(m_sorted_meshes))
+    {
+        set_base_uniforms(m_sorted_mesh.second);
+        set_vert_uniforms(m_sorted_mesh.second);
+        handle_draw(m_sorted_mesh.second);
+    }
+}
+
+void pge::OpenglRenderer::clear_buffers()
+{
+    m_render_queue.clear();
+    m_sorted_meshes.clear();
+    m_delete_queue.clear();
+}
+
+void pge::OpenglRenderer::draw_outline(const DrawData& data)
+{
+    auto &[mesh, model, options] = data;
 
     if (options.enable_outline)
     {
@@ -415,12 +441,73 @@ uint32_t pge::OpenglRenderer::handle_draw(const MeshView &mesh, glm::mat4 model,
 
         glClear(GL_STENCIL_BUFFER_BIT);
     }
+}
 
-    glBindVertexArray(0);
+void pge::OpenglRenderer::handle_gl_buffer_delete()
+{
+    for (auto id : m_delete_queue)
+    {
+        auto buffers = m_buffers.get(id);
 
-    glDisable(GL_CULL_FACE);
+        glDeleteVertexArrays(1, &buffers.vao);
+        glDeleteBuffers(1, &buffers.vbo);
+        glDeleteBuffers(1, &buffers.ebo);
 
-    Engine::statistics.report_verticies(mesh.vertices.size());
+        m_buffers.remove(id);
+    }
+}
 
-    return OPENGL_ERROR_OK;
+void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
+{
+    auto &[mesh, model, _] = data;
+
+    m_shader.use();
+
+    handle_lighting();
+
+    auto material = mesh.material;
+
+    m_shader.set("material.color", material.color);
+    m_shader.set("material.shininess", material.shininess);
+    m_shader.set("texture_scale", material.diffuse.scale);
+    m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
+    m_shader.set("material.specular.enabled", material.specular.enabled);
+    m_shader.set("material.transparency", material.alpha);
+    m_shader.set("recieve_lighting", material.recieve_lighting);
+    m_shader.set("material.diffuse.sampler", 0);
+    m_shader.set("material.specular.sampler", 1);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, material.specular.id);
+}
+
+void pge::OpenglRenderer::set_vert_uniforms(const DrawData& data)
+{
+    m_shader.set("model", data.model);
+    m_shader.set("projection", m_camera->projection);
+    m_shader.set("view", m_camera->view);
+    m_shader.set("view_pos", m_camera->position);
+    m_shader.set("near", m_camera->near);
+    m_shader.set("far", m_camera->far);
+}
+
+void pge::OpenglRenderer::create_screen_pane()
+{
+    auto &[vbo, vao, _] = m_screen_plane;
+
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD_MESH), &QUAD_MESH, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 }
