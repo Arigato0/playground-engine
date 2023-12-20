@@ -60,6 +60,8 @@ namespace pge
     private:
         GLFWmonitor *m_monitor = nullptr;
         GLFWwindow *m_window;
+        int m_width;
+        int m_height;
         bool m_is_init = false;
 
         static void glfw_error_cb(int code, const char* description);

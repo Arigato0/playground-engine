@@ -9,6 +9,7 @@
 #include "shaders.hpp"
 #include "../application/fmt.hpp"
 #include "CameraData.hpp"
+#include "framebuffer_interface.hpp"
 #include "render_options.hpp"
 #include "../data/string.hpp"
 
@@ -79,6 +80,8 @@ namespace pge
         {
             m_camera = camera;
         }
+
+        virtual IFramebuffer* get_framebuffer() = 0;
 
         glm::vec4 clear_color;
 

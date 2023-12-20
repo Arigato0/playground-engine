@@ -6,6 +6,7 @@
 #include <glm/gtx/compatibility.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <any>
+#include <imgui_internal.h>
 #include <thread>
 
 #include "application/dialog.hpp"
@@ -386,9 +387,13 @@ public:
             ImGui::EndMainMenuBar();
         }
 
-        // auto texture = *Engine::asset_manager.get_texture("assets/mona.jpg");
+        // ImGui::Begin("Game view", 0, ImGuiWindowFlags_NoScrollbar);
         //
-        // ImGui::Image(ImTextureID(texture.id), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
+        // auto *framebuffer = Engine::renderer->get_framebuffer();
+        //
+        // ImGui::Image(ImTextureID(framebuffer->get_texture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
+        //
+        // ImGui::End();
 
         if (show_object_control)
         {

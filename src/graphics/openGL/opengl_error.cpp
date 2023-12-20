@@ -10,6 +10,7 @@ constexpr std::array ERROR_MESSAGES
     "Could not create shader",
     "Could not load or generate texture",
     "could not find the specified mesh"
+    "Could not create framebuffer",
 };
 
 std::string_view pge::opengl_error_message(OpenGlErrorCode code)

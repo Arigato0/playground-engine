@@ -1,5 +1,6 @@
 #include "glfw_window.hpp"
 
+
 void window_close_callback(GLFWwindow *glfw_window)
 {
     auto ptr = (pge::IWindow*)glfwGetWindowUserPointer(glfw_window);
@@ -44,6 +45,13 @@ void pge::GlfwWindow::set_callbacks()
     glfwSetWindowPosCallback(m_window, window_pos_callback);
     glfwSetWindowIconifyCallback(m_window, window_iconify_callback);
     glfwSetWindowMaximizeCallback(m_window, window_maximize_callback);
+
+    on_framebuffer_resize.connect(
+        [&](IWindow*, int width, int height)
+        {
+            m_width = width;
+            m_height = height;
+        });
 }
 
 pge::GlfwWindow::GlfwWindow()
@@ -53,7 +61,6 @@ pge::GlfwWindow::GlfwWindow()
         glfwInit();
         m_is_init = true;
     }
-
 
     glfwSetErrorCallback(glfw_error_cb);
 }
@@ -77,6 +84,9 @@ bool pge::GlfwWindow::open(std::string_view title, int width, int height)
         glfwSetWindowUserPointer(m_window, this);
         set_callbacks();
     }
+
+    m_width = width;
+    m_height = height;
 
     return m_window != nullptr;
 }
@@ -181,11 +191,7 @@ void pge::GlfwWindow::set_graphics_api(GraphicsApi api)
 
 std::pair<uint32_t, uint32_t> pge::GlfwWindow::framebuffer_size()
 {
-    uint32_t width, height;
-
-    glfwGetFramebufferSize(m_window, (int*)&width, (int*)&height);
-
-    return { width, height };
+    return { m_width, m_height };
 }
 
 bool pge::GlfwWindow::is_key_held(Key key)

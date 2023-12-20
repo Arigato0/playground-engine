@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 
+#include "gl_framebuffer.hpp"
 #include "opengl_shader.hpp"
 #include "../renderer_interface.hpp"
 #include "../render_options.hpp"
@@ -56,6 +57,11 @@ namespace pge
             glFinish();
         }
 
+        IFramebuffer* get_framebuffer() override
+        {
+            return &m_framebuffer;
+        }
+
         std::string_view error_message(uint32_t code) override
         {
             return opengl_error_message((OpenGlErrorCode)code);
@@ -69,6 +75,7 @@ namespace pge
         GlShader m_shader;
         GlShader m_outline_shader;
         std::multimap<float, DrawData> m_sorted_meshes;
+        GlFramebuffer m_framebuffer;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 

@@ -27,16 +27,12 @@ uint32_t pge::OpenglRenderer::init()
         return OPENGL_ERROR_GLAD_INIT;
     }
 
-    auto [width, height] = Engine::window.framebuffer_size();
-
-    glViewport(0, 0, width, height);
 
     Engine::window.on_framebuffer_resize.connect(
-        [](IWindow*, int width, int height)
-        {
-            glViewport(0, 0, width, height);
-        });
-
+    [](IWindow*, int width, int height)
+    {
+        glViewport(0, 0, width, height);
+    });
 
     create_texture_from_path("assets/missing.jpeg", m_missing_texture, false, TextureWrapMode::Repeat);
 
@@ -62,9 +58,7 @@ uint32_t pge::OpenglRenderer::init()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
-
-    return OPENGL_ERROR_OK;
+    return m_framebuffer.init();
 }
 
 pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
@@ -140,6 +134,8 @@ void pge::OpenglRenderer::new_frame()
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
+    m_framebuffer.bind();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
@@ -152,6 +148,8 @@ void pge::OpenglRenderer::end_frame()
     }
 
     m_sorted_meshes.clear();
+
+    m_framebuffer.unbind();
 }
 
 void draw_mesh(const pge::MeshView &mesh)

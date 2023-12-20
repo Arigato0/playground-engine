@@ -25,10 +25,10 @@ void mouse_callback(GLFWwindow *_, double xpos, double ypos)
 
     io.AddMousePosEvent(xpos, ypos);
 
-    if (io.WantCaptureMouse)
-    {
-        return;
-    }
+    // if (io.WantCaptureMouse)
+    // {
+    //     return;
+    // }
 
     g_mouse_cords =
     {
