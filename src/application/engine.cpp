@@ -21,8 +21,6 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
 
     set_graphics_api(info.graphics_api);
 
-    renderer->clear_color = {0.f, 0.f, 0.f, 1.f};
-
     auto result = renderer->init();
 
     if (result != 0)
@@ -30,6 +28,8 @@ pge::ErrorCode pge::Engine::init(AppInfo info)
         Logger::warn("could not initialize graphics subsystem. {}", renderer->error_message(result));
         return ErrorCode::GraphicsSubsystemInitError;
     }
+
+    renderer->set_clear_color({0.f, 0.f, 0.f, 1.f});
 
     auto properties = renderer->properties();
 
@@ -70,6 +70,8 @@ pge::ErrorCode pge::Engine::run()
         imgui_draw();
 
         reset_input();
+
+        window.swap_buffers();
     }
 
 	renderer->wait();

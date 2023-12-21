@@ -576,12 +576,11 @@ public:
                         Engine::renderer->set_visualize_depth(visualize_depth);
                     }
 
-                    auto clear_color_vec = Engine::renderer->clear_color;
-                    static float colors[3]{clear_color_vec.x, clear_color_vec.y, clear_color_vec.z};
+                    static auto clear_color_vec = Engine::renderer->get_clear_color();
 
-                    if (ImGui::ColorEdit3("Clear color", colors))
+                    if (ImGui::ColorEdit4("Clear color", glm::value_ptr(clear_color_vec)))
                     {
-                        Engine::renderer->clear_color = {colors[0], colors[1], colors[2], 1.f};
+                        Engine::renderer->set_clear_color(clear_color_vec);
                     }
 
                     ImGui::SeparatorText("Camera");
@@ -888,7 +887,7 @@ int main()
     Engine::entity_manager.create<ControlTest>("ControlTest");
     Engine::entity_manager.create<InputHandlerComp, DebugUiComp>("Debug Editor");
 
-    Engine::renderer->clear_color = glm::vec4{0.09, 0.871, 1, 0.902};
+    Engine::renderer->set_clear_color({0.09, 0.871, 1, 0.902});
 
     register_components<MeshRenderer, LightComp>();
 

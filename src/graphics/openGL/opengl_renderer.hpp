@@ -52,6 +52,20 @@ namespace pge
             glPolygonMode(GL_FRONT_AND_BACK, value ? GL_LINE : GL_FILL);
         }
 
+        void set_clear_color(glm::vec4 value) override
+        {
+            glClearColor(EXPAND_VEC4(value));
+        }
+
+        glm::vec4 get_clear_color() override
+        {
+            float buffer[4];
+
+            glGetFloatv(GL_COLOR_CLEAR_VALUE, buffer);
+
+            return glm::make_vec4(buffer);
+        }
+
         void wait() override
         {
             glFinish();
@@ -109,8 +123,8 @@ namespace pge
 
         void set_base_uniforms(const DrawData &data);
 
-        void set_vert_uniforms(const DrawData &data);
-
         void create_screen_pane();
+
+        void draw_screen_plane();
     };
 }

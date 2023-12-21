@@ -61,6 +61,10 @@ namespace pge
         // sets if wireframe mode is active
         virtual void set_wireframe_mode(bool value) = 0;
 
+        virtual void set_clear_color(glm::vec4 value) = 0;
+
+        virtual glm::vec4 get_clear_color() = 0;
+
         // waits for all render commands to finish
         virtual void wait() = 0;
 
@@ -84,8 +88,6 @@ namespace pge
         }
 
         virtual IFramebuffer* get_framebuffer() = 0;
-
-        glm::vec4 clear_color;
 
     protected:
         CameraData *m_camera;

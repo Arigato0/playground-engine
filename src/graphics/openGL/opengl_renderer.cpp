@@ -57,6 +57,7 @@ uint32_t pge::OpenglRenderer::init()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
     glEnable(GL_STENCIL_TEST);
+    glEnable(GL_CULL_FACE);
 
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -144,12 +145,6 @@ void default_stencil()
 
 void pge::OpenglRenderer::new_frame()
 {
-    Engine::window.swap_buffers();
-
-    // TODO add function to change clear color instead of changing it every frame
-    glClearColor(EXPAND_VEC4(clear_color));
-
-    enable_stencil();
 }
 
 void pge::OpenglRenderer::end_frame()
@@ -344,9 +339,9 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
         return OPENGL_ERROR_MESH_NOT_FOUND;
     }
 
-    if (options.cull_faces)
+    if (!options.cull_faces)
     {
-        glEnable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
     }
 
     auto buffers = m_buffers.get(mesh.id);
@@ -357,7 +352,7 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
     glBindVertexArray(0);
 
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 
     return OPENGL_ERROR_OK;
 }
@@ -366,42 +361,28 @@ void pge::OpenglRenderer::draw_passes()
 {
     m_framebuffer.bind();
 
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
     draw_everything();
 
     m_framebuffer.unbind();
 
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glDisable(GL_DEPTH_TEST);
-
-    m_screen_shader.use();
-    m_screen_shader.set("screen_texture", 0);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_framebuffer.get_texture());
-
-    glBindVertexArray(m_screen_plane.vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
+    draw_screen_plane();
 }
 
 void pge::OpenglRenderer::draw_everything()
 {
+    glEnable(GL_DEPTH_TEST);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
     for (auto &data : m_render_queue)
     {
         set_base_uniforms(data);
-        set_vert_uniforms(data);
         handle_draw(data);
     }
 
-    for (auto &m_sorted_mesh : std::ranges::reverse_view(m_sorted_meshes))
+    for (auto &[_, data] : std::ranges::reverse_view(m_sorted_meshes))
     {
-        set_base_uniforms(m_sorted_mesh.second);
-        set_vert_uniforms(m_sorted_mesh.second);
-        handle_draw(m_sorted_mesh.second);
+        set_base_uniforms(data);
+        handle_draw(data);
     }
 }
 
@@ -477,20 +458,17 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     m_shader.set("material.diffuse.sampler", 0);
     m_shader.set("material.specular.sampler", 1);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, material.specular.id);
-}
-
-void pge::OpenglRenderer::set_vert_uniforms(const DrawData& data)
-{
     m_shader.set("model", data.model);
     m_shader.set("projection", m_camera->projection);
     m_shader.set("view", m_camera->view);
     m_shader.set("view_pos", m_camera->position);
     m_shader.set("near", m_camera->near);
     m_shader.set("far", m_camera->far);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, material.specular.id);
 }
 
 void pge::OpenglRenderer::create_screen_pane()
@@ -510,4 +488,21 @@ void pge::OpenglRenderer::create_screen_pane()
 
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
+}
+
+void pge::OpenglRenderer::draw_screen_plane()
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glDisable(GL_DEPTH_TEST);
+
+    m_screen_shader.use();
+    m_screen_shader.set("screen_texture", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_framebuffer.get_texture());
+
+    glBindVertexArray(m_screen_plane.vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
 }
