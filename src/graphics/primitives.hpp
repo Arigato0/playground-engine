@@ -1,5 +1,6 @@
 #pragma once
 
+// raw cube mesh containing position, normal, and texture coordinate vectors
 static float CUBE_MESH[] =
 {
    // Back face             normals               texture cords
@@ -57,5 +58,51 @@ static float QUAD_MESH[] =
  -1.0f,  1.0f,  0.0f, 1.0f,
   1.0f, -1.0f,  1.0f, 0.0f,
   1.0f,  1.0f,  1.0f, 1.0f
+};
+
+// a cube that only contains position vectors mostly used for skyboxes
+static float CUBE_VERTS[] =
+ {
+ -1.0f,  1.0f, -1.0f,
+ -1.0f, -1.0f, -1.0f,
+  1.0f, -1.0f, -1.0f,
+  1.0f, -1.0f, -1.0f,
+  1.0f,  1.0f, -1.0f,
+ -1.0f,  1.0f, -1.0f,
+
+ -1.0f, -1.0f,  1.0f,
+ -1.0f, -1.0f, -1.0f,
+ -1.0f,  1.0f, -1.0f,
+ -1.0f,  1.0f, -1.0f,
+ -1.0f,  1.0f,  1.0f,
+ -1.0f, -1.0f,  1.0f,
+
+  1.0f, -1.0f, -1.0f,
+  1.0f, -1.0f,  1.0f,
+  1.0f,  1.0f,  1.0f,
+  1.0f,  1.0f,  1.0f,
+  1.0f,  1.0f, -1.0f,
+  1.0f, -1.0f, -1.0f,
+
+ -1.0f, -1.0f,  1.0f,
+ -1.0f,  1.0f,  1.0f,
+  1.0f,  1.0f,  1.0f,
+  1.0f,  1.0f,  1.0f,
+  1.0f, -1.0f,  1.0f,
+ -1.0f, -1.0f,  1.0f,
+
+ -1.0f,  1.0f, -1.0f,
+  1.0f,  1.0f, -1.0f,
+  1.0f,  1.0f,  1.0f,
+  1.0f,  1.0f,  1.0f,
+ -1.0f,  1.0f,  1.0f,
+ -1.0f,  1.0f, -1.0f,
+
+ -1.0f, -1.0f, -1.0f,
+ -1.0f, -1.0f,  1.0f,
+  1.0f, -1.0f, -1.0f,
+  1.0f, -1.0f, -1.0f,
+ -1.0f, -1.0f,  1.0f,
+  1.0f, -1.0f,  1.0f
 };
 

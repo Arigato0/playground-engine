@@ -10,18 +10,12 @@
 #include "../render_options.hpp"
 #include "../../data/id_table.hpp"
 #include "../../data/string.hpp"
+#include "gl_buffers.hpp"
 
 namespace pge
 {
     class OpenglRenderer : public IRenderer
     {
-        struct GlBuffers
-        {
-            GLuint vbo;
-            GLuint vao;
-            GLuint ebo;
-        };
-
     public:
         uint32_t init() override;
 
@@ -45,6 +39,8 @@ namespace pge
         uint32_t create_texture(ustring_view data, int width, int height, int channels,
             uint32_t &out_texture, TextureWrapMode wrap_mode) override;
 
+        uint32_t create_cubemap_from_path(std::array<std::string_view, 6> faces, uint32_t& out_texture) override;
+
         void delete_texture(uint32_t id) override;
 
         void set_wireframe_mode(bool value) override
@@ -66,6 +62,11 @@ namespace pge
             return glm::make_vec4(buffer);
         }
 
+        void set_offline(bool value) override
+        {
+            m_is_offline = value;
+        }
+
         void wait() override
         {
             glFinish();
@@ -73,7 +74,12 @@ namespace pge
 
         IFramebuffer* get_framebuffer() override
         {
-            return &m_framebuffer;
+            return &m_out_buffer;
+        }
+
+        void set_skybox(uint32_t id) override
+        {
+            m_skybox = id;
         }
 
         std::string_view error_message(uint32_t code) override
@@ -86,6 +92,8 @@ namespace pge
     private:
         // the default missing texture to use when unable to create a texture
         uint32_t m_missing_texture;
+        // the texture id for the skybox
+        uint32_t m_skybox = UINT32_MAX;
         // the opengl buffers every mesh needs to be drawn.
         IdTable<GlBuffers> m_buffers;
         // the base shader
@@ -103,7 +111,11 @@ namespace pge
         std::list<GlShader> m_shaders;
         // the queue for the buffers that are supposed to be deleted
         std::vector<uint32_t> m_delete_queue;
-        GlFramebuffer m_framebuffer;
+        // the screen buffer all meshes will be drawn to and will be used by the screen plane
+        GlFramebuffer m_screen_buffer;
+        // the buffer for the render output if offline renders are enabled
+        GlFramebuffer m_out_buffer;
+        bool m_is_offline = false;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 
@@ -123,7 +135,7 @@ namespace pge
 
         void set_base_uniforms(const DrawData &data);
 
-        void create_screen_pane();
+        void create_screen_plane();
 
         void draw_screen_plane();
     };

@@ -90,6 +90,8 @@ add_library(playgroundEngineLib
         src/graphics/framebuffer_interface.hpp
         src/graphics/openGL/gl_framebuffer.cpp
         src/graphics/openGL/gl_framebuffer.hpp
+        src/graphics/openGL/gl_buffers.cpp
+        src/graphics/openGL/gl_buffers.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

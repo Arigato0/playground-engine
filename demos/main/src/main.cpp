@@ -891,6 +891,7 @@ int main()
 
     register_components<MeshRenderer, LightComp>();
 
+    //Engine::renderer->set_offline(true);
     //init_grass_scene();
 
     init_room_scene();

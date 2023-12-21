@@ -52,7 +52,7 @@ uint32_t pge::OpenglRenderer::init()
        {PGE_FIND_SHADER("screen.frag"), ShaderType::Fragment}
    });
 
-    create_screen_pane();
+    create_screen_plane();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
@@ -67,7 +67,9 @@ uint32_t pge::OpenglRenderer::init()
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-    return m_framebuffer.init();
+    VALIDATE_ERR(m_out_buffer.init());
+
+    return m_screen_buffer.init();
 }
 
 pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
@@ -81,36 +83,17 @@ pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
 
 void pge::OpenglRenderer::create_buffers(Mesh &mesh)
 {
-    GlBuffers gl_mesh;
+    auto buffer = GlBufferBuilder()
+        .start()
+        .stride(sizeof(Vertex))
+        .vbo(mesh.vertices)
+        .ebo(mesh.indices)
+        .attr(3, offsetof(Vertex, position))
+        .attr(3, offsetof(Vertex, normal))
+        .attr(2, offsetof(Vertex, coord))
+        .finish();
 
-    glGenVertexArrays(1, &gl_mesh.vao);
-    glGenBuffers(1, &gl_mesh.vbo);
-    glGenBuffers(1, &gl_mesh.ebo);
-
-    glBindVertexArray(gl_mesh.vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, gl_mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(Vertex), mesh.vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gl_mesh.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t),
-                 mesh.indices.data(), GL_STATIC_DRAW);
-
-    // vertex position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
-
-    // normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-    glEnableVertexAttribArray(1);
-
-    // coords
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, coord));
-    glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0);
-
-    mesh.id = m_buffers.create(gl_mesh);
+    mesh.id = m_buffers.create(buffer);
 }
 
 void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
@@ -241,6 +224,39 @@ uint32_t pge::OpenglRenderer::create_texture(ustring_view data, int width, int h
     return OPENGL_ERROR_OK;
 }
 
+uint32_t pge::OpenglRenderer::create_cubemap_from_path(std::array<std::string_view, 6> faces, uint32_t& out_texture)
+{
+    glGenTextures(1, &out_texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, out_texture);
+
+    int width, height, channels;
+
+    for (auto i = 0; auto path : faces)
+    {
+        auto *data = stbi_load(path.data(), &width, &height, &channels, 0);
+
+        if (!data)
+        {
+            return OPENGL_ERROR_TEXTURE_LOADING;
+        }
+
+        DEFER([&data]
+        {
+            stbi_image_free(data);
+        });
+
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i++, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return OPENGL_ERROR_OK;
+}
+
 void pge::OpenglRenderer::delete_texture(uint32_t id)
 {
     if (id == m_missing_texture)
@@ -359,13 +375,20 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
 void pge::OpenglRenderer::draw_passes()
 {
-    m_framebuffer.bind();
+    m_screen_buffer.bind();
 
     draw_everything();
 
-    m_framebuffer.unbind();
+    m_screen_buffer.unbind();
+
+    if (m_is_offline)
+    {
+        m_out_buffer.bind();
+    }
 
     draw_screen_plane();
+
+    m_out_buffer.unbind();
 }
 
 void pge::OpenglRenderer::draw_everything()
@@ -430,9 +453,7 @@ void pge::OpenglRenderer::handle_gl_buffer_delete()
     {
         auto buffers = m_buffers.get(id);
 
-        glDeleteVertexArrays(1, &buffers.vao);
-        glDeleteBuffers(1, &buffers.vbo);
-        glDeleteBuffers(1, &buffers.ebo);
+        buffers.free();
 
         m_buffers.remove(id);
     }
@@ -471,23 +492,15 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     glBindTexture(GL_TEXTURE_2D, material.specular.id);
 }
 
-void pge::OpenglRenderer::create_screen_pane()
+void pge::OpenglRenderer::create_screen_plane()
 {
-    auto &[vbo, vao, _] = m_screen_plane;
-
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(QUAD_MESH), &QUAD_MESH, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    m_screen_plane = GlBufferBuilder()
+        .start()
+        .vbo(QUAD_MESH)
+        .stride(4 * sizeof(float))
+        .attr(2, 0)
+        .attr(2, 2 * sizeof(float))
+        .finish();
 }
 
 void pge::OpenglRenderer::draw_screen_plane()
@@ -500,7 +513,7 @@ void pge::OpenglRenderer::draw_screen_plane()
     m_screen_shader.set("screen_texture", 0);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_framebuffer.get_texture());
+    glBindTexture(GL_TEXTURE_2D, m_screen_buffer.get_texture());
 
     glBindVertexArray(m_screen_plane.vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
