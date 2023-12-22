@@ -99,7 +99,6 @@ void pge::OpenglRenderer::create_buffers(Mesh &mesh)
 void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
 {
     m_delete_queue.push_back(mesh.id);
-    mesh.id = UINT32_MAX;
 }
 
 void pge::OpenglRenderer::set_visualize_depth(bool value)
@@ -257,6 +256,24 @@ uint32_t pge::OpenglRenderer::create_cubemap_from_path(std::array<std::string_vi
     return OPENGL_ERROR_OK;
 }
 
+pge::Image pge::OpenglRenderer::get_image()
+{
+    Image img;
+
+    auto [width, height] = Engine::window.framebuffer_size();
+
+    img.width = width;
+    img.height = height;
+
+    img.data.resize(img.width * img.height * 3);
+
+    img.channels = 3;
+
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, img.data.data());
+
+    return img;
+}
+
 void pge::OpenglRenderer::delete_texture(uint32_t id)
 {
     if (id == m_missing_texture)
@@ -386,7 +403,15 @@ void pge::OpenglRenderer::draw_passes()
         m_out_buffer.bind();
     }
 
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
     draw_screen_plane();
+
+    if (m_wireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
+    }
 
     m_out_buffer.unbind();
 }

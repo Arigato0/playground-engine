@@ -87,6 +87,7 @@ void pge::Engine::shutdown()
     }
 
     cleanup_imgui();
+
     delete renderer;
 
     m_initialized = false;

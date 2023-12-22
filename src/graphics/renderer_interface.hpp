@@ -85,6 +85,8 @@ namespace pge
 
         virtual uint32_t create_cubemap_from_path(std::array<std::string_view, 6> faces, uint32_t &out_texture) = 0;
 
+        virtual Image get_image() = 0;
+
         virtual void delete_texture(uint32_t id) = 0;
 
         virtual void set_skybox(uint32_t id) = 0;

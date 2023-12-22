@@ -1,6 +1,6 @@
 #version 460 core
 
-out vec4 FragColor;
+out vec4 frag_color;
 
 uniform vec3 view_pos;
 uniform float texture_scale;
@@ -137,7 +137,7 @@ void main()
 {
     if (visualize_depth)
     {
-        FragColor = calculate_depth();
+        frag_color = calculate_depth();
         return;
     }
 
@@ -181,5 +181,5 @@ void main()
         result *= material.color;
     }
 
-    FragColor = vec4(result, tex.a * material.transparency);
+    frag_color = vec4(result, tex.a * material.transparency);
 }

@@ -32,7 +32,10 @@ namespace pge
                 return;
             }
 
-            m_table[id].~T();
+            if (!std::is_trivially_destructible_v<T>)
+            {
+                m_table[id].~T();
+            }
 
             m_free_list.push(id);
         }

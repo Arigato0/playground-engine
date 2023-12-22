@@ -1,10 +1,5 @@
 #version 460 core
 
-out vec4 frag_color;
-
-in vec2 tex_coords;
-
-uniform sampler2D screen_texture;
 
 vec4 pp_pixelate()
 {
@@ -40,12 +35,32 @@ vec4 pp_strip()
     return texture(screen_texture, stripedCoord);
 }
 
-vec4 pp_invert()
+vec4 crt()
 {
-    return vec4(vec3(1 - texture(screen_texture, tex_coords)), 1);
+    vec3 original_color = texture(screen_texture, tex_coords).rgb;
+
+    // Simulate scanlines
+    float scanline_intensity = 1.5;
+    vec3 scanline_color = mix(original_color, vec3(0.0), scanline_intensity);
+
+    // Simulate color bleeding
+    float bleeding_amount = 1.105;
+    vec3 bleed_color = original_color - bleeding_amount * (original_color - vec3(1.0));
+
+    // Combine scanlines and color bleeding
+    vec3 crt_color = mix(bleed_color, scanline_color, 0.5);
+
+    // Simulate barrel distortion
+    vec2 distorted_coord = tex_coords - 0.5;
+    float distortion = 0.5;
+    distorted_coord *= 1.0 + distortion * dot(distorted_coord, distorted_coord);
+
+     if (length(distorted_coord) > 0.5)
+     {
+        crt_color = vec3(0.0);
+    }
+
+    // Sample the final color from the distorted coordinates
+    return texture(screen_texture, distorted_coord + 1.5);
 }
 
-void main()
-{
-    frag_color = texture(screen_texture, tex_coords);
-}

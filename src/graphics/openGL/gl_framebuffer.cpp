@@ -7,13 +7,13 @@
 
 uint32_t pge::GlFramebuffer::init()
 {
+    auto [width, height] = Engine::window.framebuffer_size();
+
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
-
-    auto [width, height] = Engine::window.framebuffer_size();
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
@@ -37,7 +37,7 @@ uint32_t pge::GlFramebuffer::init()
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    Engine::window.on_framebuffer_resize.connect(this, &GlFramebuffer::on_resize);
+    m_on_resize_con = Engine::window.on_framebuffer_resize.connect(this, &GlFramebuffer::on_resize);
 
     return OPENGL_ERROR_OK;
 }
@@ -47,6 +47,8 @@ pge::GlFramebuffer::~GlFramebuffer()
     glDeleteFramebuffers(1, &m_fbo);
     glDeleteRenderbuffers(1, &m_rbo);
     glDeleteTextures(1, &m_texture);
+
+    Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
 }
 
 uint32_t pge::GlFramebuffer::get_texture() const
@@ -62,6 +64,26 @@ void pge::GlFramebuffer::bind()
 void pge::GlFramebuffer::unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+pge::Image pge::GlFramebuffer::get_image() const
+{
+    glBindTexture(GL_TEXTURE_2D, m_texture);
+
+    Image img;
+
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &img.width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &img.height);
+
+    img.data.resize(img.width * img.height * 3);
+
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, img.data.data());
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    img.channels = 3;
+
+    return img;
 }
 
 void pge::GlFramebuffer::on_resize(IWindow*, int width, int height) const

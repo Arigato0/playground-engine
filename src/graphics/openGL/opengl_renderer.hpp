@@ -41,11 +41,14 @@ namespace pge
 
         uint32_t create_cubemap_from_path(std::array<std::string_view, 6> faces, uint32_t& out_texture) override;
 
+        Image get_image() override;
+
         void delete_texture(uint32_t id) override;
 
         void set_wireframe_mode(bool value) override
         {
             glPolygonMode(GL_FRONT_AND_BACK, value ? GL_LINE : GL_FILL);
+            m_wireframe = value;
         }
 
         void set_clear_color(glm::vec4 value) override
@@ -116,6 +119,7 @@ namespace pge
         // the buffer for the render output if offline renders are enabled
         GlFramebuffer m_out_buffer;
         bool m_is_offline = false;
+        bool m_wireframe = false;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 

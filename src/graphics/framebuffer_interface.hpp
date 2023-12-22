@@ -1,5 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <vector>
+
+#include "image.hpp"
 
 namespace pge
 {
@@ -14,5 +17,6 @@ namespace pge
         virtual void unbind() = 0;
 
         virtual uint32_t get_texture() const = 0;
+        virtual Image get_image() const = 0;
     };
 }

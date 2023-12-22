@@ -1,5 +1,3 @@
-#pragma once
-
 #include "ecs.hpp"
 #include "../application/engine.hpp"
 

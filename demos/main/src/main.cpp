@@ -22,8 +22,11 @@
 #include "graphics/primitives.hpp"
 #include "game/camera_comp.hpp"
 #include "graphics/light.hpp"
+#include "graphics/util.hpp"
 
 #include "misc/cpp/imgui_stdlib.h"
+
+
 
 class LightComp;
 using namespace pge;
@@ -33,9 +36,16 @@ class InputHandlerComp : public IComponent
 public:
     void update(double delta_time) override
     {
-        if (Engine::window.is_key_held(Key::Escape))
+        if (key_pressed(Key::Escape))
         {
             Engine::window.set_should_close(true);
+        }
+        if(key_pressed(Key::F5))
+        {
+            //auto framebuffer = Engine::renderer->get_framebuffer();
+            auto img = Engine::renderer->get_image();
+            img.format = ImgFmt::Png;
+            screen_shot(img.get_filename("screen_shot"), img);
         }
     }
 };
@@ -382,7 +392,7 @@ public:
             ImGui::EndMainMenuBar();
         }
 
-        // ImGui::Begin("Game view", 0, ImGuiWindowFlags_NoScrollbar);
+        // ImGui::Begin("Game view", 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs);
         //
         // auto *framebuffer = Engine::renderer->get_framebuffer();
         //
@@ -890,6 +900,21 @@ int main()
     Engine::renderer->set_clear_color({0.09, 0.871, 1, 0.902});
 
     register_components<MeshRenderer, LightComp>();
+
+    std::array<std::string_view, 6> skybox_faces
+    {
+        "assets/skybox/right.jpg",
+        "assets/skybox/left.jpg",
+        "assets/skybox/top.jpg",
+        "assets/skybox/bottom.jpg",
+        "assets/skybox/front.jpg",
+        "assets/skybox/back.jpg"
+    };
+
+    uint32_t skybox_texture;
+
+    Engine::renderer->create_cubemap_from_path(skybox_faces, skybox_texture);
+    Engine::renderer->set_skybox(skybox_texture);
 
     //Engine::renderer->set_offline(true);
     //init_grass_scene();

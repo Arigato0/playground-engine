@@ -11,6 +11,7 @@ add_subdirectory("lib/assimp")
 add_library(playgroundEngineLib
         lib/glad/src/glad.c
         lib/stb/stb_image.h
+        lib/stb/stb_image_write.h
         src/application/log.hpp
         src/application/fmt.hpp
         src/application/glfw_window.cpp
@@ -92,6 +93,12 @@ add_library(playgroundEngineLib
         src/graphics/openGL/gl_framebuffer.hpp
         src/graphics/openGL/gl_buffers.cpp
         src/graphics/openGL/gl_buffers.hpp
+        src/data/map.hpp
+        src/graphics/util.hpp
+        src/graphics/util.hpp
+        src/graphics/util.hpp
+        src/graphics/util.cpp
+        src/graphics/image.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

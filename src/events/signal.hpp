@@ -58,35 +58,35 @@ namespace pge
         using connection_t = Connection<R, A...>;
 
         template<class Obj, util::IsFunction Fn>
-        connection_t& connect(Obj *obj, Fn fn)
+        connection_t* connect(Obj *obj, Fn fn)
         {
             auto &iter = m_connections.emplace_back(obj, fn);
 
             iter.m_iter = --m_connections.end();
 
-            return m_connections.back();
+            return &m_connections.back();
         }
 
         template<util::IsFunction Fn>
-        connection_t& connect(Fn fn)
+        connection_t* connect(Fn fn)
         {
             auto &iter = m_connections.emplace_back(fn);
 
             iter.m_iter = --m_connections.end();
 
-            return m_connections.back();
+            return &m_connections.back();
         }
 
-        void disconnect(connection_t &connection)
+        void disconnect(connection_t *connection)
         {
-            if (!connection.m_alive)
+            if (!connection->m_alive)
             {
                 return;
             }
 
-            connection.m_alive = false;
+            connection->m_alive = false;
 
-            m_connections.erase(connection.m_iter);
+            m_connections.erase(connection->m_iter);
         }
 
         void operator()(A ...a) const
