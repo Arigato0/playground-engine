@@ -40,12 +40,9 @@ public:
         {
             Engine::window.set_should_close(true);
         }
-        if(key_pressed(Key::F5))
+        if(key_held(Key::F5))
         {
-            //auto framebuffer = Engine::renderer->get_framebuffer();
-            auto img = Engine::renderer->get_image();
-            img.format = ImgFmt::Png;
-            screen_shot(img.get_filename("screen_shot"), img);
+           screen_shot("screen_shot");
         }
     }
 };
@@ -788,9 +785,7 @@ void init_room_scene()
 
     room_mesh->options.cull_faces = false;
 
-    create_mesh("TransparentCube", "/home/arian/Downloads/transparent.obj");
-    auto [sword_ent, sword_mesh] = create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
-    //sword_mesh->model.meshes.front().material.diffuse = *Engine::asset_manager.get_texture("/home/arian/Downloads/lowpoly-stylized-scimitar/source/Object001_2016-11-10_22-03-18_complete.rpf_converted.jpg", true, TextureWrapMode::ClampToEdge);
+    create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
 
     auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
 
@@ -913,7 +908,10 @@ int main()
 
     uint32_t skybox_texture;
 
-    Engine::renderer->create_cubemap_from_path(skybox_faces, skybox_texture);
+    auto result = Engine::renderer->create_cubemap_from_path(skybox_faces, skybox_texture);
+
+    assert(result != 0);
+
     Engine::renderer->set_skybox(skybox_texture);
 
     //Engine::renderer->set_offline(true);

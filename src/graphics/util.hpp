@@ -7,5 +7,5 @@
 
 namespace pge
 {
-    void screen_shot(std::string_view path, const Image &image);
+    void screen_shot(std::string_view path, IFramebuffer *framebuffer = nullptr);
 }

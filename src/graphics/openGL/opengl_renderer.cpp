@@ -52,7 +52,20 @@ uint32_t pge::OpenglRenderer::init()
        {PGE_FIND_SHADER("screen.frag"), ShaderType::Fragment}
    });
 
+    m_screen_shader.use();
+    m_screen_shader.set("screen_texture", 0);
+
+    m_skybox_shader.create
+   ({
+       {PGE_FIND_SHADER("skybox.vert"), ShaderType::Vertex},
+       {PGE_FIND_SHADER("skybox.frag"), ShaderType::Fragment}
+   });
+
+    m_skybox_shader.use();
+    m_skybox_shader.set("skybox_texture", 0);
+
     create_screen_plane();
+    create_skybox_cube();
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_MULTISAMPLE);
@@ -230,12 +243,13 @@ uint32_t pge::OpenglRenderer::create_cubemap_from_path(std::array<std::string_vi
 
     int width, height, channels;
 
-    for (auto i = 0; auto path : faces)
+    for (int i = 0; i < faces.size(); i++)
     {
-        auto *data = stbi_load(path.data(), &width, &height, &channels, 0);
+        auto *data = stbi_load(faces[i].data(), &width, &height, &channels, 0);
 
         if (!data)
         {
+            out_texture = m_missing_texture;
             return OPENGL_ERROR_TEXTURE_LOADING;
         }
 
@@ -244,7 +258,7 @@ uint32_t pge::OpenglRenderer::create_cubemap_from_path(std::array<std::string_vi
             stbi_image_free(data);
         });
 
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i++, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -394,32 +408,34 @@ void pge::OpenglRenderer::draw_passes()
 {
     m_screen_buffer.bind();
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    draw_skybox();
+
     draw_everything();
 
     m_screen_buffer.unbind();
 
-    if (m_is_offline)
-    {
-        m_out_buffer.bind();
-    }
+     if (m_is_offline)
+     {
+         m_out_buffer.bind();
+     }
 
+     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+     draw_screen_plane();
 
-    draw_screen_plane();
+     if (m_wireframe)
+     {
+         glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
+     }
 
-    if (m_wireframe)
-    {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
-    }
-
-    m_out_buffer.unbind();
+     m_out_buffer.unbind();
 }
 
 void pge::OpenglRenderer::draw_everything()
 {
     glEnable(GL_DEPTH_TEST);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     for (auto &data : m_render_queue)
     {
@@ -528,6 +544,16 @@ void pge::OpenglRenderer::create_screen_plane()
         .finish();
 }
 
+void pge::OpenglRenderer::create_skybox_cube()
+{
+    m_skybox_cube = GlBufferBuilder()
+        .start()
+        .vbo(CUBE_VERTS)
+        .stride(3 * sizeof(float))
+        .attr(3, 0)
+        .finish();
+}
+
 void pge::OpenglRenderer::draw_screen_plane()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -535,7 +561,6 @@ void pge::OpenglRenderer::draw_screen_plane()
     glDisable(GL_DEPTH_TEST);
 
     m_screen_shader.use();
-    m_screen_shader.set("screen_texture", 0);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_screen_buffer.get_texture());
@@ -543,4 +568,27 @@ void pge::OpenglRenderer::draw_screen_plane()
     glBindVertexArray(m_screen_plane.vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+}
+
+void pge::OpenglRenderer::draw_skybox()
+{
+    if (m_skybox_texture == UINT32_MAX)
+    {
+        return;
+    }
+
+    glDepthMask(GL_FALSE);
+
+    m_skybox_shader.use();
+
+    auto view = glm::mat4(glm::mat3(m_camera->view));
+    m_skybox_shader.set("projection", m_camera->projection);
+    m_skybox_shader.set("view", view);
+
+    glBindVertexArray(m_skybox_cube.vao);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_skybox_texture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glDepthMask(GL_TRUE);
 }

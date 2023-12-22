@@ -1,31 +1,18 @@
 #include "util.hpp"
+#include "../application/engine.hpp"
 
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
-void pge::screen_shot(std::string_view path, const Image &image)
+void pge::screen_shot(std::string_view path, IFramebuffer* framebuffer)
 {
-    stbi_flip_vertically_on_write(true);
+    Image img;
 
-    using enum ImgFmt;
-
-    switch (image.format)
+    if (framebuffer != nullptr)
     {
-        case Png:
-        {
-            stbi_write_png(path.data(), image.width, image.height, image.channels, image.data.data(), image.width * image.channels);
-            break;
-        }
-        case Jpg:
-        {
-            stbi_write_jpg(path.data(), image.width, image.height, image.channels, image.data.data(), intptr_t(image.other));
-            break;
-        }
-        case Bmp:
-        {
-            stbi_write_bmp(path.data(), image.width, image.height, image.channels, image.data.data());
-            break;
-        }
+       img = framebuffer->get_image();
     }
+    else
+    {
+        img = Engine::renderer->get_image();
+    }
+
+    img.save(path);
 }

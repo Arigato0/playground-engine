@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "../application/fmt.hpp"
 
@@ -16,29 +17,17 @@ namespace pge
         Hdr
     };
 
-    static std::string_view img_fmt_ext(ImgFmt format)
-    {
-        using enum ImgFmt;
+    static std::string_view img_fmt_ext(ImgFmt format);
 
-        switch (format)
-        {
-            case Png: return "png";
-            case Jpg: return "jpg";
-            case Bmp: return "bmp";
-            case Hdr: return "hdr";
-        }
-
-        return "";
-    }
-
+    // image container for png, jpg, and bmp
     struct Image
     {
         int width;
         int height;
         int channels;
         ImgFmt format;
-        // a pointer to format specific data. for jpg its just an int that specifies the jpg quality level
-        void *other;
+        // image quality only relevent to jpg
+        int quality;
         std::vector<uint8_t> data;
 
         [[nodiscard]]
@@ -46,5 +35,7 @@ namespace pge
         {
             return fmt::format("{}.{}", name, img_fmt_ext(format));
         }
+
+        void save(std::string_view path, bool add_ext = true);
     };
 }

@@ -2,7 +2,11 @@
 
 out vec4 frag_color;
 
+in vec3 tex_coords;
+
+uniform samplerCube skybox_texture;
+
 void main()
 {
-    frag_color = vec4(1.0, 0.0, 0.0, 1.0);
+    frag_color = texture(skybox_texture, tex_coords);
 }

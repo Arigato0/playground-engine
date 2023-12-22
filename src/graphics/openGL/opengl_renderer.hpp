@@ -82,7 +82,7 @@ namespace pge
 
         void set_skybox(uint32_t id) override
         {
-            m_skybox = id;
+            m_skybox_texture = id;
         }
 
         std::string_view error_message(uint32_t code) override
@@ -96,7 +96,7 @@ namespace pge
         // the default missing texture to use when unable to create a texture
         uint32_t m_missing_texture;
         // the texture id for the skybox
-        uint32_t m_skybox = UINT32_MAX;
+        uint32_t m_skybox_texture = UINT32_MAX;
         // the opengl buffers every mesh needs to be drawn.
         IdTable<GlBuffers> m_buffers;
         // the base shader
@@ -104,8 +104,11 @@ namespace pge
         // a shader used for outlinening
         GlShader m_outline_shader;
         GlShader m_screen_shader;
+        GlShader m_skybox_shader;
         // the screen plane where framebuffer textures are drawn to
         GlBuffers m_screen_plane;
+        // the cube that will be used to draw the skybox
+        GlBuffers m_skybox_cube;
         // possibly transparent meshes that are sorted by their distance from the camera
         std::multimap<float, DrawData> m_sorted_meshes;
         // meshes that are queued for drawing in all render passes
@@ -141,6 +144,10 @@ namespace pge
 
         void create_screen_plane();
 
+        void create_skybox_cube();
+
         void draw_screen_plane();
+
+        void draw_skybox();
     };
 }
