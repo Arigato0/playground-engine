@@ -80,6 +80,15 @@ namespace pge
             return &m_out_buffer;
         }
 
+		IFramebuffer* add_camera(pge::Camera *camera) override
+		{
+			auto &[_, fb] = m_cameras.emplace_back(camera, GlFramebuffer{});
+
+			fb.init();
+
+			return &fb;
+		}
+
         void set_skybox(uint32_t id) override
         {
             m_skybox_texture = id;
@@ -117,6 +126,8 @@ namespace pge
         std::list<GlShader> m_shaders;
         // the queue for the buffers that are supposed to be deleted
         std::vector<uint32_t> m_delete_queue;
+        // list of cameras to render to. these cameras will always render to the attached framebuffer
+        std::list<std::pair<Camera*, GlFramebuffer>> m_cameras;
         // the screen buffer all meshes will be drawn to and will be used by the screen plane
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
@@ -149,5 +160,7 @@ namespace pge
         void draw_screen_plane();
 
         void draw_skybox();
+
+		void render_to_framebuffer(pge::GlFramebuffer &fb);
     };
 }

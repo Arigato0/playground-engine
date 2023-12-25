@@ -1,8 +1,8 @@
-#include "CameraData.hpp"
+#include "Camera.hpp"
 
 #include "../application/engine.hpp"
 
-void pge::CameraData::process()
+void pge::Camera::process()
 {
     static glm::vec3 direction {};
 

@@ -39,6 +39,12 @@ namespace pge
             glUniform1f(location, value);
         }
 
+        void set(std::string_view name, glm::vec2 value) override
+        {
+            auto location = glGetUniformLocation(m_program, name.data());
+            glUniform2f(location, EXPAND_VEC2(value));
+        }
+
         void set(std::string_view name, glm::vec3 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());

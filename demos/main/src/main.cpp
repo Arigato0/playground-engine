@@ -7,6 +7,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <any>
 #include <imgui_internal.h>
+#include <map>
 #include <thread>
 
 #include "application/dialog.hpp"
@@ -18,15 +19,13 @@
 #include "common_util/random.hpp"
 #include "data/id_table.hpp"
 #include "events/signal.hpp"
-#include "graphics/CameraData.hpp"
+#include "graphics/Camera.hpp"
 #include "graphics/primitives.hpp"
 #include "game/camera_comp.hpp"
 #include "graphics/light.hpp"
 #include "graphics/util.hpp"
 
 #include "misc/cpp/imgui_stdlib.h"
-
-
 
 class LightComp;
 using namespace pge;
@@ -389,13 +388,15 @@ public:
             ImGui::EndMainMenuBar();
         }
 
-        // ImGui::Begin("Game view", 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs);
+        // ImGui::Begin("Game view", 0);
         //
         // auto *framebuffer = Engine::renderer->get_framebuffer();
         //
         // ImGui::Image(ImTextureID(framebuffer->get_texture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
         //
         // ImGui::End();
+        //
+        // ImGui::DockSpaceOverViewport();
 
         if (show_object_control)
         {
@@ -881,6 +882,29 @@ void init_grass_scene()
     }
 }
 
+PGE_COMPONENT(CameraViewComp)
+{
+public:
+
+	void update(double delta_time) override
+	{
+		m_data.process();
+
+		ImGui::Begin("Camera view", 0);
+		ImGui::Image(ImTextureID(m_fb->get_texture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::End();
+	}
+
+	void on_start() override
+	{
+		m_fb = Engine::renderer->add_camera(&m_data);
+	}
+
+private:
+	Camera m_data;
+	IFramebuffer *m_fb;
+};
+
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -914,10 +938,12 @@ int main()
 
     Engine::renderer->set_skybox(skybox_texture);
 
-    //Engine::renderer->set_offline(true);
+    // Engine::renderer->set_offline(true);
     //init_grass_scene();
 
     init_room_scene();
+
+	Engine::entity_manager.create<CameraViewComp>("CameraView");
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

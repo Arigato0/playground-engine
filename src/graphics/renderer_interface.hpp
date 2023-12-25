@@ -4,13 +4,13 @@
 
 #include <glm/glm.hpp>
 
-#include "CameraData.hpp"
-#include "CameraData.hpp"
+#include "Camera.hpp"
+#include "Camera.hpp"
 #include "graphics_api.hpp"
 #include "model.hpp"
 #include "shaders.hpp"
 #include "../application/fmt.hpp"
-#include "CameraData.hpp"
+#include "Camera.hpp"
 #include "framebuffer_interface.hpp"
 #include "render_options.hpp"
 #include "../data/string.hpp"
@@ -91,14 +91,18 @@ namespace pge
 
         virtual void set_skybox(uint32_t id) = 0;
 
-        void set_camera(CameraData *camera)
+        void set_camera(Camera *camera)
         {
             m_camera = camera;
         }
 
+		// TODO add a way to remove cameras
+		virtual IFramebuffer* add_camera(Camera *camera) = 0;
+
         virtual IFramebuffer* get_framebuffer() = 0;
 
     protected:
-        CameraData *m_camera;
+        // the main camera that will be used for renders.
+        Camera *m_camera;
     };
 }

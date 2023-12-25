@@ -7,7 +7,7 @@
 
 namespace pge
 {
-    struct CameraData
+    struct Camera
     {
         enum Projection : uint8_t
         {

@@ -1,11 +1,11 @@
 #pragma once
 #include "ecs.hpp"
 #include "application/engine.hpp"
-#include "graphics/CameraData.hpp"
+#include "graphics/Camera.hpp"
 
 namespace pge
 {
-    class CameraComp : public IComponent
+    PGE_COMPONENT(CameraComp)
     {
     public:
         void on_start() override
@@ -54,6 +54,7 @@ namespace pge
         }
 
         float speed = 2.5f;
-        CameraData data;
+        Camera data;
+        IFramebuffer *framebuffer;
     };
 }

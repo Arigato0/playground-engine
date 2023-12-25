@@ -48,7 +48,8 @@ pge::GlFramebuffer::~GlFramebuffer()
     glDeleteRenderbuffers(1, &m_rbo);
     glDeleteTextures(1, &m_texture);
 
-    Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
+	// TODO uncommenting this causes a segfault investigate why
+    //Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
 }
 
 uint32_t pge::GlFramebuffer::get_texture() const

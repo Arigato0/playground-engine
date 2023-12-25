@@ -406,31 +406,33 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
 void pge::OpenglRenderer::draw_passes()
 {
-    m_screen_buffer.bind();
+	render_to_framebuffer(m_screen_buffer);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	auto *main_camera = m_camera;
 
-    draw_skybox();
+    for (auto &[camera, framebuffer] : m_cameras)
+    {
+		m_camera = camera;
+		render_to_framebuffer(framebuffer);
+    }
 
-    draw_everything();
+	m_camera = main_camera;
 
-    m_screen_buffer.unbind();
+    if (m_is_offline)
+    {
+        m_out_buffer.bind();
+    }
 
-     if (m_is_offline)
-     {
-         m_out_buffer.bind();
-     }
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    draw_screen_plane();
 
-     draw_screen_plane();
+	if (m_wireframe)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
+	}
 
-     if (m_wireframe)
-     {
-         glPolygonMode(GL_FRONT_AND_BACK, GL_LINES);
-     }
-
-     m_out_buffer.unbind();
+    m_out_buffer.unbind();
 }
 
 void pge::OpenglRenderer::draw_everything()
@@ -562,6 +564,10 @@ void pge::OpenglRenderer::draw_screen_plane()
 
     m_screen_shader.use();
 
+    auto [width, height] = Engine::window.framebuffer_size();
+
+    m_screen_shader.set("resolution", {width, height});
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_screen_buffer.get_texture());
 
@@ -577,18 +583,29 @@ void pge::OpenglRenderer::draw_skybox()
         return;
     }
 
-    glDepthMask(GL_FALSE);
-
     m_skybox_shader.use();
 
     auto view = glm::mat4(glm::mat3(m_camera->view));
     m_skybox_shader.set("projection", m_camera->projection);
     m_skybox_shader.set("view", view);
 
+    glDepthFunc(GL_LEQUAL);
+
     glBindVertexArray(m_skybox_cube.vao);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_skybox_texture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthFunc(GL_LESS);
+}
 
-    glDepthMask(GL_TRUE);
+void pge::OpenglRenderer::render_to_framebuffer(pge::GlFramebuffer &fb)
+{
+	fb.bind();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    draw_everything();
+    draw_skybox();
+
+    fb.unbind();
 }

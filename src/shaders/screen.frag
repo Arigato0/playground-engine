@@ -5,6 +5,7 @@ out vec4 frag_color;
 in vec2 tex_coords;
 
 uniform sampler2D screen_texture;
+uniform vec2 resolution;
 
 vec4 pp_pixelate()
 {
@@ -27,7 +28,7 @@ vec4 pp_drugged()
 {
     vec4 tex = texture(screen_texture, tex_coords);
 
-    float noise_intensity = 0.4;
+    float noise_intensity = 0.6;
     vec3 noisy_color = tex.rgb + noise_intensity * (texture(screen_texture, tex_coords * noise_intensity).rgb - 0.5);
 
     return vec4(noisy_color, tex.a);
