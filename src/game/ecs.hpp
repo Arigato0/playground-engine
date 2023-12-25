@@ -225,10 +225,15 @@ namespace pge
             return (T*)iter->second.get();
         }
 
-        void add_component_prototype(std::string_view name, IComponent *component)
+        IComponent* add_component_prototype(std::string_view name, IComponent *component)
         {
             auto [comp, _] = m_components.emplace(name, component->clone());
-            init_comp(comp->second.get());
+
+			auto *ptr = comp->second.get();
+
+            init_comp(ptr);
+
+			return ptr;
         }
 
         template<IsComponent T>

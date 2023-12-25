@@ -424,6 +424,7 @@ public:
                 {
                     modal_open = false;
                     Engine::entity_manager.create(std::move(name));
+					name.clear();
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -449,7 +450,8 @@ public:
                         {
                             if (ImGui::Selectable(name.data()))
                             {
-                                entity.add_component_prototype(name, comp.get());
+                                auto new_comp = entity.add_component_prototype(name, comp.get());
+								new_comp->on_start();
                             }
                         }
 
@@ -886,12 +888,23 @@ PGE_COMPONENT(CameraViewComp)
 {
 public:
 
+	CameraViewComp()
+	{
+		m_name = fmt::format("Camera View #{}", m_count++);
+	}
+
 	void update(double delta_time) override
 	{
+		if (m_fb == nullptr)
+		{
+			return;
+		}
+
 		m_data.process();
 
-		ImGui::Begin("Camera view", 0);
-		ImGui::Image(ImTextureID(m_fb->get_texture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Begin(m_name.c_str());
+		auto texture = m_fb->get_texture();
+		ImGui::Image(ImTextureID(texture), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 	}
 
@@ -901,8 +914,10 @@ public:
 	}
 
 private:
-	Camera m_data;
-	IFramebuffer *m_fb;
+	Camera m_data {};
+	IFramebuffer *m_fb = nullptr;
+	std::string m_name;
+	inline static int m_count = 0;
 };
 
 int main()
@@ -934,7 +949,7 @@ int main()
 
     auto result = Engine::renderer->create_cubemap_from_path(skybox_faces, skybox_texture);
 
-    assert(result != 0);
+    assert(result == 0);
 
     Engine::renderer->set_skybox(skybox_texture);
 
@@ -944,6 +959,9 @@ int main()
     init_room_scene();
 
 	Engine::entity_manager.create<CameraViewComp>("CameraView");
+//	Engine::entity_manager.create<CameraViewComp>("CameraView2");
+//	Engine::entity_manager.create<CameraViewComp>("CameraView3");
+//	Engine::entity_manager.create<CameraViewComp>("CameraView4");
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 
