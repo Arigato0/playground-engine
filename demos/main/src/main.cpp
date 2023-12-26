@@ -895,27 +895,37 @@ public:
 
 	void update(double delta_time) override
 	{
-		if (m_fb == nullptr)
-		{
-			return;
-		}
-
 		m_data.process();
 
 		ImGui::Begin(m_name.c_str());
-		auto texture = m_fb->get_texture();
+		auto texture = m_view->framebuffer->get_texture();
 		ImGui::Image(ImTextureID(texture), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::End();
 	}
 
+	~CameraViewComp() override
+	{
+		if (m_view == nullptr)
+		{
+			return;
+		}
+
+		Engine::renderer->remove_view(m_view);
+	}
+
 	void on_start() override
 	{
-		m_fb = Engine::renderer->add_camera(&m_data);
+		m_view = Engine::renderer->add_view(&m_data);
+
+		if (m_view == nullptr)
+		{
+			m_enabled = false;
+		}
 	}
 
 private:
 	Camera m_data {};
-	IFramebuffer *m_fb = nullptr;
+	RenderView *m_view = nullptr;
 	std::string m_name;
 	inline static int m_count = 0;
 };

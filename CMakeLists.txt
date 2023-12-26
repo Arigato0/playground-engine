@@ -103,6 +103,7 @@ add_library(playgroundEngineLib
         "src/graphics/util.cpp"
         "src/graphics/image.hpp"
         "src/graphics/image.cpp"
+        src/graphics/render_view.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

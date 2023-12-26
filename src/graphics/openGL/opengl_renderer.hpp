@@ -11,6 +11,7 @@
 #include "../../data/id_table.hpp"
 #include "../../data/string.hpp"
 #include "gl_buffers.hpp"
+#include "../render_view.hpp"
 
 namespace pge
 {
@@ -80,14 +81,9 @@ namespace pge
             return &m_out_buffer;
         }
 
-		IFramebuffer* add_camera(pge::Camera *camera) override
-		{
-			auto &[_, fb] = m_cameras.emplace_back(camera, GlFramebuffer{});
+		RenderView* add_view(Camera *camera) override;
 
-			fb.init();
-
-			return &fb;
-		}
+		void remove_view(RenderView *view) override;
 
         void set_skybox(uint32_t id) override
         {
@@ -127,7 +123,7 @@ namespace pge
         // the queue for the buffers that are supposed to be deleted
         std::vector<uint32_t> m_delete_queue;
         // list of cameras to render to. these cameras will always render to the attached framebuffer
-        std::list<std::pair<Camera*, GlFramebuffer>> m_cameras;
+        RenderViewList m_render_views;
         // the screen buffer all meshes will be drawn to and will be used by the screen plane
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
@@ -161,6 +157,6 @@ namespace pge
 
         void draw_skybox();
 
-		void render_to_framebuffer(pge::GlFramebuffer &fb);
+		void render_to_framebuffer(pge::IFramebuffer *fb);
     };
 }

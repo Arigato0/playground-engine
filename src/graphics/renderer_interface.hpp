@@ -14,6 +14,7 @@
 #include "framebuffer_interface.hpp"
 #include "render_options.hpp"
 #include "../data/string.hpp"
+#include "render_view.hpp"
 
 namespace pge
 {
@@ -97,7 +98,9 @@ namespace pge
         }
 
 		// TODO add a way to remove cameras
-		virtual IFramebuffer* add_camera(Camera *camera) = 0;
+		virtual RenderView* add_view(Camera *camera) = 0;
+
+		virtual void remove_view(RenderView *view) = 0;
 
         virtual IFramebuffer* get_framebuffer() = 0;
 

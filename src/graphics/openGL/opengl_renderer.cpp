@@ -337,6 +337,8 @@ void pge::OpenglRenderer::handle_lighting()
 
     auto light_iter = Light::table.begin();
 
+	char name_buffer[256];
+
     for (int i = 0; i < Light::table.size(); i++)
     {
         auto *light = *light_iter++;
@@ -346,11 +348,9 @@ void pge::OpenglRenderer::handle_lighting()
             continue;
         }
 
-        static char name_buffer[256];
-
         auto start = sprintf(name_buffer, "lights[%i].", i);
 
-        static auto field = [start](std::string_view name) -> const char*
+        static auto field = [&name_buffer, start](std::string_view name) -> const char*
         {
             sprintf(name_buffer + start, "%s", name.data());
             return name_buffer;
@@ -406,14 +406,20 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
 void pge::OpenglRenderer::draw_passes()
 {
-	render_to_framebuffer(m_screen_buffer);
+	render_to_framebuffer(&m_screen_buffer);
 
 	auto *main_camera = m_camera;
 
-    for (auto &[camera, framebuffer] : m_cameras)
+    for (auto &view : m_render_views)
     {
-		m_camera = camera;
-		render_to_framebuffer(framebuffer);
+		if (!view.is_active || view.framebuffer == nullptr)
+		{
+			continue;
+		}
+
+		m_camera = view.camera;
+
+		render_to_framebuffer(view.framebuffer);
     }
 
 	m_camera = main_camera;
@@ -598,14 +604,48 @@ void pge::OpenglRenderer::draw_skybox()
     glDepthFunc(GL_LESS);
 }
 
-void pge::OpenglRenderer::render_to_framebuffer(pge::GlFramebuffer &fb)
+void pge::OpenglRenderer::render_to_framebuffer(pge::IFramebuffer *fb)
 {
-	fb.bind();
+	fb->bind();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     draw_everything();
     draw_skybox();
 
-    fb.unbind();
+    fb->unbind();
+}
+
+pge::RenderView *pge::OpenglRenderer::add_view(pge::Camera *camera)
+{
+	auto *fb = new GlFramebuffer();
+
+	auto result = fb->init();
+
+	if (result != 0)
+	{
+		delete fb;
+		return nullptr;
+	}
+
+	auto &view = m_render_views.emplace_back(camera, fb, true);
+
+	view.camera = camera;
+	view.iter = --m_render_views.end();
+
+	return &m_render_views.back();
+}
+
+void pge::OpenglRenderer::remove_view(RenderView *view)
+{
+	if (view == nullptr)
+	{
+		return;
+	}
+
+	delete view->framebuffer;
+
+	view->framebuffer = nullptr;
+
+	m_render_views.erase(view->iter);
 }
