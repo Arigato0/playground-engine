@@ -143,6 +143,7 @@ public:
                 {"Shininess", DragControl(&material.shininess)},
                 {"Is transparent", &material.use_alpha},
                 {"Transparency", DragControl(&material.alpha)},
+				{"Specular", DragControl(&material.specular)},
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
                 {"Enable texture", &material.diffuse.enabled},
                 {"Set Diffuse", [&mesh]
@@ -155,17 +156,6 @@ public:
                     }
 
                     mesh.material.diffuse = *Engine::asset_manager.get_texture(path->c_str());
-                }},
-                {"Set Specular", [&mesh]
-                {
-                    auto path = native_file_dialog("~");
-
-                    if (!path)
-                    {
-                        return;
-                    }
-
-                    mesh.material.specular = *Engine::asset_manager.get_texture(path->c_str());
                 }},
                 END_GROUP
             };
@@ -574,18 +564,29 @@ public:
             {
                 if (ImGui::BeginTabItem("Renderering"))
                 {
+					ImGui::SeparatorText("Antialiasing");
+
+					static int msaa_samples = 4;
+
+					if (ImGui::SliderInt("MSAA samples", &msaa_samples, 0, 32))
+					{
+						Engine::renderer->get_render_framebuffer()->set_samples(msaa_samples);
+					}
+
+					ImGui::SeparatorText("Debug Visualize");
+
                     ImGui::Checkbox("Wireframe", &enable_wireframe);
 
                     Engine::renderer->set_wireframe_mode(enable_wireframe);
 
-                    ImGui::SeparatorText("Viewport");
-
-                    static bool visualize_depth = false;
+					static bool visualize_depth = false;
 
                     if (ImGui::Checkbox("Visualize depth buffer", &visualize_depth))
                     {
                         Engine::renderer->set_visualize_depth(visualize_depth);
                     }
+
+                    ImGui::SeparatorText("Viewport");
 
                     static auto clear_color_vec = Engine::renderer->get_clear_color();
 
@@ -619,6 +620,8 @@ public:
                     ImGui::DragFloat("Zoom", &m_camera->data.zoom, 0.1);
 
                     static bool framerate_cap = false;
+
+					ImGui::SeparatorText("Display");
 
                     if (ImGui::Checkbox("Framerate cap", &framerate_cap))
                     {

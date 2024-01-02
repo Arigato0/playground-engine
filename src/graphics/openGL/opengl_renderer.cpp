@@ -523,11 +523,10 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     m_shader.set("material.shininess", material.shininess);
     m_shader.set("texture_scale", material.diffuse.scale);
     m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
-    m_shader.set("material.specular.enabled", material.specular.enabled);
     m_shader.set("material.transparency", material.alpha);
     m_shader.set("recieve_lighting", material.recieve_lighting);
     m_shader.set("material.diffuse.sampler", 0);
-    m_shader.set("material.specular.sampler", 1);
+    m_shader.set("material.specular", material.specular);
 
     m_shader.set("model", data.model);
     m_shader.set("projection", m_camera->projection);
@@ -538,8 +537,6 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, material.specular.id);
 }
 
 void pge::OpenglRenderer::create_screen_plane()

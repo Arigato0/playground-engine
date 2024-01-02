@@ -103,6 +103,8 @@ namespace pge
 
         virtual IFramebuffer* get_framebuffer() = 0;
 
+		virtual IFramebuffer* get_render_framebuffer() = 0;
+
     protected:
         // the main camera that will be used for renders.
         Camera *m_camera;

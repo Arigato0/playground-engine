@@ -32,5 +32,6 @@ namespace pge
 
         void on_resize(IWindow*, int width, int height) const;
 
+		void set_buffers(int width, int height) const;
 	};
 }

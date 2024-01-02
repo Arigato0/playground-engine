@@ -13,11 +13,13 @@
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, (width), (height))  : \
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (width), (height))
 
+#define GET_TARGET(samples) (samples) > 0 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D
+
 uint32_t pge::GlFramebuffer::init(int samples)
 {
     auto [width, height] = Engine::window.framebuffer_size();
 
-	m_tex_target = samples > 0 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+	m_tex_target = GET_TARGET(samples);
 
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -102,7 +104,23 @@ pge::Image pge::GlFramebuffer::get_image() const
 
 void pge::GlFramebuffer::on_resize(IWindow*, int width, int height) const
 {
-    glBindTexture(m_tex_target, m_texture);
+	set_buffers(width, height);
+}
+
+void pge::GlFramebuffer::set_samples(int n)
+{
+ 	auto [width, height] = Engine::window.framebuffer_size();
+
+	m_tex_target = GET_TARGET(n);
+
+	set_buffers(width, height);
+
+	m_samples = n;
+}
+
+void pge::GlFramebuffer::set_buffers(int width, int height) const
+{
+	glBindTexture(m_tex_target, m_texture);
 
 	SET_TEX_IMAGE(m_samples, width, height);
 
@@ -116,15 +134,4 @@ void pge::GlFramebuffer::on_resize(IWindow*, int width, int height) const
 	SET_RENDER_BUFFER(m_samples, width, height);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
-}
-
-void pge::GlFramebuffer::set_samples(int n)
-{
- 	auto [width, height] = Engine::window.framebuffer_size();
-
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_texture);
-
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, n, GL_RGB, width, height, GL_TRUE);
-
-	m_samples = n;
 }

@@ -20,7 +20,7 @@ struct Texture
 struct Material
 {
     Texture diffuse;
-    Texture specular;
+    float specular;
     float shininess;
     float transparency;
     vec3 color;
@@ -84,7 +84,7 @@ vec3 create_texture(Texture text)
 struct LightingData
 {
     vec3 diffuse;
-    vec3 specular;
+    float specular;
     vec3 norm;
     vec3 view_dir;
 };
@@ -153,7 +153,7 @@ void main()
     LightingData lighting_data =
     LightingData(
     create_texture(material.diffuse),
-    create_texture(material.specular),
+    material.specular,
     normalize(normals),
     normalize(view_pos - frag_pos));
 

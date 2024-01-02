@@ -81,6 +81,11 @@ namespace pge
             return &m_out_buffer;
         }
 
+		IFramebuffer* get_render_framebuffer() override
+        {
+            return &m_render_buffer;
+        }
+
 		RenderView* add_view(Camera *camera) override;
 
 		void remove_view(RenderView *view) override;

@@ -136,6 +136,7 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 	material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
 	material->Get(AI_MATKEY_SHININESS, output.shininess);
 	material->Get(AI_MATKEY_OPACITY, output.alpha);
+	material->Get(AI_MATKEY_COLOR_SPECULAR, output.specular);
 
 	if (output.alpha < 1.0f)
 	{
@@ -149,7 +150,6 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 	output.color = {color.r, color.g, color.b};
 
 	output.diffuse  = load_material(material, aiTextureType_DIFFUSE);
-	output.specular = load_material(material, aiTextureType_SPECULAR);
 
 	return output;
 }
