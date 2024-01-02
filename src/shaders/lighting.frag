@@ -6,6 +6,7 @@ uniform vec3 view_pos;
 uniform float texture_scale;
 uniform bool recieve_lighting;
 uniform bool visualize_depth;
+uniform float gamma;
 
 in vec3 frag_pos;
 in vec3 normals;
@@ -92,15 +93,14 @@ struct LightingData
 vec3 calculate_lighting(Light light, LightingData data)
 {
     vec3 light_dir = normalize(light.position - frag_pos);
+    vec3 halfway_dir = normalize(light_dir + data.view_dir);
 
     float diff = max(dot(data.norm, light_dir), 0.0);
 
     vec3 diffuse = light.color * light.diffuse * diff * data.diffuse * light.power;
     vec3 ambient =  light.color * data.diffuse * light.ambient * light.power;
 
-    vec3 reflect_dir = reflect(-light_dir, data.norm);
-
-    float spec = pow(max(dot(data.view_dir, reflect_dir), 0.0), material.shininess);
+    float spec = pow(max(dot(data.norm, halfway_dir), 0.0), material.shininess);
     vec3 specular = light.color * data.specular * spec * light.specular * light.power;
 
     if (light.is_spot)
@@ -182,4 +182,6 @@ void main()
     }
 
     frag_color = vec4(result, tex.a * material.transparency);
+
+    frag_color.rgb = pow(frag_color.rgb, vec3(1.0/gamma));
 }

@@ -466,11 +466,11 @@ public:
                         auto scale = trans.get_scale();
                         auto euler = glm::eulerAngles(glm::quat_cast(trans.model));
 
-                        if (ImGui::DragFloat3("Position", glm::value_ptr(pos)))
+                        if (ImGui::DragFloat3("Position", glm::value_ptr(pos), 0.1))
                         {
                             trans.set_position(pos);
                         }
-                        if (ImGui::DragFloat3("Scale", glm::value_ptr(scale)))
+                        if (ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1))
                         {
                             trans.set_scale(scale);
                         }
@@ -622,6 +622,13 @@ public:
                     static bool framerate_cap = false;
 
 					ImGui::SeparatorText("Display");
+
+					static float gamma = 1.7f;
+
+					if (ImGui::DragFloat("Gamma", &gamma, 0.1))
+					{
+						Engine::renderer->set_gamma(gamma);
+					}
 
                     if (ImGui::Checkbox("Framerate cap", &framerate_cap))
                     {
@@ -812,12 +819,12 @@ void init_room_scene()
     skull_ent->transform.translate({-2, 1.5, -3});
     skull_ent->transform.rotate(30, {0, 1, 0});
 
-    for (auto &mesh : skull_mesh->model.meshes)
-    {
-        mesh.material.use_alpha = true;
-        mesh.material.alpha = 0.3f;
-        mesh.material.color = {1, 0.161, 0.933};
-    }
+//    for (auto &mesh : skull_mesh->model.meshes)
+//    {
+//        mesh.material.use_alpha = true;
+//        mesh.material.alpha = 0.3f;
+//        mesh.material.color = {1, 0.161, 0.933};
+//    }
 }
 
 void init_grass_scene()
@@ -880,12 +887,12 @@ void init_grass_scene()
     skull_ent->transform.translate({-2, 1.5, -3});
     skull_ent->transform.rotate(30, {0, 1, 0});
 
-    for (auto &mesh : skull_mesh->model.meshes)
-    {
-        mesh.material.use_alpha = true;
-        mesh.material.alpha = 0.3f;
-        mesh.material.color = {1, 0.161, 0.933};
-    }
+//    for (auto &mesh : skull_mesh->model.meshes)
+//    {
+//        mesh.material.use_alpha = true;
+//        mesh.material.alpha = 0.3f;
+//        mesh.material.color = {1, 0.161, 0.933};
+//    }
 }
 
 PGE_COMPONENT(CameraViewComp)

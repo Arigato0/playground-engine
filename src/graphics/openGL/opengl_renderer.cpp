@@ -32,13 +32,16 @@ uint32_t pge::OpenglRenderer::init()
         glViewport(0, 0, width, height);
     });
 
-    create_texture_from_path("assets/missing.jpeg", m_missing_texture, false, TextureWrapMode::Repeat);
+	create_texture_from_path("assets/missing.jpeg", m_missing_texture, TextureOptions{});
 
     m_shader.create
    ({
        {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
        {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
    });
+
+	m_shader.use();
+	m_shader.set("gamma", 1.7f);
 
     m_outline_shader.create
    ({
@@ -171,10 +174,10 @@ void pge::OpenglRenderer::draw(const MeshView&mesh, glm::mat4 model, DrawOptions
     }
 }
 
-uint32_t pge::OpenglRenderer::create_texture_from_path(std::string_view path, uint32_t& out_texture, bool flip,
-    TextureWrapMode wrap_mode)
+uint32_t
+pge::OpenglRenderer::create_texture_from_path(std::string_view path, uint32_t &out_texture, TextureOptions options)
 {
-    stbi_set_flip_vertically_on_load(flip);
+    stbi_set_flip_vertically_on_load(options.flip);
 
     int width, height, channels;
 
@@ -191,11 +194,13 @@ uint32_t pge::OpenglRenderer::create_texture_from_path(std::string_view path, ui
         stbi_image_free(data);
     });
 
-    return create_texture(data, width, height, channels, out_texture, wrap_mode);
+    return create_texture(data, width, height, channels, out_texture, options.wrap_mode, options.gamma_correct);
 }
 
-uint32_t pge::OpenglRenderer::create_texture(ustring_view data, int width, int height, int channels,
-    uint32_t &out_texture, TextureWrapMode wrap_mode)
+uint32_t
+pge::OpenglRenderer::create_texture(ustring_view data, int width, int height, int channels, uint32_t &out_texture,
+	TextureWrapMode wrap_mode,
+	bool gamma_correct)
 {
     glGenTextures(1, &out_texture);
     glBindTexture(GL_TEXTURE_2D, out_texture);
@@ -216,22 +221,28 @@ uint32_t pge::OpenglRenderer::create_texture(ustring_view data, int width, int h
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    int format;
+    int pixel_format;
+	int internal_format;
 
     if (channels == 1)
     {
-        format = GL_RED;
+		pixel_format = GL_RED;
+		internal_format = GL_RED;
     }
     if (channels == 3)
     {
-        format = GL_RGB;
+		pixel_format = GL_RGB;
+		internal_format = GL_SRGB;
     }
     if (channels == 4)
     {
-        format = GL_RGBA;
+		pixel_format = GL_RGBA;
+		internal_format = GL_SRGB_ALPHA;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data.data());
+	internal_format = gamma_correct ? internal_format : pixel_format;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, pixel_format, GL_UNSIGNED_BYTE, data.data());
     glGenerateMipmap(GL_TEXTURE_2D);
 
     return OPENGL_ERROR_OK;
@@ -243,6 +254,8 @@ uint32_t pge::OpenglRenderer::create_cubemap_from_path(std::array<std::string_vi
     glBindTexture(GL_TEXTURE_CUBE_MAP, out_texture);
 
     int width, height, channels;
+
+	stbi_set_flip_vertically_on_load(false);
 
     for (int i = 0; i < faces.size(); i++)
     {

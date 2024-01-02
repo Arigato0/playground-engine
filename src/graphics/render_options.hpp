@@ -41,6 +41,14 @@ namespace pge
         ClampToBorder,
     };
 
+	// texture options for loading textures with the renderer
+	struct TextureOptions
+	{
+		bool flip = true;
+		bool gamma_correct = true;
+		TextureWrapMode wrap_mode = TextureWrapMode::Repeat;
+	};
+
     enum class WireframeMode : uint8_t
     {
         Lines,

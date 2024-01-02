@@ -34,11 +34,12 @@ namespace pge
 
         void draw(const MeshView&mesh, glm::mat4 model, DrawOptions options = {}) override;
 
-        uint32_t create_texture_from_path(std::string_view path, uint32_t &out_texture,
-            bool flip, TextureWrapMode wrap_mode) override;
+        uint32_t
+		create_texture_from_path(std::string_view path, uint32_t &out_texture, TextureOptions options) override;
 
-        uint32_t create_texture(ustring_view data, int width, int height, int channels,
-            uint32_t &out_texture, TextureWrapMode wrap_mode) override;
+        uint32_t create_texture(ustring_view data, int width, int height, int channels, uint32_t &out_texture,
+			TextureWrapMode wrap_mode,
+			bool gamma_correct) override;
 
         uint32_t create_cubemap_from_path(std::array<std::string_view, 6> faces, uint32_t& out_texture) override;
 
@@ -99,6 +100,12 @@ namespace pge
         {
             return opengl_error_message((OpenGlErrorCode)code);
         }
+
+		void set_gamma(float value) override
+		{
+			m_shader.use();
+			m_shader.set("gamma", value);
+		}
 
         RendererProperties properties() override;
 

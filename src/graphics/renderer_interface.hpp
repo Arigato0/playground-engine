@@ -78,11 +78,10 @@ namespace pge
         // translates the underlying graphics apis error code to a string
         virtual std::string_view error_message(uint32_t code) = 0;
 
-        virtual uint32_t create_texture_from_path(std::string_view path, uint32_t &out_texture,
-            bool flip, TextureWrapMode wrap_mode) = 0;
+        virtual uint32_t create_texture_from_path(std::string_view path, uint32_t &out_texture, TextureOptions options) = 0;
 
-        virtual uint32_t create_texture(ustring_view data, int width, int height, int channels,
-            uint32_t &out_texture, TextureWrapMode wrap_mode) = 0;
+        virtual uint32_t create_texture(ustring_view data, int width, int height, int channels, uint32_t &out_texture,
+			TextureWrapMode wrap_mode, bool gamma_correct) = 0;
 
         virtual uint32_t create_cubemap_from_path(std::array<std::string_view, 6> faces, uint32_t &out_texture) = 0;
 
@@ -104,6 +103,8 @@ namespace pge
         virtual IFramebuffer* get_framebuffer() = 0;
 
 		virtual IFramebuffer* get_render_framebuffer() = 0;
+
+		virtual void set_gamma(float value) = 0;
 
     protected:
         // the main camera that will be used for renders.
