@@ -124,6 +124,7 @@ namespace pge
         std::vector<uint32_t> m_delete_queue;
         // list of cameras to render to. these cameras will always render to the attached framebuffer
         RenderViewList m_render_views;
+		GlFramebuffer m_render_buffer;
         // the screen buffer all meshes will be drawn to and will be used by the screen plane
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled

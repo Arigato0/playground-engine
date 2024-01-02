@@ -79,9 +79,11 @@ uint32_t pge::OpenglRenderer::init()
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-    VALIDATE_ERR(m_out_buffer.init());
+	VALIDATE_ERR(m_render_buffer.init(4));
+	VALIDATE_ERR(m_out_buffer.init(0));
+	VALIDATE_ERR(m_screen_buffer.init(0));
 
-    return m_screen_buffer.init();
+    return OPENGL_ERROR_OK;
 }
 
 pge::IShader* pge::OpenglRenderer::create_shader(ShaderList shaders)
@@ -405,7 +407,7 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
 void pge::OpenglRenderer::draw_passes()
 {
-	render_to_framebuffer(&m_screen_buffer);
+	render_to_framebuffer(&m_render_buffer);
 
 	auto *main_camera = m_camera;
 
@@ -605,12 +607,19 @@ void pge::OpenglRenderer::draw_skybox()
 
 void pge::OpenglRenderer::render_to_framebuffer(pge::IFramebuffer *fb)
 {
+	auto *gl_fb = (GlFramebuffer*)fb;
 	fb->bind();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     draw_everything();
     draw_skybox();
+
+	auto [width, height] = Engine::window.framebuffer_size();
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, gl_fb->m_fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.m_fbo);
+	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     fb->unbind();
 }
@@ -619,7 +628,7 @@ pge::RenderView *pge::OpenglRenderer::add_view(pge::Camera *camera)
 {
 	auto *fb = new GlFramebuffer();
 
-	auto result = fb->init();
+	auto result = fb->init(0);
 
 	if (result != 0)
 	{

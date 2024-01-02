@@ -158,12 +158,17 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
 {
     if (material->GetTextureCount(type) == 0)
     {
-        return {};
+		return {.enabled = false};
     }
 
     aiString path;
     // TODO handle embedded textures
-    material->GetTexture(type, 0, &path);
+    auto result = material->GetTexture(type, 0, &path);
+
+	if (result == aiReturn_FAILURE)
+	{
+		return {};
+	}
 
     m_path.replace_filename(path.C_Str()).c_str();
 

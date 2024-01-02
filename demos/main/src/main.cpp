@@ -970,7 +970,7 @@ int main()
 	create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
     init_room_scene();
 
-//	Engine::entity_manager.create<CameraViewComp>("CameraView");
+// 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView3");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView4");

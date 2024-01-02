@@ -8,11 +8,13 @@ namespace pge
     class GlFramebuffer : public IFramebuffer
     {
     public:
-        uint32_t init() override;
+        uint32_t init(int samples) override;
 
         ~GlFramebuffer() override;
 
         uint32_t get_texture() const override;
+
+		void set_samples(int n) override;
 
         void bind() override;
 
@@ -20,12 +22,15 @@ namespace pge
 
         Image get_image() const override;
 
-    private:
+    public:
         uint32_t m_fbo;
         uint32_t m_rbo;
         uint32_t m_texture;
+		int m_samples = 0;
+		int m_tex_target;
         Connection<void, IWindow*, int, int> *m_on_resize_con;
 
         void on_resize(IWindow*, int width, int height) const;
-    };
+
+	};
 }
