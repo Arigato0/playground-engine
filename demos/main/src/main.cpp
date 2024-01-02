@@ -93,6 +93,7 @@ public:
         }
 
         model = std::move(model_opt.value());
+		m_parent->transform.model *= model.transform;
         m_path  = path;
 
         return true;
@@ -966,12 +967,20 @@ int main()
     // Engine::renderer->set_offline(true);
     //init_grass_scene();
 
+	create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
     init_room_scene();
 
-	Engine::entity_manager.create<CameraViewComp>("CameraView");
+//	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView3");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView4");
+
+/*
+ * auto mesh = ...
+ * mesh.set_mesh("./path");
+ * glm::mat4 transforms[];
+ * mesh.set_instances(transforms);
+ */
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 

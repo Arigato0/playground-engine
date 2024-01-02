@@ -68,7 +68,6 @@ uint32_t pge::OpenglRenderer::init()
     create_skybox_cube();
 
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_MULTISAMPLE);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_CULL_FACE);
 

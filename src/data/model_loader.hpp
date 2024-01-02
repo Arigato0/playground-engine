@@ -60,7 +60,7 @@ namespace pge
     private:
         std::filesystem::path m_path;
 
-        void process_node(Model &model, aiNode *node, const aiScene *scene);
+        glm::mat4 process_node(Model &model, aiNode *node, const aiScene *scene);
 
         std::vector<Vertex> load_mesh_vertices(aiMesh *mesh);
 
@@ -69,5 +69,7 @@ namespace pge
         Mesh process_mesh(aiMesh *mesh, const aiScene *scene);
 
         Texture load_material(aiMaterial *material, aiTextureType type);
-    };
+
+		pge::Material load_mesh_material(const aiMesh *mesh, const aiScene *scene);
+	};
 }

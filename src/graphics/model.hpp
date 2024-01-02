@@ -68,6 +68,7 @@ namespace pge
     {
         uint32_t id = UINT32_MAX;
         std::vector<T> meshes;
+		glm::mat4 transform {};
     };
 
     using Model = ModelBase<Mesh>;
@@ -78,6 +79,7 @@ namespace pge
         ModelView view;
 
         view.id = model.id;
+		view.transform = model.transform;
 
         util::concat(view.meshes, model.meshes);
 

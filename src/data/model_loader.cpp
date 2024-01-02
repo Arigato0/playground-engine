@@ -5,6 +5,7 @@
 #include "stb_image.h"
 #include "../common_util/macros.hpp"
 #include "../application/engine.hpp"
+ #include <glm/gtc/type_ptr.hpp>
 
 std::optional<pge::Model> pge::ModelLoader::load(std::string_view path, int flags)
 {
@@ -21,14 +22,25 @@ std::optional<pge::Model> pge::ModelLoader::load(std::string_view path, int flag
 
     Model model;
 
-    process_node(model, scene->mRootNode, scene);
+    model.transform = process_node(model, scene->mRootNode, scene);
 
     return model;
 }
 
-void pge::ModelLoader::process_node(Model &model, aiNode* node, const aiScene* scene)
+glm::mat4 pge::ModelLoader::process_node(Model &model, aiNode* node, const aiScene* scene)
 {
     model.meshes.reserve(scene->mNumMeshes);
+
+	auto node_transform = node->mTransformation;
+
+	glm::mat4 transform {1.0f};
+
+	transform[0] = glm::make_vec4(node_transform[0]);
+	transform[1] = glm::make_vec4(node_transform[1]);
+	transform[2] = glm::make_vec4(node_transform[2]);
+	transform[3] = glm::make_vec4(node_transform[3]);
+
+	model.transform *= transform;
 
     for (int i = 0; i < node->mNumMeshes; i++)
     {
@@ -38,8 +50,10 @@ void pge::ModelLoader::process_node(Model &model, aiNode* node, const aiScene* s
 
     for (int i = 0; i < node->mNumChildren; i++)
     {
-        process_node(model, node->mChildren[i], scene);
+        transform *= process_node(model, node->mChildren[i], scene);
     }
+
+	return transform;
 }
 
 std::vector<pge::Vertex> pge::ModelLoader::load_mesh_vertices(aiMesh* mesh)
@@ -97,39 +111,47 @@ std::vector<uint32_t> pge::ModelLoader::load_mesh_indices(aiMesh* mesh)
 
 pge::Mesh pge::ModelLoader::process_mesh(aiMesh* mesh, const aiScene* scene)
 {
-    Mesh output;
+    return
+	{
+		.name 	  = mesh->mName.C_Str(),
+		.vertices = load_mesh_vertices(mesh),
+		.indices  = load_mesh_indices(mesh),
+		.material = load_mesh_material(mesh, scene),
+	};
+}
 
-    output.vertices = load_mesh_vertices(mesh);
-    output.indices  = load_mesh_indices(mesh);
+pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiScene *scene)
+{
+	if (mesh->mMaterialIndex < 0)
+	{
+		return {};
+	}
 
-    output.name = mesh->mName.C_Str();
+	Material output;
 
-    if (mesh->mMaterialIndex >= 0)
-    {
-        auto *material = scene->mMaterials[mesh->mMaterialIndex];
+	auto *material = scene->mMaterials[mesh->mMaterialIndex];
 
-        aiColor3D color {};
+	aiColor3D color {};
 
-        material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-        material->Get(AI_MATKEY_SHININESS, output.material.shininess);
-        material->Get(AI_MATKEY_OPACITY, output.material.alpha);
+	material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+	material->Get(AI_MATKEY_SHININESS, output.shininess);
+	material->Get(AI_MATKEY_OPACITY, output.alpha);
 
-        if (output.material.alpha < 1.0f)
-        {
-            output.material.use_alpha = true;
-        }
-        if (output.material.shininess < 1)
-        {
-            output.material.shininess = 1;
-        }
+	if (output.alpha < 1.0f)
+	{
+		output.use_alpha = true;
+	}
+	if (output.shininess < 1)
+	{
+		output.shininess = 1;
+	}
 
-        output.material.color = {color.r, color.g, color.b};
+	output.color = {color.r, color.g, color.b};
 
-        output.material.diffuse  = load_material(material, aiTextureType_DIFFUSE);
-        output.material.specular = load_material(material, aiTextureType_SPECULAR);
-    }
+	output.diffuse  = load_material(material, aiTextureType_DIFFUSE);
+	output.specular = load_material(material, aiTextureType_SPECULAR);
 
-    return output;
+	return output;
 }
 
 pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType type)
@@ -140,7 +162,7 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
     }
 
     aiString path;
-    // TODO handle embeded textures
+    // TODO handle embedded textures
     material->GetTexture(type, 0, &path);
 
     m_path.replace_filename(path.C_Str()).c_str();

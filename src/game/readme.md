@@ -35,7 +35,7 @@ PGE_COMPONENT(PlayerInputComp)
 public:
     void update(double _) override
     {
-        if (pge:key_pressed(pge:Key::Space))
+        if (pge::key_pressed(pge::Key::Space))
         {
             jump()
         }

@@ -40,7 +40,7 @@ namespace pge
     public:
         virtual ~IRenderer() = default;
 
-        // initilizes the graphics subsystem
+        // initializes the graphics subsystem
         virtual uint32_t init() = 0;
 
         // creates a shader program using the underlying graphics api
@@ -97,7 +97,6 @@ namespace pge
             m_camera = camera;
         }
 
-		// TODO add a way to remove cameras
 		virtual RenderView* add_view(Camera *camera) = 0;
 
 		virtual void remove_view(RenderView *view) = 0;
