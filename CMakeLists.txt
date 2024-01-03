@@ -52,7 +52,7 @@ add_library(playgroundEngineLib
         "src/graphics/openGL/opengl_error.hpp"
         "src/graphics/openGL/opengl_error.cpp"
         "src/application/input_keys.hpp"
-        "src/graphics/shaders.hpp"
+        "src/graphics/shader_interface.hpp"
         "src/application/imgui_handler.cpp"
         "src/application/imgui_handler.hpp"
         "src/graphics/openGL/opengl_shader.cpp"
@@ -104,6 +104,8 @@ add_library(playgroundEngineLib
         "src/graphics/image.hpp"
         "src/graphics/image.cpp"
         src/graphics/render_view.hpp
+        src/graphics/openGL/shadow_map.hpp
+        src/graphics/openGL/shadow_map.cpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

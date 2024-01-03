@@ -797,7 +797,6 @@ void init_room_scene()
 
     auto [room_ent, room_mesh] = create_mesh("Room", "/home/arian/Downloads/testing room/room.obj");
 
-    room_mesh->options.cull_faces = false;
 
     create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
 
@@ -806,78 +805,8 @@ void init_room_scene()
     window_ent->transform.translate({0, 2, -3});
     window_ent->transform.rotate(180, glm::vec3{0, 1, 1});
 
-    window_mesh->options.cull_faces = false;
-
     auto &window_material = window_mesh->model.meshes.front().material;
     window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
-    window_material.shininess = 1;
-    window_material.recieve_lighting = false;
-    window_material.use_alpha = true;
-
-    auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
-
-    skull_ent->transform.translate({-2, 1.5, -3});
-    skull_ent->transform.rotate(30, {0, 1, 0});
-
-//    for (auto &mesh : skull_mesh->model.meshes)
-//    {
-//        mesh.material.use_alpha = true;
-//        mesh.material.alpha = 0.3f;
-//        mesh.material.color = {1, 0.161, 0.933};
-//    }
-}
-
-void init_grass_scene()
-{
-    auto light_ent = Engine::entity_manager.create<LightComp>("Light");
-
-    light_ent->transform.translate({2, 100, -1});
-
-    auto light_data = light_ent->find<LightComp>();
-    light_data->data.power = 80;
-
-    auto ground_ent = Engine::entity_manager.create<MeshRenderer>("ground");
-
-    ground_ent->transform.scale(glm::vec3{100});
-    ground_ent->transform.translate({0, -0.01, 0});
-
-    auto ground_mesh = ground_ent->find<MeshRenderer>();
-
-    ground_mesh->set_mesh("assets/models/primitives/plane.glb");
-
-    auto &material = ground_mesh->model.meshes.front().material;
-    material.diffuse = *Engine::asset_manager.get_texture("assets/grass_ground.jpg");
-    material.diffuse.scale = 60;
-    material.shininess = 1;
-
-    auto grass_ent = Engine::entity_manager.create<MeshRenderer>("Grass");
-
-    grass_ent->transform.rotate(180, glm::vec3{0, 1, 1});
-
-    auto grass_mesh = grass_ent->find<MeshRenderer>();
-
-    grass_mesh->set_mesh("assets/models/primitives/plane.glb");
-
-    grass_mesh->options.cull_faces = false;
-
-    auto &grass_material = grass_mesh->model.meshes.front().material;
-    grass_material.diffuse = *Engine::asset_manager.get_texture("assets/grass.png", false, TextureWrapMode::ClampToEdge);
-    grass_material.shininess = 1;
-    grass_material.recieve_lighting = false;
-    grass_material.use_alpha = true;
-
-    auto window_ent = Engine::entity_manager.create<MeshRenderer>("Window");
-
-    window_ent->transform.rotate(180, glm::vec3{0, 1, 1});
-
-    auto window_mesh = window_ent->find<MeshRenderer>();
-
-    window_mesh->set_mesh("assets/models/primitives/plane.glb");
-
-    window_mesh->options.cull_faces = false;
-
-    auto &window_material = window_mesh->model.meshes.front().material;
-    window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", false, TextureWrapMode::ClampToEdge);
     window_material.shininess = 1;
     window_material.recieve_lighting = false;
     window_material.use_alpha = true;

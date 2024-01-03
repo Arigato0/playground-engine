@@ -5,7 +5,7 @@
 #include "vulkan_manager.hpp"
 #include "queue_families.hpp"
 #include "swap_chain.hpp"
-#include "../shaders.hpp"
+#include "../shader_interface.hpp"
 
 pge::VulkanManager::~VulkanManager()
 {

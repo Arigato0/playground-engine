@@ -1,5 +1,5 @@
 #include "vulkan_shader.hpp"
-#include "../shaders.hpp"
+#include "../shader_interface.hpp"
 #include "../../common_util/util.hpp"
 
 namespace pge

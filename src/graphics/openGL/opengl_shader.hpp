@@ -4,7 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "opengl_error.hpp"
-#include "../shaders.hpp"
+#include "../shader_interface.hpp"
 #include "../../application/log.hpp"
 #include "../../application/error.hpp"
 #include "../../common_util/macros.hpp"

@@ -40,9 +40,6 @@ uint32_t pge::OpenglRenderer::init()
        {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
    });
 
-	m_shader.use();
-	m_shader.set("gamma", 1.7f);
-
     m_outline_shader.create
    ({
        {PGE_FIND_SHADER("extrude_from_normals.vert"), ShaderType::Vertex},
@@ -57,6 +54,13 @@ uint32_t pge::OpenglRenderer::init()
 
     m_screen_shader.use();
     m_screen_shader.set("screen_texture", 0);
+	m_screen_shader.set("gamma", 1.7f);
+
+	m_shadow_map_shader.create
+   ({
+       {PGE_FIND_SHADER("shadow_map.vert"), ShaderType::Vertex},
+       {PGE_FIND_SHADER("empty.frag"), ShaderType::Fragment}
+   });
 
     m_skybox_shader.create
    ({
@@ -83,8 +87,11 @@ uint32_t pge::OpenglRenderer::init()
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 	VALIDATE_ERR(m_render_buffer.init(4));
-	VALIDATE_ERR(m_out_buffer.init(0));
-	VALIDATE_ERR(m_screen_buffer.init(0));
+
+	VALIDATE_ERR(m_out_buffer.init());
+	VALIDATE_ERR(m_screen_buffer.init());
+
+	VALIDATE_ERR(m_shadow_map.init_framebuffer());
 
     return OPENGL_ERROR_OK;
 }
@@ -347,6 +354,8 @@ void pge::OpenglRenderer::draw_shaded_wireframe(const Mesh& mesh, glm::mat4 mode
 
 void pge::OpenglRenderer::handle_lighting()
 {
+	m_shader.use();
+
     m_shader.set("light_count", (int)Light::table.size());
 
     auto light_iter = Light::table.begin();
@@ -400,10 +409,10 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
         return OPENGL_ERROR_MESH_NOT_FOUND;
     }
 
-    if (!options.cull_faces)
-    {
-        glDisable(GL_CULL_FACE);
-    }
+//    if (!options.cull_faces)
+//    {
+//        glDisable(GL_CULL_FACE);
+//    }
 
     auto buffers = m_buffers.get(mesh.id);
 
@@ -420,7 +429,7 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
 void pge::OpenglRenderer::draw_passes()
 {
-	render_to_framebuffer(&m_render_buffer);
+	render_to_framebuffer(m_render_buffer);
 
 	auto *main_camera = m_camera;
 
@@ -433,7 +442,7 @@ void pge::OpenglRenderer::draw_passes()
 
 		m_camera = view.camera;
 
-		render_to_framebuffer(view.framebuffer);
+		render_to_framebuffer(*((GlFramebuffer*)view.framebuffer));
     }
 
 	m_camera = main_camera;
@@ -455,20 +464,49 @@ void pge::OpenglRenderer::draw_passes()
     m_out_buffer.unbind();
 }
 
-void pge::OpenglRenderer::draw_everything()
+void draw_data(pge::DrawData &data)
+{
+
+}
+
+void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 {
     glEnable(GL_DEPTH_TEST);
 
+	glm::mat4 light_space;
+
+	auto projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
+	auto view = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
+						  glm::vec3( 0.0f, 0.0f,  0.0f),
+						  glm::vec3( 0.0f, 1.0f,  0.0f));
+
+	light_space = projection * view;
+
+	auto draw_data = [&]
+	(DrawData &data)
+	{
+		if (calculate_shadows)
+		{
+			m_shadow_map_shader.use();
+			m_shadow_map_shader.set("light_space", light_space);
+			m_shadow_map_shader.set("model", data.model);
+		}
+		else
+		{
+			set_base_uniforms(data, light_space);
+		}
+
+        handle_draw(data);
+	};
+
     for (auto &data : m_render_queue)
     {
-        set_base_uniforms(data);
-        handle_draw(data);
+		draw_data(data);
     }
 
     for (auto &[_, data] : std::ranges::reverse_view(m_sorted_meshes))
     {
-        set_base_uniforms(data);
-        handle_draw(data);
+		draw_data(data);
     }
 }
 
@@ -522,13 +560,11 @@ void pge::OpenglRenderer::handle_gl_buffer_delete()
     }
 }
 
-void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
+void pge::OpenglRenderer::set_base_uniforms(const DrawData &data, glm::mat4 &light_space)
 {
     auto &[mesh, model, _] = data;
 
     m_shader.use();
-
-    handle_lighting();
 
     auto material = mesh.material;
 
@@ -547,9 +583,14 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     m_shader.set("view_pos", m_camera->position);
     m_shader.set("near", m_camera->near);
     m_shader.set("far", m_camera->far);
+	m_shader.set("light_space", light_space);
+
+	m_shader.set("shadow_map", 1);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_shadow_map.framebuffer.texture);
 }
 
 void pge::OpenglRenderer::create_screen_plane()
@@ -615,30 +656,33 @@ void pge::OpenglRenderer::draw_skybox()
     glDepthFunc(GL_LESS);
 }
 
-void pge::OpenglRenderer::render_to_framebuffer(pge::IFramebuffer *fb)
+void pge::OpenglRenderer::render_to_framebuffer(pge::GlFramebuffer &fb)
 {
-	auto *gl_fb = (GlFramebuffer*)fb;
-	fb->bind();
+	render_to_shadow_map();
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    draw_everything();
-    draw_skybox();
+	fb.bind();
 
 	auto [width, height] = Engine::window.framebuffer_size();
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, gl_fb->m_fbo);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.m_fbo);
+	glViewport(0, 0, width, height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    handle_lighting();
+	draw_everything(false);
+    draw_skybox();
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.fbo);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    fb->unbind();
+    fb.unbind();
 }
 
 pge::RenderView *pge::OpenglRenderer::add_view(pge::Camera *camera)
 {
 	auto *fb = new GlFramebuffer();
 
-	auto result = fb->init(0);
+	auto result = fb->init();
 
 	if (result != 0)
 	{
@@ -666,4 +710,25 @@ void pge::OpenglRenderer::remove_view(RenderView *view)
 	view->framebuffer = nullptr;
 
 	m_render_views.erase(view->iter);
+}
+
+void pge::OpenglRenderer::render_to_shadow_map()
+{
+	glViewport(0, 0, m_shadow_map.width, m_shadow_map.height);
+
+	m_shadow_map.framebuffer.bind();
+
+	m_shadow_map_shader.use();
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+
+	draw_everything(true);
+
+	glCullFace(GL_BACK);
+	glDisable(GL_CULL_FACE);
+
+	m_shadow_map.framebuffer.unbind();
 }

@@ -14,8 +14,8 @@ namespace pge
         float outer_cutoff = glm::cos(glm::radians(14.f));
 
         glm::vec3 color {1.0f};
-        float ambient = 0.5;
-        float diffuse = 7;
+        float ambient = 1;
+        float diffuse = 4;
         float specular = 1;
         float power = 1;
 

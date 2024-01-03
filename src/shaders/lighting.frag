@@ -6,11 +6,13 @@ uniform vec3 view_pos;
 uniform float texture_scale;
 uniform bool recieve_lighting;
 uniform bool visualize_depth;
-uniform float gamma;
+
+uniform sampler2D shadow_map;
 
 in vec3 frag_pos;
 in vec3 normals;
 in vec2 text_cord;
+in vec4 frag_light_space_pos;
 
 struct Texture
 {
@@ -90,6 +92,39 @@ struct LightingData
     vec3 view_dir;
 };
 
+float calculate_shadows(vec3 light_dir)
+{
+    vec3 coords = frag_light_space_pos.xyz / frag_light_space_pos.w;
+    coords = coords * 0.5 + 0.5;
+
+    float closest_depth = texture(shadow_map, coords.xy).r;
+
+    float current_depth = coords.z;
+    float bias = max(0.05 * (1.0 - dot(normals, light_dir)), 0.005);
+
+    float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
+
+    if (coords.z > 1.0)
+    {
+        shadow = 0.0;
+    }
+
+    vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
+
+    for(int x = -1; x <= 1; ++x)
+    {
+        for(int y = -1; y <= 1; ++y)
+        {
+            float pcf_depth = texture(shadow_map, coords.xy + vec2(x, y) * texel_size).r;
+            shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
+        }
+    }
+
+    shadow /= 9.0;
+
+    return shadow;
+}
+
 vec3 calculate_lighting(Light light, LightingData data)
 {
     vec3 light_dir = normalize(light.position - frag_pos);
@@ -119,7 +154,9 @@ vec3 calculate_lighting(Light light, LightingData data)
     diffuse  *= attenuation;
     specular *= attenuation;
 
-    return ambient + diffuse + specular;
+    float shadow = calculate_shadows(light_dir);
+
+    return ambient + (1.0 - shadow) * (diffuse + specular);
 }
 
 uniform float near;
@@ -182,6 +219,4 @@ void main()
     }
 
     frag_color = vec4(result, tex.a * material.transparency);
-
-    frag_color.rgb = pow(frag_color.rgb, vec3(1.0/gamma));
 }

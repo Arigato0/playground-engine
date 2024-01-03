@@ -7,7 +7,7 @@
 
 #include "vulkan/vulkan.h"
 
-#include "../shaders.hpp"
+#include "../shader_interface.hpp"
 
 namespace pge
 {

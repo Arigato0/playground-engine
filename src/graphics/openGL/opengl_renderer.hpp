@@ -12,6 +12,7 @@
 #include "../../data/string.hpp"
 #include "gl_buffers.hpp"
 #include "../render_view.hpp"
+#include "shadow_map.hpp"
 
 namespace pge
 {
@@ -103,8 +104,8 @@ namespace pge
 
 		void set_gamma(float value) override
 		{
-			m_shader.use();
-			m_shader.set("gamma", value);
+			m_screen_shader.use();
+			m_screen_shader.set("gamma", value);
 		}
 
         RendererProperties properties() override;
@@ -122,6 +123,7 @@ namespace pge
         GlShader m_outline_shader;
         GlShader m_screen_shader;
         GlShader m_skybox_shader;
+		GlShader m_shadow_map_shader;
         // the screen plane where framebuffer textures are drawn to
         GlBuffers m_screen_plane;
         // the cube that will be used to draw the skybox
@@ -136,11 +138,14 @@ namespace pge
         std::vector<uint32_t> m_delete_queue;
         // list of cameras to render to. these cameras will always render to the attached framebuffer
         RenderViewList m_render_views;
+		// the buffer all the meshes will get rendered to
 		GlFramebuffer m_render_buffer;
-        // the screen buffer all meshes will be drawn to and will be used by the screen plane
+        // the screen buffer used for screen space rendering
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
         GlFramebuffer m_out_buffer;
+		// the depth buffer used for shadow mapping
+		ShadowMap m_shadow_map;
         bool m_is_offline = false;
         bool m_wireframe = false;
 
@@ -152,7 +157,7 @@ namespace pge
 
         void draw_passes();
 
-        void draw_everything();
+        void draw_everything(bool calculate_shadows);
 
         void clear_buffers();
 
@@ -160,7 +165,7 @@ namespace pge
 
         void handle_gl_buffer_delete();
 
-        void set_base_uniforms(const DrawData &data);
+        void set_base_uniforms(const DrawData &data, glm::mat4 &light_space);
 
         void create_screen_plane();
 
@@ -170,6 +175,8 @@ namespace pge
 
         void draw_skybox();
 
-		void render_to_framebuffer(pge::IFramebuffer *fb);
+		void render_to_framebuffer(pge::GlFramebuffer &fb);
+
+		void render_to_shadow_map();
     };
 }

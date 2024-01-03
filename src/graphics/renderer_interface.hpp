@@ -8,7 +8,7 @@
 #include "Camera.hpp"
 #include "graphics_api.hpp"
 #include "model.hpp"
-#include "shaders.hpp"
+#include "shader_interface.hpp"
 #include "../application/fmt.hpp"
 #include "Camera.hpp"
 #include "framebuffer_interface.hpp"

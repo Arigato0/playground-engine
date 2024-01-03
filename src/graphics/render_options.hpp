@@ -22,7 +22,7 @@ namespace pge
     {
         bool enable_outline = false;
         OutlineOptions outline;
-        bool cull_faces = true;
+        bool cull_faces = false;
     };
 
     // all the data needed to draw a mesh

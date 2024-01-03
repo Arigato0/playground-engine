@@ -5,33 +5,34 @@
 
 namespace pge
 {
-    class GlFramebuffer : public IFramebuffer
+    struct GlFramebuffer : public IFramebuffer
     {
-    public:
-        uint32_t init(int samples) override;
+        uint32_t fbo;
+        uint32_t rbo;
+        uint32_t texture;
+		int samples;
+		int tex_target;
+
+        uint32_t init(int msaa_samples = 0);
 
         ~GlFramebuffer() override;
 
-        uint32_t get_texture() const override;
-
 		void set_samples(int n) override;
 
-        void bind() override;
+        void bind();
 
-        void unbind() override;
+        void unbind();
 
-        Image get_image() const override;
+        uint32_t get_texture() const override;
 
-    public:
-        uint32_t m_fbo;
-        uint32_t m_rbo;
-        uint32_t m_texture;
-		int m_samples = 0;
-		int m_tex_target;
+		Image get_image() const override;
+
         Connection<void, IWindow*, int, int> *m_on_resize_con;
 
         void on_resize(IWindow*, int width, int height) const;
 
 		void set_buffers(int width, int height) const;
 	};
+
+	pge::GlFramebuffer create_depth_buffer(int width, int height);
 }

@@ -15,42 +15,42 @@
 
 #define GET_TARGET(samples) (samples) > 0 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D
 
-uint32_t pge::GlFramebuffer::init(int samples)
+uint32_t pge::GlFramebuffer::init(int msaa_samples)
 {
-    auto [width, height] = Engine::window.framebuffer_size();
+	auto [width, height] = Engine::window.framebuffer_size();
 
-	m_tex_target = GET_TARGET(samples);
+	samples = msaa_samples;
 
-    glGenFramebuffers(1, &m_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+	tex_target = GET_TARGET(samples);
 
-    glGenTextures(1, &m_texture);
-    glBindTexture(m_tex_target, m_texture);
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    glGenTextures(1, &texture);
+    glBindTexture(tex_target, texture);
 
 	SET_TEX_IMAGE(samples, width, height);
 
-    glTexParameteri(m_tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(m_tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_tex_target, m_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_target, texture, 0);
 
-    glGenRenderbuffers(1, &m_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
 	SET_RENDER_BUFFER(samples, width, height);
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         return OPENGL_ERROR_FRAMEBUFFER_CREATION;
     }
 
-	m_samples = samples;
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glBindTexture(m_tex_target, 0);
+    glBindTexture(tex_target, 0);
 
     m_on_resize_con = Engine::window.on_framebuffer_resize.connect(this, &GlFramebuffer::on_resize);
 
@@ -59,9 +59,9 @@ uint32_t pge::GlFramebuffer::init(int samples)
 
 pge::GlFramebuffer::~GlFramebuffer()
 {
-    glDeleteFramebuffers(1, &m_fbo);
-    glDeleteRenderbuffers(1, &m_rbo);
-    glDeleteTextures(1, &m_texture);
+    glDeleteFramebuffers(1, &fbo);
+    glDeleteRenderbuffers(1, &rbo);
+    glDeleteTextures(1, &texture);
 
 	// TODO uncommenting this causes a segfault investigate why
     //Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
@@ -69,12 +69,12 @@ pge::GlFramebuffer::~GlFramebuffer()
 
 uint32_t pge::GlFramebuffer::get_texture() const
 {
-    return m_texture;
+    return texture;
 }
 
 void pge::GlFramebuffer::bind()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 }
 
 void pge::GlFramebuffer::unbind()
@@ -84,18 +84,18 @@ void pge::GlFramebuffer::unbind()
 
 pge::Image pge::GlFramebuffer::get_image() const
 {
-    glBindTexture(m_tex_target, m_texture);
+    glBindTexture(tex_target, texture);
 
     Image img;
 
-    glGetTexLevelParameteriv(m_tex_target, 0, GL_TEXTURE_WIDTH, &img.width);
-    glGetTexLevelParameteriv(m_tex_target, 0, GL_TEXTURE_HEIGHT, &img.height);
+    glGetTexLevelParameteriv(tex_target, 0, GL_TEXTURE_WIDTH, &img.width);
+    glGetTexLevelParameteriv(tex_target, 0, GL_TEXTURE_HEIGHT, &img.height);
 
     img.data.resize(img.width * img.height * 3);
 
-    glGetTexImage(m_tex_target, 0, GL_RGB, GL_UNSIGNED_BYTE, img.data.data());
+    glGetTexImage(tex_target, 0, GL_RGB, GL_UNSIGNED_BYTE, img.data.data());
 
-    glBindTexture(m_tex_target, 0);
+    glBindTexture(tex_target, 0);
 
     img.channels = 3;
 
@@ -111,27 +111,56 @@ void pge::GlFramebuffer::set_samples(int n)
 {
  	auto [width, height] = Engine::window.framebuffer_size();
 
-	m_tex_target = GET_TARGET(n);
+	tex_target = GET_TARGET(n);
 
 	set_buffers(width, height);
 
-	m_samples = n;
+	samples = n;
 }
 
 void pge::GlFramebuffer::set_buffers(int width, int height) const
 {
-	glBindTexture(m_tex_target, m_texture);
+	glBindTexture(tex_target, texture);
 
-	SET_TEX_IMAGE(m_samples, width, height);
+	SET_TEX_IMAGE(samples, width, height);
 
-    glTexParameteri(m_tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(m_tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_tex_target, m_texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_target, texture, 0);
 
-    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
-	SET_RENDER_BUFFER(m_samples, width, height);
+	SET_RENDER_BUFFER(samples, width, height);
 
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindTexture(tex_target, 0);
+}
+
+pge::GlFramebuffer pge::create_depth_buffer(int width, int height)
+{
+	GlFramebuffer buffer;
+
+	glGenTextures(1, &buffer.texture);
+	glBindTexture(GL_TEXTURE_2D, buffer.texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, buffer.fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, buffer.texture, 0);
+
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return buffer;
 }
