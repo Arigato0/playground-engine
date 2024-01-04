@@ -40,8 +40,6 @@ glm::mat4 pge::ModelLoader::process_node(Model &model, aiNode* node, const aiSce
 	transform[2] = glm::make_vec4(node_transform[2]);
 	transform[3] = glm::make_vec4(node_transform[3]);
 
-	model.transform *= transform;
-
     for (int i = 0; i < node->mNumMeshes; i++)
     {
         auto *mesh = scene->mMeshes[node->mMeshes[i]];

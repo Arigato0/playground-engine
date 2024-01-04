@@ -118,7 +118,7 @@ namespace pge
         // the opengl buffers every mesh needs to be drawn.
         IdTable<GlBuffers> m_buffers;
         // the base shader
-        GlShader m_shader;
+        GlShader m_lighting_shader;
         // a shader used for outlinening
         GlShader m_outline_shader;
         GlShader m_screen_shader;
@@ -165,7 +165,7 @@ namespace pge
 
         void handle_gl_buffer_delete();
 
-        void set_base_uniforms(const DrawData &data, glm::mat4 &light_space);
+        void set_base_uniforms(const DrawData &data);
 
         void create_screen_plane();
 

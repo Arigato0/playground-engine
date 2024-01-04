@@ -93,7 +93,7 @@ public:
         }
 
         model = std::move(model_opt.value());
-		m_parent->transform.model *= model.transform;
+		m_parent->transform.model = model.transform;
         m_path  = path;
 
         return true;
@@ -811,6 +811,8 @@ void init_room_scene()
     window_material.recieve_lighting = false;
     window_material.use_alpha = true;
 
+	//create_mesh("arm chair", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
+
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
     skull_ent->transform.translate({-2, 1.5, -3});
@@ -906,7 +908,7 @@ int main()
     // Engine::renderer->set_offline(true);
     //init_grass_scene();
 
-	create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
+	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
     init_room_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");

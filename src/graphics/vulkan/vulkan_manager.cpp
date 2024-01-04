@@ -311,7 +311,7 @@ pge::VulkanErrorCode pge::VulkanManager::create_image_views()
 
 pge::VulkanErrorCode pge::VulkanManager::create_graphics_pipeline()
 {
-    auto vert_shader_src = util::read_file(PGE_FIND_SHADER("shader.vert"));
+    auto vert_shader_src = util::read_file(PGE_FIND_SHADER("lighting.vert"));
     auto frag_shader_src = util::read_file(PGE_FIND_SHADER("shader.frag"));
 
     auto vert_shader_module = create_shader_module(vert_shader_src);

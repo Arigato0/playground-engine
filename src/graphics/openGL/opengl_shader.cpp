@@ -16,6 +16,7 @@ inline uint32_t opengl_shader_type(pge::ShaderType type)
     {
         case Vertex: return GL_VERTEX_SHADER;
         case Fragment: return GL_FRAGMENT_SHADER;
+		case Geometry: return GL_GEOMETRY_SHADER;
     }
 }
 

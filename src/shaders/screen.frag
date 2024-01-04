@@ -50,5 +50,5 @@ vec4 pp_invert()
 void main()
 {
     frag_color = texture(screen_texture, tex_coords);
-    frag_color.rgb = pow(frag_color.rgb, vec3(1.0/gamma));
+    frag_color.rgb = pow(frag_color.rgb, vec3(1.0 / gamma));
 }

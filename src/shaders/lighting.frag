@@ -7,12 +7,16 @@ uniform float texture_scale;
 uniform bool recieve_lighting;
 uniform bool visualize_depth;
 
-uniform sampler2D shadow_map;
+uniform float camera_near;
+uniform float camera_far;
+
+uniform float shadow_far;
+
+uniform samplerCube shadow_map;
 
 in vec3 frag_pos;
 in vec3 normals;
 in vec2 text_cord;
-in vec4 frag_light_space_pos;
 
 struct Texture
 {
@@ -92,37 +96,47 @@ struct LightingData
     vec3 view_dir;
 };
 
-float calculate_shadows(vec3 light_dir)
+vec3 sampling_disk[20] = vec3[]
+(
+   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1),
+   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
+   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
+   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
+   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
+);
+
+float calculate_shadows(Light light)
 {
-    vec3 coords = frag_light_space_pos.xyz / frag_light_space_pos.w;
-    coords = coords * 0.5 + 0.5;
-
-    float closest_depth = texture(shadow_map, coords.xy).r;
-
-    float current_depth = coords.z;
-    float bias = max(0.05 * (1.0 - dot(normals, light_dir)), 0.005);
-
-    float shadow = current_depth - bias > closest_depth ? 1.0 : 0.0;
-
-    if (coords.z > 1.0)
-    {
-        shadow = 0.0;
-    }
-
-    vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
-
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcf_depth = texture(shadow_map, coords.xy + vec2(x, y) * texel_size).r;
-            shadow += current_depth - bias > pcf_depth ? 1.0 : 0.0;
-        }
-    }
-
-    shadow /= 9.0;
+    vec3 frag_to_light = frag_pos - light.position;
+    float closest_depth = texture(shadow_map, frag_to_light).r;
+    closest_depth *= shadow_far;
+    float current_depth = length(frag_to_light);
+    float bias = 0.05;
+    float shadow = current_depth -  bias > closest_depth ? 1.0 : 0.0;
 
     return shadow;
+
+//    vec3 frag_to_light = frag_pos - light.position;
+//
+//    float current_depth = length(frag_to_light);
+//
+//    float shadow = 0.0;
+//    float bias = 0.15;
+//    int samples = 30;
+//    float view_distance = length(view_pos - frag_pos);
+//    float disk_radius = (1.0 + (view_distance / shadow_far)) / 25.0;
+//
+//    for(int i = 0; i < samples; ++i)
+//    {
+//        float closest_depth = texture(shadow_map, frag_to_light + sampling_disk[i] * disk_radius).r;
+//        closest_depth *= shadow_far;
+//        if(current_depth - bias > closest_depth)
+//            shadow += 1.0;
+//    }
+//
+//    shadow /= float(samples);
+//
+//    return shadow;
 }
 
 vec3 calculate_lighting(Light light, LightingData data)
@@ -154,20 +168,17 @@ vec3 calculate_lighting(Light light, LightingData data)
     diffuse  *= attenuation;
     specular *= attenuation;
 
-    float shadow = calculate_shadows(light_dir);
+    float shadow = calculate_shadows(light);
 
-    return ambient + (1.0 - shadow) * (diffuse + specular);
+    return ambient + (1 - shadow) * (diffuse + specular);
 }
-
-uniform float near;
-uniform float far;
 
 vec4 calculate_depth()
 {
     float z = gl_FragCoord.z * 2.0 - 1.0;
-    float linear_depth = (2.0 * near * far) / (far + near - z * (far - near));
+    float linear_depth = (2.0 * camera_near * camera_far) / (camera_far + camera_near - z * (camera_far - camera_near));
 
-    return vec4(vec3(linear_depth / far), 1.0);
+    return vec4(vec3(linear_depth / camera_far), 1.0);
 }
 
 void main()

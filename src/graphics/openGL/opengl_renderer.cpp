@@ -34,22 +34,24 @@ uint32_t pge::OpenglRenderer::init()
 
 	create_texture_from_path("assets/missing.jpeg", m_missing_texture, TextureOptions{});
 
-    m_shader.create
+	using enum ShaderType;
+
+    m_lighting_shader.create
    ({
-       {PGE_FIND_SHADER("shader.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("lighting.frag"), ShaderType::Fragment}
+       {PGE_FIND_SHADER("lighting.vert"), Vertex},
+       {PGE_FIND_SHADER("lighting.frag"), Fragment}
    });
 
     m_outline_shader.create
    ({
-       {PGE_FIND_SHADER("extrude_from_normals.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("color.frag"), ShaderType::Fragment}
+       {PGE_FIND_SHADER("extrude_from_normals.vert"), Vertex},
+       {PGE_FIND_SHADER("color.frag"), Fragment}
    });
 
     m_screen_shader.create
    ({
-       {PGE_FIND_SHADER("screen.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("screen.frag"), ShaderType::Fragment}
+       {PGE_FIND_SHADER("screen.vert"), Vertex},
+       {PGE_FIND_SHADER("screen.frag"), Fragment}
    });
 
     m_screen_shader.use();
@@ -58,14 +60,15 @@ uint32_t pge::OpenglRenderer::init()
 
 	m_shadow_map_shader.create
    ({
-       {PGE_FIND_SHADER("shadow_map.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("empty.frag"), ShaderType::Fragment}
+       {PGE_FIND_SHADER("shadow_map.vert"), Vertex},
+       {PGE_FIND_SHADER("omni_shadow_map.geo.glsl"), Geometry},
+       {PGE_FIND_SHADER("shadow_map.frag.glsl"), Fragment},
    });
 
     m_skybox_shader.create
    ({
-       {PGE_FIND_SHADER("skybox.vert"), ShaderType::Vertex},
-       {PGE_FIND_SHADER("skybox.frag"), ShaderType::Fragment}
+       {PGE_FIND_SHADER("skybox.vert"), Vertex},
+       {PGE_FIND_SHADER("skybox.frag"), Fragment}
    });
 
     m_skybox_shader.use();
@@ -76,7 +79,7 @@ uint32_t pge::OpenglRenderer::init()
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
 
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
@@ -127,8 +130,8 @@ void pge::OpenglRenderer::delete_buffers(Mesh& mesh)
 
 void pge::OpenglRenderer::set_visualize_depth(bool value)
 {
-    m_shader.use();
-    m_shader.set("visualize_depth", value);
+    m_lighting_shader.use();
+    m_lighting_shader.set("visualize_depth", value);
 }
 
 void disable_stencil()
@@ -354,9 +357,9 @@ void pge::OpenglRenderer::draw_shaded_wireframe(const Mesh& mesh, glm::mat4 mode
 
 void pge::OpenglRenderer::handle_lighting()
 {
-	m_shader.use();
+	m_lighting_shader.use();
 
-    m_shader.set("light_count", (int)Light::table.size());
+    m_lighting_shader.set("light_count", (int)Light::table.size());
 
     auto light_iter = Light::table.begin();
 
@@ -379,23 +382,23 @@ void pge::OpenglRenderer::handle_lighting()
             return name_buffer;
         };
 
-        m_shader.set(field("is_active"), light->is_active);
-        m_shader.set(field("color"), light->color);
-        m_shader.set(field("diffuse"), light->diffuse);
-        m_shader.set(field("specular"), light->specular);
-        m_shader.set(field("ambient"), light->ambient);
-        m_shader.set(field("power"), light->power);
-        m_shader.set(field("direction"), m_camera->front);
-        m_shader.set(field("cutoff"), light->inner_cutoff);
-        m_shader.set(field("outer_cutoff"), light->outer_cutoff);
-        m_shader.set(field("constant"),  light->constant);
-        m_shader.set(field("linear"),    light->linear);
-        m_shader.set(field("quadratic"), light->quadratic);
-        m_shader.set(field("is_spot"), light->is_spot);
+        m_lighting_shader.set(field("is_active"), light->is_active);
+        m_lighting_shader.set(field("color"), light->color);
+        m_lighting_shader.set(field("diffuse"), light->diffuse);
+        m_lighting_shader.set(field("specular"), light->specular);
+        m_lighting_shader.set(field("ambient"), light->ambient);
+        m_lighting_shader.set(field("power"), light->power);
+        m_lighting_shader.set(field("direction"), m_camera->front);
+        m_lighting_shader.set(field("cutoff"), light->inner_cutoff);
+        m_lighting_shader.set(field("outer_cutoff"), light->outer_cutoff);
+        m_lighting_shader.set(field("constant"),  light->constant);
+        m_lighting_shader.set(field("linear"),    light->linear);
+        m_lighting_shader.set(field("quadratic"), light->quadratic);
+        m_lighting_shader.set(field("is_spot"), light->is_spot);
 
         if (light->position)
         {
-            m_shader.set(field("position"), *light->position);
+            m_lighting_shader.set(field("position"), *light->position);
         }
     }
 }
@@ -422,7 +425,7 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
     glBindVertexArray(0);
 
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
 
     return OPENGL_ERROR_OK;
 }
@@ -464,23 +467,9 @@ void pge::OpenglRenderer::draw_passes()
     m_out_buffer.unbind();
 }
 
-void draw_data(pge::DrawData &data)
-{
-
-}
-
 void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 {
     glEnable(GL_DEPTH_TEST);
-
-	glm::mat4 light_space;
-
-	auto projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
-	auto view = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f),
-						  glm::vec3( 0.0f, 0.0f,  0.0f),
-						  glm::vec3( 0.0f, 1.0f,  0.0f));
-
-	light_space = projection * view;
 
 	auto draw_data = [&]
 	(DrawData &data)
@@ -488,12 +477,11 @@ void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 		if (calculate_shadows)
 		{
 			m_shadow_map_shader.use();
-			m_shadow_map_shader.set("light_space", light_space);
 			m_shadow_map_shader.set("model", data.model);
 		}
 		else
 		{
-			set_base_uniforms(data, light_space);
+			set_base_uniforms(data);
 		}
 
         handle_draw(data);
@@ -560,37 +548,37 @@ void pge::OpenglRenderer::handle_gl_buffer_delete()
     }
 }
 
-void pge::OpenglRenderer::set_base_uniforms(const DrawData &data, glm::mat4 &light_space)
+void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
 {
     auto &[mesh, model, _] = data;
 
-    m_shader.use();
+    m_lighting_shader.use();
 
     auto material = mesh.material;
 
-    m_shader.set("material.color", material.color);
-    m_shader.set("material.shininess", material.shininess);
-    m_shader.set("texture_scale", material.diffuse.scale);
-    m_shader.set("material.diffuse.enabled", material.diffuse.enabled);
-    m_shader.set("material.transparency", material.alpha);
-    m_shader.set("recieve_lighting", material.recieve_lighting);
-    m_shader.set("material.diffuse.sampler", 0);
-    m_shader.set("material.specular", material.specular);
+    m_lighting_shader.set("material.color", material.color);
+    m_lighting_shader.set("material.shininess", material.shininess);
+    m_lighting_shader.set("texture_scale", material.diffuse.scale);
+    m_lighting_shader.set("material.diffuse.enabled", material.diffuse.enabled);
+    m_lighting_shader.set("material.transparency", material.alpha);
+    m_lighting_shader.set("recieve_lighting", material.recieve_lighting);
+    m_lighting_shader.set("material.diffuse.sampler", 0);
+    m_lighting_shader.set("material.specular", material.specular);
 
-    m_shader.set("model", data.model);
-    m_shader.set("projection", m_camera->projection);
-    m_shader.set("view", m_camera->view);
-    m_shader.set("view_pos", m_camera->position);
-    m_shader.set("near", m_camera->near);
-    m_shader.set("far", m_camera->far);
-	m_shader.set("light_space", light_space);
+    m_lighting_shader.set("model", data.model);
+    m_lighting_shader.set("projection", m_camera->projection);
+    m_lighting_shader.set("view", m_camera->view);
+    m_lighting_shader.set("view_pos", m_camera->position);
+    m_lighting_shader.set("camera_near", m_camera->near);
+    m_lighting_shader.set("camera_far", m_camera->far);
+	m_lighting_shader.set("shadow_far", m_shadow_map.far);
 
-	m_shader.set("shadow_map", 1);
+	m_lighting_shader.set("shadow_map", 1);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_shadow_map.framebuffer.texture);
+	glBindTexture(m_shadow_map.framebuffer.tex_target, m_shadow_map.framebuffer.texture);
 }
 
 void pge::OpenglRenderer::create_screen_plane()
@@ -724,6 +712,30 @@ void pge::OpenglRenderer::render_to_shadow_map()
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
+
+	auto projection = glm::perspective(glm::radians(90.0f), float(m_shadow_map.width / m_shadow_map.height),
+		m_shadow_map.near, m_shadow_map.far);
+
+	auto *light = Light::table.front();
+	auto light_pos = *light->position;
+
+	std::array shadow_transforms =
+	{
+		 projection * glm::lookAt(light_pos, light_pos + glm::vec3{ 1.0, 0.0, 0.0}, glm::vec3{0.0,-1.0, 0.0}),
+		 projection * glm::lookAt(light_pos, light_pos + glm::vec3{-1.0, 0.0, 0.0}, glm::vec3{0.0,-1.0, 0.0}),
+		 projection * glm::lookAt(light_pos, light_pos + glm::vec3{0.0, 1.0, 0.0}, glm::vec3{0.0, 0.0, 1.0}),
+		 projection * glm::lookAt(light_pos, light_pos + glm::vec3{0.0,-1.0, 0.0}, glm::vec3{0.0, 0.0,-1.0}),
+		 projection * glm::lookAt(light_pos, light_pos + glm::vec3{0.0, 0.0, 1.0}, glm::vec3{0.0,-1.0, 0.0}),
+		 projection * glm::lookAt(light_pos, light_pos + glm::vec3{0.0, 0.0,-1.0}, glm::vec3{0.0,-1.0, 0.0}),
+	};
+
+	m_shadow_map_shader.set("far_plane", m_shadow_map.far);
+	m_shadow_map_shader.set("light_pos", light_pos);
+
+	for (int i = 0; i < shadow_transforms.size(); ++i)
+	{
+		m_shadow_map_shader.set(fmt::format("shadow_transforms[{}]", i), shadow_transforms[i]);
+	}
 
 	draw_everything(true);
 

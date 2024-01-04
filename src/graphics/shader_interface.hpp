@@ -14,7 +14,9 @@ namespace pge
     {
         Vertex,
         Fragment,
+		Geometry,
     };
+
     using ShaderList = std::initializer_list<
             std::pair<const std::filesystem::path, ShaderType>>;
 
