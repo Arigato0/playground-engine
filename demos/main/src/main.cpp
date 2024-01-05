@@ -573,6 +573,24 @@ public:
 						Engine::renderer->get_render_framebuffer()->set_samples(msaa_samples);
 					}
 
+#define CHECK_CHANGE(var, exp) do { if ((exp)) { (var) = true; } } while(false)
+
+					{
+						ImGui::SeparatorText("Shadows");
+
+						auto changed = false;
+						auto settings = Engine::renderer->get_shadow_settings();
+
+						CHECK_CHANGE(changed, ImGui::Checkbox("Soft Shadows", &settings.enable_soft));
+						CHECK_CHANGE(changed, ImGui::DragInt("PCF samples", &settings.pcf_samples));
+						CHECK_CHANGE(changed, ImGui::DragFloat("Bias", &settings.bias, 0.1));
+
+						if (changed)
+						{
+							Engine::renderer->set_shadow_settings(settings);
+						}
+					}
+
 					ImGui::SeparatorText("Debug Visualize");
 
                     ImGui::Checkbox("Wireframe", &enable_wireframe);
@@ -621,13 +639,18 @@ public:
 
                     static bool framerate_cap = false;
 
-					ImGui::SeparatorText("Display");
-
-					static float gamma = 1.7f;
-
-					if (ImGui::DragFloat("Gamma", &gamma, 0.1))
 					{
-						Engine::renderer->set_gamma(gamma);
+						ImGui::SeparatorText("Display");
+
+						auto changed = false;
+						auto settings = Engine::renderer->get_color_settings();
+
+						CHECK_CHANGE(changed, ImGui::DragFloat("Gamma", &settings.gamma, 0.1));
+
+						if (changed)
+						{
+							Engine::renderer->set_color_settings(settings);
+						}
 					}
 
                     if (ImGui::Checkbox("Framerate cap", &framerate_cap))
@@ -811,7 +834,7 @@ void init_room_scene()
     window_material.recieve_lighting = false;
     window_material.use_alpha = true;
 
-	//create_mesh("arm chair", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
+	// create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 

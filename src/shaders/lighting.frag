@@ -11,8 +11,10 @@ uniform float camera_near;
 uniform float camera_far;
 
 uniform float shadow_far;
-
 uniform samplerCube shadow_map;
+uniform int pcf_samples;
+uniform float shadow_bias;
+uniform bool enable_soft_shadows;
 
 in vec3 frag_pos;
 in vec3 normals;
@@ -105,38 +107,47 @@ vec3 sampling_disk[20] = vec3[]
    vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
 );
 
+float calculate_pcf(Light light)
+{
+    vec3 frag_to_light = frag_pos - light.position;
+
+    float current_depth = length(frag_to_light);
+
+    float shadow = 0.0;
+    float view_distance = length(view_pos - frag_pos);
+    float disk_radius = (1.0 + (view_distance / shadow_far)) / shadow_far;
+
+    for (int i = 0; i < pcf_samples; ++i)
+    {
+        float closest_depth = texture(shadow_map, frag_to_light + sampling_disk[i] * disk_radius).r;
+
+        closest_depth *= shadow_far;
+
+        if (current_depth - shadow_bias > closest_depth)
+        {
+            shadow += 1.0;
+        }
+    }
+
+    shadow /= float(pcf_samples);
+
+    return shadow;
+}
+
 float calculate_shadows(Light light)
 {
+    if (enable_soft_shadows)
+    {
+        return calculate_pcf(light);
+    }
+
     vec3 frag_to_light = frag_pos - light.position;
     float closest_depth = texture(shadow_map, frag_to_light).r;
     closest_depth *= shadow_far;
     float current_depth = length(frag_to_light);
     float bias = 0.05;
-    float shadow = current_depth -  bias > closest_depth ? 1.0 : 0.0;
 
-    return shadow;
-
-//    vec3 frag_to_light = frag_pos - light.position;
-//
-//    float current_depth = length(frag_to_light);
-//
-//    float shadow = 0.0;
-//    float bias = 0.15;
-//    int samples = 30;
-//    float view_distance = length(view_pos - frag_pos);
-//    float disk_radius = (1.0 + (view_distance / shadow_far)) / 25.0;
-//
-//    for(int i = 0; i < samples; ++i)
-//    {
-//        float closest_depth = texture(shadow_map, frag_to_light + sampling_disk[i] * disk_radius).r;
-//        closest_depth *= shadow_far;
-//        if(current_depth - bias > closest_depth)
-//            shadow += 1.0;
-//    }
-//
-//    shadow /= float(samples);
-//
-//    return shadow;
+    return current_depth - bias > closest_depth ? 1.0 : 0.0;
 }
 
 vec3 calculate_lighting(Light light, LightingData data)

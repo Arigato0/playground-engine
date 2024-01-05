@@ -55,9 +55,17 @@ namespace pge
         Shaded,
     };
 
-    struct RendererSettings
+    struct ShadowSettings
     {
-        bool enable_wireframe = false;
-        WireframeMode wireframe_mode = WireframeMode::Lines;
+		int pcf_samples = 16;
+		float bias = 0.15;
+		bool enable_soft = true;
+		int width = 2048;
+		int height = 2048;
     };
+
+	struct RenderColorSettings
+	{
+		float gamma = 1.4;
+	};
 }

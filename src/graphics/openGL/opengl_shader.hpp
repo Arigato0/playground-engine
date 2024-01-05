@@ -22,45 +22,52 @@ namespace pge
             std::initializer_list<
             std::pair<const std::filesystem::path, ShaderType>> shaders) override;
 
-        void use() override
+        IShader& use() override
         {
             glUseProgram(m_program);
+			return *this;
         }
 
-        void set(std::string_view name, int value) override
+        IShader& set(std::string_view name, int value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform1i(location, value);
+			return *this;
         }
 
-        void set(std::string_view name, float value) override
+        IShader& set(std::string_view name, float value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform1f(location, value);
+			return *this;
         }
 
-        void set(std::string_view name, glm::vec2 value) override
+        IShader& set(std::string_view name, glm::vec2 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform2f(location, EXPAND_VEC2(value));
+			return *this;
         }
 
-        void set(std::string_view name, glm::vec3 value) override
+        IShader& set(std::string_view name, glm::vec3 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform3f(location, EXPAND_VEC3(value));
+			return *this;
         }
 
-        void set(std::string_view name, glm::vec4 value) override
+        IShader& set(std::string_view name, glm::vec4 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform4f(location, EXPAND_VEC4(value));
+			return *this;
         }
 
-        void set(std::string_view name, glm::mat4 value) override
+        IShader& set(std::string_view name, glm::mat4 value) override
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+			return *this;
         }
 
     private:

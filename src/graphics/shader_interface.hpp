@@ -25,12 +25,12 @@ namespace pge
     public:
         virtual ~IShader() = default;
         virtual uint32_t create(ShaderList shaders) = 0;
-        virtual void use() = 0;
-        virtual void set(std::string_view name, int value) = 0;
-        virtual void set(std::string_view name, float value) = 0;
-        virtual void set(std::string_view name, glm::vec2 value) = 0;
-        virtual void set(std::string_view name, glm::vec3 value) = 0;
-        virtual void set(std::string_view name, glm::vec4 value) = 0;
-        virtual void set(std::string_view name, glm::mat4 value) = 0;
+        virtual IShader& use() = 0;
+        virtual IShader& set(std::string_view name, int value) = 0;
+        virtual IShader& set(std::string_view name, float value) = 0;
+        virtual IShader& set(std::string_view name, glm::vec2 value) = 0;
+        virtual IShader& set(std::string_view name, glm::vec3 value) = 0;
+        virtual IShader& set(std::string_view name, glm::vec4 value) = 0;
+        virtual IShader& set(std::string_view name, glm::mat4 value) = 0;
     };
 }

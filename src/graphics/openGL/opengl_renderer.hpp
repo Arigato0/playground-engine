@@ -110,6 +110,20 @@ namespace pge
 
         RendererProperties properties() override;
 
+		void set_shadow_settings(pge::ShadowSettings settings) override;
+
+		ShadowSettings get_shadow_settings() override
+		{
+			return m_shadow_settings;
+		}
+
+		void set_color_settings(pge::RenderColorSettings settings) override;
+
+		RenderColorSettings get_color_settings() override
+		{
+			return m_color_settings;
+		}
+
     private:
         // the default missing texture to use when unable to create a texture
         uint32_t m_missing_texture;
@@ -119,7 +133,7 @@ namespace pge
         IdTable<GlBuffers> m_buffers;
         // the base shader
         GlShader m_lighting_shader;
-        // a shader used for outlinening
+        // a shader used for outlining
         GlShader m_outline_shader;
         GlShader m_screen_shader;
         GlShader m_skybox_shader;
@@ -144,10 +158,12 @@ namespace pge
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
         GlFramebuffer m_out_buffer;
-		// the depth buffer used for shadow mapping
 		ShadowMap m_shadow_map;
         bool m_is_offline = false;
         bool m_wireframe = false;
+
+		ShadowSettings m_shadow_settings;
+		RenderColorSettings m_color_settings;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 
