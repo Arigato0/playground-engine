@@ -465,6 +465,7 @@ public:
                         auto pos = trans.get_position();
                         auto scale = trans.get_scale();
                         auto euler = glm::eulerAngles(glm::quat_cast(trans.model));
+                        auto euler_old = euler;
 
                         if (ImGui::DragFloat3("Position", glm::value_ptr(pos), 0.1))
                         {
@@ -474,37 +475,36 @@ public:
                         {
                             trans.set_scale(scale);
                         }
-                        ImGui::Text("Rotation");
-                        if (ImGui::SliderAngle("X", &euler.x))
-                        {
-                            trans.model *= glm::mat4{1.0f} * glm::eulerAngleXYZ(euler.x, 0.0f, 0.0f);
-                        }
-                        if (ImGui::SliderAngle("Y", &euler.y))
-                        {
-                            trans.model *= glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, euler.y, 0.0f);
-                        }
-                        if (ImGui::SliderAngle("Z", &euler.z))
-                        {
-                            trans.model *= glm::mat4{1.0f} * glm::eulerAngleXYZ(0.0f, 0.0f, euler.z);
-                        }
 
-                        // if (ImGui::DragFloat3("Rotation", glm::value_ptr(euler)))
-                        // {
-                        //     trans.model = glm::rotate(trans.model, glm::radians(1.0f), euler);
-                        // }
+                        ImGui::Text("Rotation");
+                        if (ImGui::DragFloat("X", &euler.x, 0.5))
+                        {
+                            trans.model = glm::rotate(trans.model, glm::radians(euler_old.x - euler.x), {1, 0, 0});
+                        }
+                        if (ImGui::DragFloat("Y", &euler.y, 0.5))
+                        {
+                            trans.model = glm::rotate(trans.model, glm::radians(euler_old.y - euler.y), {0, 1, 0});
+                        }
+                        if (ImGui::DragFloat("Z", &euler.z, 0.5))
+                        {
+                            trans.model = glm::rotate(trans.model, glm::radians(euler_old.z - euler.z), {0, 0, 1});
+                        }
 
                         ImGui::TreePop();
                     }
 
-                    // TODO the second component cant be toggled off for some reason
+					int id = 0;
+
                     for (auto &[comp_name, comp] : entity.get_components())
                     {
                         auto is_enabled = comp->is_enabled();
 
-                        if (ImGui::Checkbox("##enabled", &is_enabled))
+						ImGui::PushID(id++);
+                        if (ImGui::Checkbox("##", &is_enabled))
                         {
                             comp->set_enabled(is_enabled);
                         }
+						ImGui::PopID();
 
                         ImGui::SameLine();
 
@@ -517,10 +517,12 @@ public:
 
                         ImGui::SameLine();
 
-                        if (ImGui::Button("Delete##component"))
+						ImGui::PushID(id++);
+                        if (ImGui::Button("Delete"))
                         {
                             components_to_delete.emplace_back(&entity, comp_name);
                         }
+						ImGui::PopID();
                     }
                     ImGui::TreePop();
                 }
@@ -562,7 +564,7 @@ public:
             ImGui::Begin("Settings", &settings_window_open);
             if (ImGui::BeginTabBar("Tabs"))
             {
-                if (ImGui::BeginTabItem("Renderering"))
+                if (ImGui::BeginTabItem("Rendering"))
                 {
 					ImGui::SeparatorText("Antialiasing");
 

@@ -18,7 +18,6 @@ namespace pge
         GraphicsApi      graphics_api;
 	};
 
-	// TODO write an observable object for the application options
 	class Engine
 	{
 	public:
