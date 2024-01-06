@@ -147,6 +147,7 @@ public:
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
                 {"Enable texture", &material.diffuse.enabled},
 				{"Enable normals", &material.bump.enabled},
+				{"Normal strength", DragControl(&material.bump_strength)},
                 {"Set Diffuse", [&mesh]
                 {
                     auto path = native_file_dialog("~");
@@ -836,7 +837,7 @@ void init_room_scene()
     window_material.recieve_lighting = false;
     window_material.use_alpha = true;
 
-	// create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
+	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 

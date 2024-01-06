@@ -7,6 +7,8 @@
 #include "../application/engine.hpp"
  #include <glm/gtc/type_ptr.hpp>
 
+// TODO replace assimp with custom model loader
+
 std::optional<pge::Model> pge::ModelLoader::load(std::string_view path, int flags)
 {
     Assimp::Importer importer;
@@ -19,6 +21,7 @@ std::optional<pge::Model> pge::ModelLoader::load(std::string_view path, int flag
     }
 
     m_path = path;
+	m_is_obj = m_path.extension() == ".obj";
 
     Model model;
 
@@ -82,7 +85,9 @@ std::vector<pge::Vertex> pge::ModelLoader::load_mesh_vertices(aiMesh* mesh)
             {
                 {EXPAND_VEC3(pos)},
                 norm,
-                coord
+                coord,
+				{EXPAND_VEC3(mesh->mTangents[i])},
+				{EXPAND_VEC3(mesh->mBitangents[i])}
             }
         );
     }
@@ -148,7 +153,7 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 	output.color = {color.r, color.g, color.b};
 
 	output.diffuse = load_material(material, aiTextureType_DIFFUSE);
-	output.bump    = load_material(material, aiTextureType_HEIGHT);
+	output.bump    = load_material(material, m_is_obj ? aiTextureType_HEIGHT : aiTextureType_NORMALS);
 
 	return output;
 }

@@ -2,7 +2,6 @@
 
 out vec4 frag_color;
 
-uniform vec3 view_pos;
 uniform float texture_scale;
 uniform bool receive_lighting;
 uniform bool visualize_depth;
@@ -19,6 +18,10 @@ in vec3 frag_pos;
 in vec3 normals;
 in vec2 text_cord;
 
+in vec3 tangent_view_pos;
+in vec3 tangent_frag_pos;
+in mat3 TBN;
+
 struct Texture
 {
     sampler2D sampler;
@@ -29,6 +32,7 @@ struct Material
 {
     Texture diffuse;
     Texture bump;
+    float bump_strength;
     float specular;
     float shininess;
     float transparency;
@@ -101,6 +105,7 @@ struct LightingData
     vec3 norm;
     vec3 view_dir;
     float shadow;
+    vec3 tangent_light_pos;
 };
 
 float calculate_penumbra_width(float current_depth, Light light)
@@ -134,7 +139,7 @@ float calculate_pcf(Light light)
     float current_depth = length(frag_to_light);
 
     float shadow = 0.0;
-    float view_distance = length(view_pos - frag_pos);
+    float view_distance = length(tangent_view_pos - tangent_frag_pos);
     float disk_radius = (1.0 + (view_distance / shadow_far)) / shadow_far;
     float penumbra_width = calculate_penumbra_width(current_depth, light);
 
@@ -175,7 +180,9 @@ float calculate_shadows(Light light)
 
 vec3 calculate_lighting(Light light, LightingData data)
 {
-    vec3 light_dir = normalize(light.position - frag_pos);
+    data.tangent_light_pos = light.position * TBN;
+
+    vec3 light_dir = normalize(data.tangent_light_pos - tangent_frag_pos);
     vec3 halfway_dir = normalize(light_dir + data.view_dir);
 
     float diff = max(dot(data.norm, light_dir), 0.0);
@@ -237,7 +244,7 @@ void main()
     if (material.bump.enabled)
     {
         vec3 bump_normal = texture(material.bump.sampler, text_cord).rgb;
-        lighting_data.norm = normalize(bump_normal * 2.0 - 1.0);
+        lighting_data.norm = normalize(bump_normal * 2 - 1.0);
     }
     else
     {
@@ -246,7 +253,7 @@ void main()
 
     lighting_data.diffuse = create_texture(material.diffuse);
     lighting_data.specular = material.specular;
-    lighting_data.view_dir = normalize(view_pos - frag_pos);
+    lighting_data.view_dir = normalize(tangent_view_pos - tangent_frag_pos);
     lighting_data.shadow = 1;
 
     if (receive_lighting)

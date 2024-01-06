@@ -58,6 +58,7 @@ namespace pge
 
     private:
         std::filesystem::path m_path;
+		bool m_is_obj = false;
 
         glm::mat4 process_node(Model &model, aiNode *node, const aiScene *scene);
 

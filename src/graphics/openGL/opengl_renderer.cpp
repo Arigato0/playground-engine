@@ -130,6 +130,8 @@ void pge::OpenglRenderer::create_buffers(Mesh &mesh)
         .attr(3, offsetof(Vertex, position))
         .attr(3, offsetof(Vertex, normal))
         .attr(2, offsetof(Vertex, coord))
+		.attr(3, offsetof(Vertex, tangent))
+		.attr(3, offsetof(Vertex, bitangent))
         .finish();
 
     mesh.id = m_buffers.create(buffer);
@@ -589,6 +591,7 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     	.set("texture_scale", material.diffuse.scale)
     	.set("material.diffuse.enabled", material.diffuse.enabled)
     	.set("material.bump.enabled", material.bump.enabled)
+		.set("material.bump_strength", material.bump_strength)
     	.set("material.transparency", material.alpha)
     	.set("receive_lighting", material.recieve_lighting)
     	.set("material.diffuse.sampler", 0)

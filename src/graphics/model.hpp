@@ -25,6 +25,7 @@ namespace pge
         float alpha = 1;
         Texture diffuse;
 		Texture bump;
+		float bump_strength = 2.0f;
         float specular = 0;
         glm::vec3 color {0.0f};
         bool recieve_lighting = true;
@@ -32,9 +33,11 @@ namespace pge
 
     struct Vertex
     {
-        glm::vec3 position {};
-        glm::vec3 normal   {};
-        glm::vec2 coord    {};
+        glm::vec3 position 	 {};
+        glm::vec3 normal   	 {};
+        glm::vec2 coord    	 {};
+		glm::vec3 tangent    {};
+		glm::vec3 bitangent  {};
     };
 
     struct Mesh
