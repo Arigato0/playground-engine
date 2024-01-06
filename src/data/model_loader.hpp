@@ -10,7 +10,6 @@
 
 namespace pge
 {
-
     // values taken from assimp
     enum MODEL_PP
     {
@@ -50,7 +49,7 @@ namespace pge
 
 #define DEFAULT_MODEL_PP_FLAGS MODEL_PP_Triangulate | \
     MODEL_PP_JoinIdenticalVertices | MODEL_PP_OptimizeGraph | \
-    MODEL_PP_OptimizeMeshes | MODEL_PP_GenUVCoords \
+    MODEL_PP_OptimizeMeshes | MODEL_PP_GenUVCoords | MODEL_PP_CalcTangentSpace \
 
     class ModelLoader
     {

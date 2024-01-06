@@ -24,6 +24,7 @@ namespace pge
         float shininess = 32;
         float alpha = 1;
         Texture diffuse;
+		Texture bump;
         float specular = 0;
         glm::vec3 color {0.0f};
         bool recieve_lighting = true;

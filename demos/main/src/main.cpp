@@ -146,6 +146,7 @@ public:
 				{"Specular", DragControl(&material.specular)},
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
                 {"Enable texture", &material.diffuse.enabled},
+				{"Enable normals", &material.bump.enabled},
                 {"Set Diffuse", [&mesh]
                 {
                     auto path = native_file_dialog("~");
@@ -820,7 +821,7 @@ void init_room_scene()
 
     light_ent->transform.translate({2, 3, -1});
 
-    auto [room_ent, room_mesh] = create_mesh("Room", "/home/arian/Downloads/testing room/room.obj");
+    auto [room_ent, room_mesh] = create_mesh("Room", "/home/arian/Downloads/testing room/testing room 2.obj");
 
     create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
 

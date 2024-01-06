@@ -101,11 +101,11 @@ uint32_t pge::OpenglRenderer::init()
 
 	m_lighting_shader.use();
 
-	int sampler = sampler_start;
+	int sampler = 99;
 
 	for (int i = 0; i < MAX_LIGHTS; i++)
 	{
-		m_lighting_shader.set(fmt::format("lights.[{}].shadow_map"), sampler++);
+		m_lighting_shader.set(fmt::format("lights[{}].shadow_map", i), sampler++);
 	}
 
     return OPENGL_ERROR_OK;
@@ -422,13 +422,11 @@ void pge::OpenglRenderer::handle_lighting()
         	.set(field("quadratic"), light->quadratic)
         	.set(field("is_spot"), light->is_spot)
 			.set(field("position"), position)
-			.set(field("shadow_map_idx"), i)
-			.set("shadow_maps[1]", 2)
-			.set("shadow_maps[0]", 1);
+			.set(field("shadow_map"), light->texture_id);
 
 		render_to_shadow_map(light->shadow_map, position);
 
-		glActiveTexture(GL_TEXTURE1 + i);
+		glActiveTexture(GL_TEXTURE4 + i);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, light->shadow_map->get_texture());
     }
 }
@@ -590,23 +588,23 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     	.set("material.shininess", material.shininess)
     	.set("texture_scale", material.diffuse.scale)
     	.set("material.diffuse.enabled", material.diffuse.enabled)
+    	.set("material.bump.enabled", material.bump.enabled)
     	.set("material.transparency", material.alpha)
     	.set("receive_lighting", material.recieve_lighting)
     	.set("material.diffuse.sampler", 0)
+		.set("material.bump.sampler", 1)
     	.set("material.specular", material.specular)
     	.set("mvp", mvp)
 		.set("model", data.model)
     	.set("view_pos", m_camera->position)
     	.set("camera_near", m_camera->near)
     	.set("camera_far", m_camera->far)
-		.set("shadow_far", m_shadow_settings.distance)
-		.set("shadow_map", 1);
+		.set("shadow_far", m_shadow_settings.distance);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
-
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, Light::table.front()->shadow_map->get_texture());
+    glBindTexture(GL_TEXTURE_2D, material.bump.id);
 }
 
 void pge::OpenglRenderer::create_screen_plane()

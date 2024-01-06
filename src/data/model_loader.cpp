@@ -147,7 +147,8 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 
 	output.color = {color.r, color.g, color.b};
 
-	output.diffuse  = load_material(material, aiTextureType_DIFFUSE);
+	output.diffuse = load_material(material, aiTextureType_DIFFUSE);
+	output.bump    = load_material(material, aiTextureType_HEIGHT);
 
 	return output;
 }

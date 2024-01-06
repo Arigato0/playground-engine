@@ -28,6 +28,7 @@ struct Texture
 struct Material
 {
     Texture diffuse;
+    Texture bump;
     float specular;
     float shininess;
     float transparency;
@@ -54,7 +55,7 @@ struct Light
     float linear;
     float quadratic;
 
-    int shadow_map_idx;
+    samplerCube shadow_map;
 };
 
 uniform Material material;
@@ -139,7 +140,7 @@ float calculate_pcf(Light light)
 
     for (int i = 0; i < pcf_samples; ++i)
     {
-        float closest_depth = texture(shadow_maps[light.shadow_map_idx], frag_to_light + sampling_disk[i] * disk_radius).r;
+        float closest_depth = texture(light.shadow_map, frag_to_light + sampling_disk[i] * disk_radius).r;
         closest_depth *= shadow_far;
 
         float filter_radius = calculate_filter_radius(penumbra_width, current_depth, closest_depth);
@@ -164,14 +165,13 @@ float calculate_shadows(Light light)
 
     vec3 frag_to_light = frag_pos - light.position;
 
-    float closest_depth = texture(shadow_maps[light.shadow_map_idx], frag_to_light).r;
+    float closest_depth = texture(light.shadow_map, frag_to_light).r;
     closest_depth *= shadow_far;
     float current_depth = length(frag_to_light);
     float bias = 0.05;
 
     return current_depth - bias > closest_depth ? 1.0 : 0.0;
 }
-
 
 vec3 calculate_lighting(Light light, LightingData data)
 {
@@ -234,9 +234,18 @@ void main()
 
     LightingData lighting_data;
 
+    if (material.bump.enabled)
+    {
+        vec3 bump_normal = texture(material.bump.sampler, text_cord).rgb;
+        lighting_data.norm = normalize(bump_normal * 2.0 - 1.0);
+    }
+    else
+    {
+        lighting_data.norm = normalize(normals);
+    }
+
     lighting_data.diffuse = create_texture(material.diffuse);
     lighting_data.specular = material.specular;
-    lighting_data.norm = normalize(normals);
     lighting_data.view_dir = normalize(view_pos - frag_pos);
     lighting_data.shadow = 1;
 
@@ -246,7 +255,7 @@ void main()
         {
             if (lights[i].is_active)
             {
-                lighting_data.shadow = calculate_shadows(lights[i]);
+                lighting_data.shadow *= calculate_shadows(lights[i]);
             }
         }
 
