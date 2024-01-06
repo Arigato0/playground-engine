@@ -4,12 +4,12 @@
 #include "opengl_error.hpp"
 #include <glad/glad.h>
 
-uint32_t pge::ShadowMap::init_framebuffer()
+uint32_t pge::create_shadow_map(int width, int height, GlFramebuffer &fb)
 {
-	framebuffer.tex_target = GL_TEXTURE_CUBE_MAP;
+	fb.tex_target = GL_TEXTURE_CUBE_MAP;
 
-	glGenTextures(1, &framebuffer.texture);
-	glBindTexture(framebuffer.tex_target, framebuffer.texture);
+	glGenTextures(1, &fb.texture);
+	glBindTexture(fb.tex_target, fb.texture);
 
 	for (int i = 0; i < 6; ++i)
 	{
@@ -17,22 +17,22 @@ uint32_t pge::ShadowMap::init_framebuffer()
 			width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	}
 
-	glTexParameteri(framebuffer.tex_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(framebuffer.tex_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(fb.tex_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(fb.tex_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
- 	glTexParameteri(framebuffer.tex_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(framebuffer.tex_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(framebuffer.tex_target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+ 	glTexParameteri(fb.tex_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(fb.tex_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(fb.tex_target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	glGenFramebuffers(1, &framebuffer.fbo);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.texture, 0);
+	glGenFramebuffers(1, &fb.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.texture, 0);
 
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(framebuffer.tex_target, 0);
+	glBindTexture(fb.tex_target, 0);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {

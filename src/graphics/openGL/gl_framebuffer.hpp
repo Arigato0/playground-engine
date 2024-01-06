@@ -19,9 +19,9 @@ namespace pge
 
 		void set_samples(int n) override;
 
-        void bind();
+        void bind() override;
 
-        void unbind();
+        void unbind() override;
 
         uint32_t get_texture() const override;
 

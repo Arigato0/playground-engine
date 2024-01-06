@@ -57,11 +57,12 @@ namespace pge
 
     struct ShadowSettings
     {
-		int pcf_samples = 16;
-		float bias = 0.15;
+		int pcf_samples = 20;
+		float bias = 0.05;
 		bool enable_soft = true;
 		int width = 2048;
 		int height = 2048;
+		float distance = 100.0f;
     };
 
 	struct RenderColorSettings

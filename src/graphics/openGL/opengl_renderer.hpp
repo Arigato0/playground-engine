@@ -158,9 +158,11 @@ namespace pge
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
         GlFramebuffer m_out_buffer;
-		ShadowMap m_shadow_map;
         bool m_is_offline = false;
         bool m_wireframe = false;
+		IdTable<GlFramebuffer> m_shadow_maps;
+		//int shadow_map_texture = GL_TEXTURE4;
+		int sampler_start = 4;
 
 		ShadowSettings m_shadow_settings;
 		RenderColorSettings m_color_settings;
@@ -193,6 +195,6 @@ namespace pge
 
 		void render_to_framebuffer(pge::GlFramebuffer &fb);
 
-		void render_to_shadow_map();
+		void render_to_shadow_map(IFramebuffer *fb, glm::vec3 position);
     };
 }

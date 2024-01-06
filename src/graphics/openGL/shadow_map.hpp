@@ -4,16 +4,5 @@
 
 namespace pge
 {
-	struct ShadowMap
-	{
-		int width = 4096;
-		int height = 4096;
-
-		float near = 1.0f;
-		float far = 25.0f;
-
-		GlFramebuffer framebuffer;
-
-		uint32_t init_framebuffer();
-	};
+	uint32_t create_shadow_map(int width, int height, GlFramebuffer &fb);
 }

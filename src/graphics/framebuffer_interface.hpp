@@ -12,6 +12,9 @@ namespace pge
     public:
         virtual ~IFramebuffer() = default;
 
+		virtual void bind() = 0;
+		virtual void unbind() = 0;
+
 		virtual void set_samples(int n) = 0;
 
         [[nodiscard]]

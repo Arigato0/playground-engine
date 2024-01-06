@@ -822,7 +822,6 @@ void init_room_scene()
 
     auto [room_ent, room_mesh] = create_mesh("Room", "/home/arian/Downloads/testing room/room.obj");
 
-
     create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
 
     auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
