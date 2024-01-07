@@ -504,8 +504,13 @@ void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 	auto draw_data = [&]
 	(DrawData &data)
 	{
+
 		if (calculate_shadows)
 		{
+			if (!data.mesh.material.cast_shadow)
+			{
+				return;
+			}
 			m_shadow_map_shader.use();
 			m_shadow_map_shader.set("model", data.model);
 		}
@@ -594,9 +599,11 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
 		.set("material.bump_strength", material.bump_strength)
     	.set("material.transparency", material.alpha)
     	.set("receive_lighting", material.recieve_lighting)
+		.set("material.cast_shadow", material.cast_shadow)
     	.set("material.diffuse.sampler", 0)
 		.set("material.bump.sampler", 1)
     	.set("material.specular", material.specular)
+		.set("material.emission", material.emission)
     	.set("mvp", mvp)
 		.set("model", data.model)
     	.set("view_pos", m_camera->position)

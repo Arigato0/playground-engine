@@ -34,8 +34,10 @@ struct Material
     float bump_strength;
     float specular;
     float shininess;
+    float emission;
     float transparency;
     vec3 color;
+    bool cast_shadow;
 };
 
 struct Light
@@ -214,7 +216,7 @@ vec3 calculate_lighting(Light light, LightingData data)
     diffuse  *= attenuation;
     specular *= attenuation;
 
-    return ambient + (1 - data.shadow) * (diffuse + specular);
+    return ambient + (1 - data.shadow) * (diffuse + specular + material.emission);
 }
 
 vec4 calculate_depth()
@@ -247,6 +249,7 @@ void main()
         vec3 bump_normal = texture(material.bump.sampler, text_cord).rgb;
         bump_normal = bump_normal * 2 - 1.0;
         bump_normal.xy *= material.bump_strength;
+        bump_normal.y = -bump_normal.y;
         data.norm = normalize(bump_normal);
 
         data.frag_pos = frag_pos * TBN;
@@ -262,9 +265,9 @@ void main()
     data.diffuse = create_texture(material.diffuse);
     data.specular = material.specular;
     data.view_dir = normalize(data.view_pos - data.frag_pos);
-    data.shadow = 1;
+    data.shadow = material.cast_shadow ? 1 : 0;
 
-    if (receive_lighting)
+    if (material.cast_shadow)
     {
         for (int i = 0; i < light_count; i++)
         {
@@ -273,6 +276,10 @@ void main()
                 data.shadow *= calculate_shadows(lights[i]);
             }
         }
+    }
+
+    if (receive_lighting)
+    {
 
         for (int i = 0; i < light_count; i++)
         {

@@ -139,8 +139,10 @@ public:
                 START_GROUP,
                 SEPERATOR(mesh.name),
                 {"Recieve light", &material.recieve_lighting},
+				{"Cast shadow", &material.cast_shadow},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
+				{"Emission", DragControl(&material.emission)},
                 {"Is transparent", &material.use_alpha},
                 {"Transparency", DragControl(&material.alpha)},
 				{"Specular", DragControl(&material.specular)},
@@ -837,19 +839,19 @@ void init_room_scene()
     window_material.recieve_lighting = false;
     window_material.use_alpha = true;
 
-	//create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
+//	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
     skull_ent->transform.translate({-2, 1.5, -3});
     skull_ent->transform.rotate(30, {0, 1, 0});
 
-//    for (auto &mesh : skull_mesh->model.meshes)
-//    {
-//        mesh.material.use_alpha = true;
-//        mesh.material.alpha = 0.3f;
-//        mesh.material.color = {1, 0.161, 0.933};
-//    }
+    for (auto &mesh : skull_mesh->model.meshes)
+    {
+        mesh.material.use_alpha = true;
+        mesh.material.alpha = 0.3f;
+        mesh.material.color = {1, 0.161, 0.933};
+    }
 }
 
 PGE_COMPONENT(CameraViewComp)

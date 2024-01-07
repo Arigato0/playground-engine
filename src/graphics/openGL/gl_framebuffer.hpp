@@ -1,4 +1,6 @@
 #pragma once
+
+#include <glad/glad.h>
 #include "../framebuffer_interface.hpp"
 #include "../../application/engine.hpp"
 #include "../../application/window_interface.hpp"
@@ -13,7 +15,7 @@ namespace pge
 		int samples;
 		int tex_target;
 
-        uint32_t init(int msaa_samples = 0);
+        uint32_t init(int msaa_samples = 0, int internal_format = GL_RGB);
 
         ~GlFramebuffer() override;
 

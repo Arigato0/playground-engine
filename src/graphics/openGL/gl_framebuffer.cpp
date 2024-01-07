@@ -15,7 +15,7 @@
 
 #define GET_TARGET(samples) (samples) > 0 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D
 
-uint32_t pge::GlFramebuffer::init(int msaa_samples)
+uint32_t pge::GlFramebuffer::init(int msaa_samples, int internal_format)
 {
 	auto [width, height] = Engine::window.framebuffer_size();
 

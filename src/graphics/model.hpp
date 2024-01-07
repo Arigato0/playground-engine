@@ -28,7 +28,9 @@ namespace pge
 		float bump_strength = 1;
         float specular = 0;
         glm::vec3 color {0.0f};
+		float emission = 00;
         bool recieve_lighting = true;
+		bool cast_shadow = true;
     };
 
     struct Vertex
