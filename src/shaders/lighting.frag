@@ -8,6 +8,7 @@ uniform bool visualize_depth;
 
 uniform float camera_near;
 uniform float camera_far;
+uniform vec3 view_pos;
 
 uniform float shadow_far;
 uniform int pcf_samples;
@@ -18,8 +19,6 @@ in vec3 frag_pos;
 in vec3 normals;
 in vec2 text_cord;
 
-in vec3 tangent_view_pos;
-in vec3 tangent_frag_pos;
 in mat3 TBN;
 
 struct Texture
@@ -105,8 +104,12 @@ struct LightingData
     vec3 norm;
     vec3 view_dir;
     float shadow;
-    vec3 tangent_light_pos;
+    vec3 light_pos;
+    vec3 frag_pos;
+    vec3 view_pos;
 };
+
+LightingData data;
 
 float calculate_penumbra_width(float current_depth, Light light)
 {
@@ -139,7 +142,7 @@ float calculate_pcf(Light light)
     float current_depth = length(frag_to_light);
 
     float shadow = 0.0;
-    float view_distance = length(tangent_view_pos - tangent_frag_pos);
+    float view_distance = length(view_pos - frag_pos);
     float disk_radius = (1.0 + (view_distance / shadow_far)) / shadow_far;
     float penumbra_width = calculate_penumbra_width(current_depth, light);
 
@@ -180,9 +183,9 @@ float calculate_shadows(Light light)
 
 vec3 calculate_lighting(Light light, LightingData data)
 {
-    data.tangent_light_pos = light.position * TBN;
+    data.light_pos = material.bump.enabled ? light.position * TBN : light.position;
 
-    vec3 light_dir = normalize(data.tangent_light_pos - tangent_frag_pos);
+    vec3 light_dir = normalize(data.light_pos - data.frag_pos);
     vec3 halfway_dir = normalize(light_dir + data.view_dir);
 
     float diff = max(dot(data.norm, light_dir), 0.0);
@@ -239,22 +242,27 @@ void main()
 
     vec3 result;
 
-    LightingData lighting_data;
-
     if (material.bump.enabled)
     {
         vec3 bump_normal = texture(material.bump.sampler, text_cord).rgb;
-        lighting_data.norm = normalize(bump_normal * 2 - 1.0);
+        bump_normal = bump_normal * 2 - 1.0;
+        bump_normal.xy *= material.bump_strength;
+        data.norm = normalize(bump_normal);
+
+        data.frag_pos = frag_pos * TBN;
+        data.view_pos = view_pos * TBN;
     }
     else
     {
-        lighting_data.norm = normalize(normals);
+        data.norm = normalize(normals);
+        data.frag_pos = frag_pos;
+        data.view_pos = view_pos;
     }
 
-    lighting_data.diffuse = create_texture(material.diffuse);
-    lighting_data.specular = material.specular;
-    lighting_data.view_dir = normalize(tangent_view_pos - tangent_frag_pos);
-    lighting_data.shadow = 1;
+    data.diffuse = create_texture(material.diffuse);
+    data.specular = material.specular;
+    data.view_dir = normalize(data.view_pos - data.frag_pos);
+    data.shadow = 1;
 
     if (receive_lighting)
     {
@@ -262,7 +270,7 @@ void main()
         {
             if (lights[i].is_active)
             {
-                lighting_data.shadow *= calculate_shadows(lights[i]);
+                data.shadow *= calculate_shadows(lights[i]);
             }
         }
 
@@ -270,13 +278,13 @@ void main()
         {
             if (lights[i].is_active)
             {
-                result += calculate_lighting(lights[i], lighting_data);
+                result += calculate_lighting(lights[i], data);
             }
         }
     }
     else
     {
-        result += lighting_data.diffuse;
+        result += data.diffuse;
     }
 
     if (any(greaterThan(material.color, vec3(0.0))))

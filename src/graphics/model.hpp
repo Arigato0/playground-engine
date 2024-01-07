@@ -25,7 +25,7 @@ namespace pge
         float alpha = 1;
         Texture diffuse;
 		Texture bump;
-		float bump_strength = 2.0f;
+		float bump_strength = 1;
         float specular = 0;
         glm::vec3 color {0.0f};
         bool recieve_lighting = true;

@@ -8,17 +8,14 @@ layout(location = 4) in vec3 in_bitangent;
 
 uniform mat4 model;
 uniform mat4 mvp;
-uniform vec3 view_pos;
 
 out vec2 text_cord;
 out vec3 normals;
 out vec3 frag_pos;
 
-out vec3 tangent_view_pos;
-out vec3 tangent_frag_pos;
 out mat3 TBN;
 
-void main()
+mat3 calculate_TBN()
 {
     vec3 T = normalize(vec3(model * vec4(in_tangent,   0.0)));
     vec3 N = normalize(vec3(model * vec4(in_normals,   0.0)));
@@ -27,12 +24,14 @@ void main()
 
     vec3 B = cross(N, T);
 
-    TBN = mat3(T, B, N);
+    return mat3(T, B, N);
+}
+
+void main()
+{
+    TBN = calculate_TBN();
 
     frag_pos = vec3(model * vec4(in_pos, 1.0));
-
-    tangent_view_pos = view_pos * TBN;
-    tangent_frag_pos = frag_pos * TBN;
 
     gl_Position = mvp * vec4(in_pos, 1.0);
     text_cord = in_tex_cord;

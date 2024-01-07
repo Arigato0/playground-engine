@@ -140,6 +140,7 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 	material->Get(AI_MATKEY_SHININESS, output.shininess);
 	material->Get(AI_MATKEY_OPACITY, output.alpha);
 	material->Get(AI_MATKEY_COLOR_SPECULAR, output.specular);
+	material->Get(AI_MATKEY_BUMPSCALING, output.bump_strength);
 
 	if (output.alpha < 1.0f)
 	{
