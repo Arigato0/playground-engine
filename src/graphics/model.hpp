@@ -26,6 +26,7 @@ namespace pge
         Texture diffuse;
 		Texture bump;
 		float bump_strength = 1;
+		bool flip_normals = false;
         float specular = 0;
         glm::vec3 color {0.0f};
 		float emission = 00;

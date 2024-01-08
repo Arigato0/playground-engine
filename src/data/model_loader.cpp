@@ -21,7 +21,10 @@ std::optional<pge::Model> pge::ModelLoader::load(std::string_view path, int flag
     }
 
     m_path = path;
+
 	m_is_obj = m_path.extension() == ".obj";
+
+	m_path.remove_filename();
 
     Model model;
 
@@ -175,9 +178,7 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
 		return {};
 	}
 
-    m_path.replace_filename(path.C_Str()).c_str();
-
-    auto *texture = Engine::asset_manager.get_texture(m_path.c_str());
+    auto *texture = Engine::asset_manager.get_texture((m_path / path.C_Str()).c_str());
 
     if (texture == nullptr)
     {

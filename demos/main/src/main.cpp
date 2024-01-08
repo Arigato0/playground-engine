@@ -150,6 +150,7 @@ public:
                 {"Enable texture", &material.diffuse.enabled},
 				{"Enable normals", &material.bump.enabled},
 				{"Normal strength", DragControl(&material.bump_strength)},
+				{"Flip normals", &material.flip_normals},
                 {"Set Diffuse", [&mesh]
                 {
                     auto path = native_file_dialog("~");
@@ -840,6 +841,7 @@ void init_room_scene()
     window_material.use_alpha = true;
 
 //	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
+	create_mesh("couch", "/home/arian/Downloads/gaudy_couch/scene.gltf");
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
@@ -848,9 +850,10 @@ void init_room_scene()
 
     for (auto &mesh : skull_mesh->model.meshes)
     {
-        mesh.material.use_alpha = true;
-        mesh.material.alpha = 0.3f;
-        mesh.material.color = {1, 0.161, 0.933};
+//        mesh.material.use_alpha = true;
+//        mesh.material.alpha = 0.3f;
+//        mesh.material.color = {1, 0.161, 0.933};
+		mesh.material.bump.enabled = false;
     }
 }
 
@@ -917,12 +920,12 @@ int main()
 
     std::array<std::string_view, 6> skybox_faces
     {
-        "assets/skybox/right.jpg",
-        "assets/skybox/left.jpg",
-        "assets/skybox/top.jpg",
-        "assets/skybox/bottom.jpg",
-        "assets/skybox/front.jpg",
-        "assets/skybox/back.jpg"
+        "assets/skybox/Daylight Box_Pieces/Daylight Box_Right.bmp",
+        "assets/skybox/Daylight Box_Pieces/Daylight Box_Left.bmp",
+        "assets/skybox/Daylight Box_Pieces/Daylight Box_Top.bmp",
+        "assets/skybox/Daylight Box_Pieces/Daylight Box_Bottom.bmp",
+        "assets/skybox/Daylight Box_Pieces/Daylight Box_Front.bmp",
+        "assets/skybox/Daylight Box_Pieces/Daylight Box_Back.bmp"
     };
 
     uint32_t skybox_texture;

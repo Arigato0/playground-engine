@@ -5,6 +5,7 @@ out vec4 frag_color;
 uniform float texture_scale;
 uniform bool receive_lighting;
 uniform bool visualize_depth;
+uniform bool flip_normals;
 
 uniform float camera_near;
 uniform float camera_far;
@@ -247,9 +248,14 @@ void main()
     if (material.bump.enabled)
     {
         vec3 bump_normal = texture(material.bump.sampler, text_cord).rgb;
+
+        if (flip_normals)
+        {
+            bump_normal.y = -bump_normal.y;
+        }
+
         bump_normal = bump_normal * 2 - 1.0;
         bump_normal.xy *= material.bump_strength;
-        bump_normal.y = -bump_normal.y;
         data.norm = normalize(bump_normal);
 
         data.frag_pos = frag_pos * TBN;
