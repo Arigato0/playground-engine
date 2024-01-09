@@ -5,7 +5,8 @@
 #include "stb_image.h"
 #include "../common_util/macros.hpp"
 #include "../application/engine.hpp"
- #include <glm/gtc/type_ptr.hpp>
+#include "../common_util/os.hpp"
+#include <glm/gtc/type_ptr.hpp>
 
 // TODO replace assimp with custom model loader
 
@@ -162,6 +163,8 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 	return output;
 }
 
+
+
 pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType type)
 {
     if (material->GetTextureCount(type) == 0)
@@ -178,7 +181,8 @@ pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType
 		return {};
 	}
 
-    auto *texture = Engine::asset_manager.get_texture((m_path / path.C_Str()).c_str());
+	auto absolute = make_sys_path(m_path / std::filesystem::path(path.C_Str()));
+    auto *texture = Engine::asset_manager.get_texture(absolute.c_str());
 
     if (texture == nullptr)
     {

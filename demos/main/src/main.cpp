@@ -819,6 +819,25 @@ std::pair<Entity*, MeshRenderer*> create_mesh(std::string_view name, std::string
     return {entity, mesh};
 }
 
+void init_sponza_scene()
+{
+	 auto light_ent = Engine::entity_manager.create<LightComp>("Light");
+
+    light_ent->transform.translate({2, 15, -1});
+	auto light = light_ent->find<LightComp>();
+
+	light->data.power = 4;
+
+	auto [sponza_ent, sponza_mesh] = create_mesh("sponza", "/home/arian/Downloads/sponza/sponza.obj");
+	sponza_ent->transform.scale(glm::vec3{0.01});
+
+	for (auto &mesh : sponza_mesh->model.meshes)
+	{
+		mesh.material.bump.enabled = false;
+		mesh.material.use_alpha = true;
+	}
+}
+
 void init_room_scene()
 {
     auto light_ent = Engine::entity_manager.create<LightComp>("Light");
@@ -841,7 +860,9 @@ void init_room_scene()
     window_material.use_alpha = true;
 
 //	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
-	create_mesh("couch", "/home/arian/Downloads/gaudy_couch/scene.gltf");
+	//create_mesh("couch", "/home/arian/Downloads/gaudy_couch/scene.gltf");
+	//create_mesh("conference room", "/home/arian/Downloads/conference/conference.obj");
+
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
@@ -940,7 +961,8 @@ int main()
     //init_grass_scene();
 
 	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
-    init_room_scene();
+    //init_room_scene();
+	init_sponza_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");
