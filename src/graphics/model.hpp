@@ -75,7 +75,7 @@ namespace pge
     {
         uint32_t id = UINT32_MAX;
         std::vector<T> meshes;
-		glm::mat4 transform {};
+		glm::mat4 transform {1.0f};
     };
 
     using Model = ModelBase<Mesh>;

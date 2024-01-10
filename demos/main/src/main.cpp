@@ -471,10 +471,15 @@ public:
                         auto scale = trans.get_scale();
                         auto euler = glm::eulerAngles(glm::quat_cast(trans.model));
                         auto euler_old = euler;
+						static auto all_scale = 0.0f;
 
                         if (ImGui::DragFloat3("Position", glm::value_ptr(pos), 0.1))
                         {
                             trans.set_position(pos);
+                        }
+						if (ImGui::DragFloat("Scale xyz", &all_scale, 0.1))
+                        {
+                            trans.set_scale(all_scale);
                         }
                         if (ImGui::DragFloat3("Scale", glm::value_ptr(scale), 0.1))
                         {
@@ -653,6 +658,7 @@ public:
 						auto settings = Engine::renderer->get_color_settings();
 
 						CHECK_CHANGE(changed, ImGui::DragFloat("Gamma", &settings.gamma, 0.1));
+						CHECK_CHANGE(changed, ImGui::DragFloat("Exposure", &settings.exposure, 0.1));
 
 						if (changed)
 						{
@@ -828,6 +834,7 @@ void init_sponza_scene()
 
 	light->data.power = 4;
 
+
 	auto [sponza_ent, sponza_mesh] = create_mesh("sponza", "/home/arian/Downloads/sponza/sponza.obj");
 	sponza_ent->transform.scale(glm::vec3{0.01});
 
@@ -836,6 +843,8 @@ void init_sponza_scene()
 		mesh.material.bump.enabled = false;
 		mesh.material.use_alpha = true;
 	}
+
+	create_mesh("gun", "/home/arian/Downloads/beretta_686_e/scene.gltf");
 }
 
 void init_room_scene()
@@ -844,7 +853,7 @@ void init_room_scene()
 
     light_ent->transform.translate({2, 3, -1});
 
-    auto [room_ent, room_mesh] = create_mesh("Room", "/home/arian/Downloads/testing room/testing room 2.obj");
+    create_mesh("Room", "/home/arian/Downloads/testing room/testing room 2.obj");
 
     create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
 
@@ -860,7 +869,8 @@ void init_room_scene()
     window_material.use_alpha = true;
 
 //	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
-	//create_mesh("couch", "/home/arian/Downloads/gaudy_couch/scene.gltf");
+	auto [couch_ent, _] = create_mesh("couch", "/home/arian/Downloads/gaudy_couch/scene.gltf");
+	couch_ent->transform.translate({-3.4, -0.8, -0.15});
 	//create_mesh("conference room", "/home/arian/Downloads/conference/conference.obj");
 
 
@@ -961,8 +971,8 @@ int main()
     //init_grass_scene();
 
 	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
-    //init_room_scene();
-	init_sponza_scene();
+    init_room_scene();
+//	init_sponza_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");

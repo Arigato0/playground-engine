@@ -34,18 +34,22 @@ std::optional<pge::Model> pge::ModelLoader::load(std::string_view path, int flag
     return model;
 }
 
+glm::mat4 convert_matrix(const aiMatrix4x4 &mat)
+{
+	return
+	{
+		mat.a1, mat.b1, mat.c1, mat.d1,
+		mat.a2, mat.b2, mat.c2, mat.d2,
+		mat.a3, mat.b3, mat.c3, mat.d3,
+		mat.a4, mat.b4, mat.c4, mat.d4
+	};
+}
+
 glm::mat4 pge::ModelLoader::process_node(Model &model, aiNode* node, const aiScene* scene)
 {
     model.meshes.reserve(scene->mNumMeshes);
 
-	auto node_transform = node->mTransformation;
-
-	glm::mat4 transform {1.0f};
-
-	transform[0] = glm::make_vec4(node_transform[0]);
-	transform[1] = glm::make_vec4(node_transform[1]);
-	transform[2] = glm::make_vec4(node_transform[2]);
-	transform[3] = glm::make_vec4(node_transform[3]);
+	auto transform = convert_matrix(node->mTransformation);
 
     for (int i = 0; i < node->mNumMeshes; i++)
     {

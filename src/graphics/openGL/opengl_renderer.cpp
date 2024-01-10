@@ -91,7 +91,7 @@ uint32_t pge::OpenglRenderer::init()
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-	VALIDATE_ERR(m_render_buffer.init(4));
+	VALIDATE_ERR(m_render_buffer.init(4, GL_RGB16F));
 
 	VALIDATE_ERR(m_out_buffer.init());
 	VALIDATE_ERR(m_screen_buffer.init());
@@ -788,7 +788,8 @@ void pge::OpenglRenderer::set_shadow_settings(pge::ShadowSettings settings)
 void pge::OpenglRenderer::set_color_settings(pge::RenderColorSettings settings)
 {
 	m_screen_shader.use()
-		.set("gamma", settings.gamma);
+		.set("gamma", settings.gamma)
+		.set("exposure", settings.exposure);
 
 	m_color_settings = settings;
 }

@@ -5,9 +5,9 @@
 #include "opengl_error.hpp"
 #include "../../application/engine.hpp"
 
-#define SET_TEX_IMAGE(samples, width, height) (samples) > 0 ? \
-	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, (samples), GL_RGB, (width), (height), GL_TRUE) : \
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (width), (height), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr)
+#define SET_TEX_IMAGE(samples, width, height, format) (samples) > 0 ? \
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, (samples), format, (width), (height), GL_TRUE) : \
+	glTexImage2D(GL_TEXTURE_2D, 0, format, (width), (height), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr)
 
 #define SET_RENDER_BUFFER(samples, width, height) (samples) > 0 ? \
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, (width), (height))  : \
@@ -15,11 +15,12 @@
 
 #define GET_TARGET(samples) (samples) > 0 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D
 
-uint32_t pge::GlFramebuffer::init(int msaa_samples, int internal_format)
+uint32_t pge::GlFramebuffer::init(int msaa_samples, int format)
 {
 	auto [width, height] = Engine::window.framebuffer_size();
 
 	samples = msaa_samples;
+	internal_format = format;
 
 	tex_target = GET_TARGET(samples);
 
@@ -29,7 +30,7 @@ uint32_t pge::GlFramebuffer::init(int msaa_samples, int internal_format)
     glGenTextures(1, &texture);
     glBindTexture(tex_target, texture);
 
-	SET_TEX_IMAGE(samples, width, height);
+	SET_TEX_IMAGE(samples, width, height, internal_format);
 
     glTexParameteri(tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -122,7 +123,7 @@ void pge::GlFramebuffer::set_buffers(int width, int height) const
 {
 	glBindTexture(tex_target, texture);
 
-	SET_TEX_IMAGE(samples, width, height);
+	SET_TEX_IMAGE(samples, width, height, GL_RGB16F);
 
     glTexParameteri(tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

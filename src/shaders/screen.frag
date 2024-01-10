@@ -7,6 +7,7 @@ in vec2 tex_coords;
 uniform sampler2D screen_texture;
 uniform vec2 resolution;
 uniform float gamma;
+uniform float exposure;
 
 vec4 pp_pixelate()
 {
@@ -49,6 +50,10 @@ vec4 pp_invert()
 
 void main()
 {
-    frag_color = texture(screen_texture, tex_coords);
-    frag_color.rgb = pow(frag_color.rgb, vec3(1.0 / gamma));
+    vec3 screen_color = texture(screen_texture, tex_coords).rgb;
+    vec3 mapped = vec3(1.0) - exp(-screen_color * exposure);
+
+    mapped = pow(mapped, vec3(1.0 / gamma));
+
+    frag_color = vec4(mapped, 1);
 }

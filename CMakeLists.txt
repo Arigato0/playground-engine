@@ -108,6 +108,7 @@ add_library(playgroundEngineLib
         src/graphics/openGL/shadow_map.cpp
         src/common_util/os.cpp
         src/common_util/os.hpp
+        src/common_util/math.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

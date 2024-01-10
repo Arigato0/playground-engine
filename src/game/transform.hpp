@@ -12,6 +12,13 @@ namespace pge
         glm::vec3 position {};
         glm::mat4 model {1.0f};
 
+		Transform() = default;
+
+		explicit Transform(glm::mat4 mat) :
+			model(mat),
+			position(mat[3])
+		{}
+
         void scale(glm::vec3 vec)
         {
             model = glm::scale(model, vec);
@@ -34,6 +41,13 @@ namespace pge
             model[0][0] = vec.x;
             model[1][1] = vec.y;
             model[2][2] = vec.z;
+        }
+
+		void set_scale(float scalar)
+        {
+            model[0][0] = scalar;
+            model[1][1] = scalar;
+            model[2][2] = scalar;
         }
 
         [[nodiscard]]

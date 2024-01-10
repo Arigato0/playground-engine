@@ -14,8 +14,9 @@ namespace pge
         uint32_t texture;
 		int samples;
 		int tex_target;
+		int internal_format;
 
-        uint32_t init(int msaa_samples = 0, int internal_format = GL_RGB);
+        uint32_t init(int msaa_samples = 0, int format = GL_RGB);
 
         ~GlFramebuffer() override;
 

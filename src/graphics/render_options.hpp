@@ -68,5 +68,6 @@ namespace pge
 	struct RenderColorSettings
 	{
 		float gamma = 1.4;
+		float exposure = 1;
 	};
 }
