@@ -61,9 +61,9 @@ pge::ErrorCode pge::Engine::run()
 
         imgui_new_frame();
 
-        renderer->new_frame();
-
         entity_manager.update(statistics.delta_time());
+
+        renderer->new_frame();
 
         renderer->end_frame();
 

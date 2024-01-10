@@ -7,7 +7,7 @@
 #include "gl_framebuffer.hpp"
 #include "opengl_shader.hpp"
 #include "../renderer_interface.hpp"
-#include "../render_options.hpp"
+#include "../renderer_structs.hpp"
 #include "../../data/id_table.hpp"
 #include "../../data/string.hpp"
 #include "gl_buffers.hpp"
@@ -124,6 +124,11 @@ namespace pge
 			return m_color_settings;
 		}
 
+		RenderStats get_stats() override
+		{
+			return m_stats;
+		}
+
     private:
         // the default missing texture to use when unable to create a texture
         uint32_t m_missing_texture;
@@ -166,10 +171,13 @@ namespace pge
 
 		ShadowSettings m_shadow_settings;
 		RenderColorSettings m_color_settings;
+		RenderStats m_stats;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 
         void handle_lighting();
+
+		void draw_mesh(const MeshView &mesh);
 
         uint32_t handle_draw(const DrawData&data);
 

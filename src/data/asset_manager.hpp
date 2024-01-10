@@ -6,7 +6,7 @@
 
 #include "id_table.hpp"
 #include "../graphics/model.hpp"
-#include "../graphics/render_options.hpp"
+#include "../graphics/renderer_structs.hpp"
 
 namespace pge
 {

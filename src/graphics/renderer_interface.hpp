@@ -12,7 +12,7 @@
 #include "../application/fmt.hpp"
 #include "Camera.hpp"
 #include "framebuffer_interface.hpp"
-#include "render_options.hpp"
+#include "renderer_structs.hpp"
 #include "../data/string.hpp"
 #include "render_view.hpp"
 
@@ -111,6 +111,8 @@ namespace pge
 
 		virtual void set_color_settings(RenderColorSettings settings) = 0;
 		virtual RenderColorSettings get_color_settings() = 0;
+
+		virtual RenderStats get_stats() = 0;
 
     protected:
         // the main camera that will be used for renders.

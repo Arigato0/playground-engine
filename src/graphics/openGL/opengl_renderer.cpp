@@ -168,6 +168,7 @@ void default_stencil()
 
 void pge::OpenglRenderer::new_frame()
 {
+	m_stats = RenderStats{};
 }
 
 void pge::OpenglRenderer::end_frame()
@@ -177,10 +178,11 @@ void pge::OpenglRenderer::end_frame()
     clear_buffers();
 }
 
-void draw_mesh(const pge::MeshView &mesh)
+void pge::OpenglRenderer::draw_mesh(const MeshView &mesh)
 {
     glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, nullptr);
-    pge::Engine::statistics.report_draw_call();
+	m_stats.draw_calls++;
+	m_stats.vertices += mesh.vertices.size();
 }
 
 void pge::OpenglRenderer::draw(const MeshView&mesh, glm::mat4 model, DrawOptions options)

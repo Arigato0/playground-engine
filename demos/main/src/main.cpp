@@ -558,11 +558,12 @@ public:
         if (stats_window_open)
         {
             auto stats = Engine::statistics.stats();
+			auto render_stats = Engine::renderer->get_stats();
 
             ImGui::Begin("Statistics", &stats_window_open);
 
             auto str = fmt::format("fps: {}\nFrame time: {}\ndraw calls: {}\nvertices: {}",
-                stats.fps, stats.delta_time, stats.draw_calls, stats.vertices);
+                stats.fps, stats.delta_time, render_stats.draw_calls, render_stats.vertices);
 
             ImGui::Text(str.data());
 
@@ -971,8 +972,8 @@ int main()
     //init_grass_scene();
 
 	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
-    init_room_scene();
-//	init_sponza_scene();
+//    init_room_scene();
+	init_sponza_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");

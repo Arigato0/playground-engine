@@ -88,7 +88,7 @@ add_library(playgroundEngineLib
         "src/data/model_loader.cpp"
         "src/data/model_loader.hpp"
         "src/data/id_table.hpp"
-        "src/graphics/render_options.hpp"
+        "src/graphics/renderer_structs.hpp"
         "src/game/ecs.cpp"
         "src/data/string.hpp"
         "src/graphics/framebuffer_interface.hpp"
@@ -108,7 +108,6 @@ add_library(playgroundEngineLib
         src/graphics/openGL/shadow_map.cpp
         src/common_util/os.cpp
         src/common_util/os.hpp
-        src/common_util/math.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

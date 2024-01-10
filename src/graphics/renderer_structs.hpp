@@ -55,6 +55,12 @@ namespace pge
         Shaded,
     };
 
+	struct RenderStats
+	{
+		uint32_t vertices = 0;
+		uint32_t draw_calls = 0;
+	};
+
     struct ShadowSettings
     {
 		int pcf_samples = 20;
