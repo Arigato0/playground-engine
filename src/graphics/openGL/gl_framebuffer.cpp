@@ -5,64 +5,21 @@
 #include "opengl_error.hpp"
 #include "../../application/engine.hpp"
 
-#define SET_TEX_IMAGE(samples, width, height, format) (samples) > 0 ? \
-	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, (samples), format, (width), (height), GL_TRUE) : \
-	glTexImage2D(GL_TEXTURE_2D, 0, format, (width), (height), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr)
+#define SET_TEX_IMAGE(fb, width, height) (fb.samples) > 0 ? \
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, (fb.samples), (fb.internal_format), (width), (height), GL_TRUE) : \
+	glTexImage2D(GL_TEXTURE_2D, 0, (fb.internal_format), (width), (height), 0, (fb.pixel_format), GL_UNSIGNED_BYTE, nullptr)
 
-#define SET_RENDER_BUFFER(samples, width, height) (samples) > 0 ? \
-	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, (width), (height))  : \
+#define SET_RENDER_BUFFER(fb, width, height) (fb.samples) > 0 ? \
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, (fb.samples), GL_DEPTH24_STENCIL8, (width), (height))  : \
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, (width), (height))
 
 #define GET_TARGET(samples) (samples) > 0 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D
-
-uint32_t pge::GlFramebuffer::init(int msaa_samples, int format)
-{
-	auto [width, height] = Engine::window.framebuffer_size();
-
-	samples = msaa_samples;
-	internal_format = format;
-
-	tex_target = GET_TARGET(samples);
-
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-    glGenTextures(1, &texture);
-    glBindTexture(tex_target, texture);
-
-	SET_TEX_IMAGE(samples, width, height, internal_format);
-
-    glTexParameteri(tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_target, texture, 0);
-
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-
-	SET_RENDER_BUFFER(samples, width, height);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        return OPENGL_ERROR_FRAMEBUFFER_CREATION;
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glBindTexture(tex_target, 0);
-
-    m_on_resize_con = Engine::window.on_framebuffer_resize.connect(this, &GlFramebuffer::on_resize);
-
-    return OPENGL_ERROR_OK;
-}
 
 pge::GlFramebuffer::~GlFramebuffer()
 {
     glDeleteFramebuffers(1, &fbo);
     glDeleteRenderbuffers(1, &rbo);
-    glDeleteTextures(1, &texture);
+    glDeleteTextures(texture_count, textures);
 
 	// TODO uncommenting this causes a segfault investigate why
     //Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
@@ -70,7 +27,7 @@ pge::GlFramebuffer::~GlFramebuffer()
 
 uint32_t pge::GlFramebuffer::get_texture() const
 {
-    return texture;
+    return textures[0];
 }
 
 void pge::GlFramebuffer::bind()
@@ -85,7 +42,7 @@ void pge::GlFramebuffer::unbind()
 
 pge::Image pge::GlFramebuffer::get_image() const
 {
-    glBindTexture(tex_target, texture);
+    glBindTexture(tex_target, textures[0]);
 
     Image img;
 
@@ -103,7 +60,7 @@ pge::Image pge::GlFramebuffer::get_image() const
     return img;
 }
 
-void pge::GlFramebuffer::on_resize(IWindow*, int width, int height) const
+void pge::GlFramebuffer::on_resize(IWindow*, int width, int height)
 {
 	set_buffers(width, height);
 }
@@ -119,20 +76,33 @@ void pge::GlFramebuffer::set_samples(int n)
 	samples = n;
 }
 
-void pge::GlFramebuffer::set_buffers(int width, int height) const
+void set_textures(const pge::GlFramebuffer &fb, int width, int height)
 {
-	glBindTexture(tex_target, texture);
+	for (int i = 0; i < fb.texture_count; i++)
+	{
+		glBindTexture(fb.tex_target, fb.textures[i]);
 
-	SET_TEX_IMAGE(samples, width, height, GL_RGB16F);
+		SET_TEX_IMAGE(fb, width, height);
 
-    glTexParameteri(tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(fb.tex_target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(fb.tex_target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(fb.tex_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(fb.tex_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_target, texture, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, fb.tex_target, fb.textures[i], 0);
+	}
+}
 
+void pge::GlFramebuffer::set_buffers(int width, int height)
+{
+	auto &fb = *this;
+
+	set_textures(fb, width, height);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, tex_target, textures[0], 0);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 
-	SET_RENDER_BUFFER(samples, width, height);
+	SET_RENDER_BUFFER(fb, width, height);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
@@ -140,28 +110,50 @@ void pge::GlFramebuffer::set_buffers(int width, int height) const
 	glBindTexture(tex_target, 0);
 }
 
-pge::GlFramebuffer pge::create_depth_buffer(int width, int height)
+uint32_t pge::create_color_buffer(GlFramebuffer &fb)
 {
-	GlFramebuffer buffer;
+	auto [width, height] = Engine::window.framebuffer_size();
 
-	glGenTextures(1, &buffer.texture);
-	glBindTexture(GL_TEXTURE_2D, buffer.texture);
+    glGenFramebuffers(1, &fb.fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+	fb.tex_target = GET_TARGET(fb.samples);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glGenTextures(fb.texture_count, fb.textures);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, buffer.fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, buffer.texture, 0);
+	set_textures(fb, width, height);
 
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
+    glGenRenderbuffers(1, &fb.rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, fb.rbo);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	SET_RENDER_BUFFER(fb, width, height);
 
-	return buffer;
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fb.rbo);
+
+	if (fb.texture_count > 1)
+	{
+		GLuint attachments[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+		glDrawBuffers(2, attachments);
+	}
+//	GLuint attachment[PGE_GL_MAX_FB_TEXTURES];
+//
+//	for (int i = 0; i < fb.texture_count && i < PGE_GL_MAX_FB_TEXTURES; i++)
+//	{
+//		attachment[i] = GL_COLOR_ATTACHMENT0 + i;
+//	}
+//
+//	glDrawBuffers(fb.texture_count, attachment);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        return OPENGL_ERROR_FRAMEBUFFER_CREATION;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindTexture(fb.tex_target, 0);
+
+	fb.m_on_resize_con = Engine::window.on_framebuffer_resize.connect(&fb, &GlFramebuffer::on_resize);
+
+    return OPENGL_ERROR_OK;
 }

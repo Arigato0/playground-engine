@@ -71,9 +71,12 @@ namespace pge
 		float distance = 100.0f;
     };
 
-	struct RenderColorSettings
+	struct ScreenSpaceSettings
 	{
 		float gamma = 1.4;
 		float exposure = 1;
+		float bright_threshold = 1;
+		bool enable_bloom = true;
+		int bloom_blur_passes = 10;
 	};
 }

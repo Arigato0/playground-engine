@@ -52,13 +52,14 @@ uint32_t pge::OpenglRenderer::init()
 
     m_screen_shader.create
    ({
-       {PGE_FIND_SHADER("screen.vert"), Vertex},
+       {PGE_FIND_SHADER("quad.vert.glsl"), Vertex},
        {PGE_FIND_SHADER("screen.frag"), Fragment}
    });
 
     m_screen_shader.use();
     m_screen_shader.set("screen_texture", 0);
-	m_screen_shader.set("gamma", 1.7f);
+	m_screen_shader.set("bloom_texture", 1);
+	m_screen_shader.set("gamma", m_screen_space_settings.gamma);
 
 	m_shadow_map_shader.create
    ({
@@ -91,13 +92,17 @@ uint32_t pge::OpenglRenderer::init()
 
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-	VALIDATE_ERR(m_render_buffer.init(4, GL_RGB16F));
+	//m_render_buffer.samples = 4;
+	m_render_buffer.texture_count = 2;
 
-	VALIDATE_ERR(m_out_buffer.init());
-	VALIDATE_ERR(m_screen_buffer.init());
+	VALIDATE_ERR(create_color_buffer(m_render_buffer));
+	VALIDATE_ERR(create_color_buffer(m_out_buffer));
+	VALIDATE_ERR(create_color_buffer(m_screen_buffer));
 
 	set_shadow_settings(m_shadow_settings);
-	set_color_settings(m_color_settings);
+	set_screen_space_settings(m_screen_space_settings);
+
+	VALIDATE_ERR(m_gaussian_blur.init());
 
 	m_lighting_shader.use();
 
@@ -489,6 +494,7 @@ void pge::OpenglRenderer::draw_passes()
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+	apply_bloom_blur();
     draw_screen_plane();
 
 	if (m_wireframe)
@@ -641,6 +647,13 @@ void pge::OpenglRenderer::create_skybox_cube()
         .finish();
 }
 
+void pge::OpenglRenderer::draw_quad(GlBuffers &buffers)
+{
+ 	glBindVertexArray(buffers.vao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
 void pge::OpenglRenderer::draw_screen_plane()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -652,11 +665,11 @@ void pge::OpenglRenderer::draw_screen_plane()
     	.set("resolution", {width, height});
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_screen_buffer.get_texture());
+    glBindTexture(GL_TEXTURE_2D, m_render_buffer.textures[0]);
+	glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_gaussian_blur.textures[!m_gaussian_blur.horizontal]);
 
-    glBindVertexArray(m_screen_plane.vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
+	draw_quad(m_screen_plane);
 }
 
 void pge::OpenglRenderer::draw_skybox()
@@ -695,9 +708,9 @@ void pge::OpenglRenderer::render_to_framebuffer(pge::GlFramebuffer &fb)
 	draw_everything(false);
     draw_skybox();
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.fbo);
-	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+//	glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
+//	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.fbo);
+//	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     fb.unbind();
 }
@@ -706,7 +719,7 @@ pge::RenderView *pge::OpenglRenderer::add_view(pge::Camera *camera)
 {
 	auto *fb = new GlFramebuffer();
 
-	auto result = fb->init();
+	auto result = create_color_buffer(*fb);
 
 	if (result != 0)
 	{
@@ -787,11 +800,49 @@ void pge::OpenglRenderer::set_shadow_settings(pge::ShadowSettings settings)
 	m_shadow_settings = settings;
 }
 
-void pge::OpenglRenderer::set_color_settings(pge::RenderColorSettings settings)
+void pge::OpenglRenderer::set_screen_space_settings(pge::ScreenSpaceSettings settings)
 {
+	m_lighting_shader.use()
+		.set("bright_threshold", settings.bright_threshold);
+
 	m_screen_shader.use()
 		.set("gamma", settings.gamma)
-		.set("exposure", settings.exposure);
+		.set("exposure", settings.exposure)
+		.set("enable_bloom", settings.enable_bloom);
 
-	m_color_settings = settings;
+	m_screen_space_settings = settings;
 }
+
+void pge::OpenglRenderer::apply_bloom_blur()
+{
+	if (!m_screen_space_settings.enable_bloom)
+	{
+		return;
+	}
+
+	m_gaussian_blur.shader.use();
+
+	m_gaussian_blur.horizontal = true;
+
+	auto tex_target = m_render_buffer.tex_target;
+
+	for (int i = 0; i < m_screen_space_settings.bloom_blur_passes; i++)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, m_gaussian_blur.fbos[m_gaussian_blur.horizontal]);
+
+		m_gaussian_blur.shader.set("horizontal", m_gaussian_blur.horizontal);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(tex_target,
+			i == 0 ? m_render_buffer.textures[1] : m_gaussian_blur.textures[!m_gaussian_blur.horizontal]);
+
+		draw_quad(m_screen_plane);
+
+		m_gaussian_blur.horizontal = !m_gaussian_blur.horizontal;
+		tex_target = GL_TEXTURE_2D;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+

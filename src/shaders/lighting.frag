@@ -1,7 +1,9 @@
 #version 460 core
 
-out vec4 frag_color;
+layout (location = 0) out vec4 frag_color;
+layout (location = 1) out vec4 bright_color;
 
+uniform float bright_threshold;
 uniform float texture_scale;
 uniform bool receive_lighting;
 uniform bool visualize_depth;
@@ -309,5 +311,17 @@ void main()
         result *= material.color;
     }
 
+    float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722));
+
+    if (brightness > bright_threshold)
+    {
+        bright_color = vec4(result, 1);
+    }
+    else
+    {
+        bright_color = vec4(0, 0, 0, 1);
+    }
+
     frag_color = vec4(result, tex.a * material.transparency);
+    //bright_color = frag_color;
 }

@@ -47,17 +47,16 @@ static float CUBE_MESH[] =
     -0.5f,  0.5f,  0.5f,    0.0f,  1.0f,  0.0f,  0.0f, 0.0f  // bottom-left
 };
 
-// quad mesh data mainly used for the screen plane
+// quad mesh mainly used for the screen plane or drawing images
 static float QUAD_MESH[] =
  {
- // positions   // texCoords
- -1.0f,  1.0f,  0.0f, 1.0f,
- -1.0f, -1.0f,  0.0f, 0.0f,
-  1.0f, -1.0f,  1.0f, 0.0f,
-
- -1.0f,  1.0f,  0.0f, 1.0f,
-  1.0f, -1.0f,  1.0f, 0.0f,
-  1.0f,  1.0f,  1.0f, 1.0f
+ 	// positions   // tex coords
+	-1.0f,  1.0f,  0.0f, 1.0f,
+	-1.0f, -1.0f,  0.0f, 0.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	-1.0f,  1.0f,  0.0f, 1.0f,
+	 1.0f, -1.0f,  1.0f, 0.0f,
+	 1.0f,  1.0f,  1.0f, 1.0f
 };
 
 // a cube that only contains position vectors mostly used for skyboxes

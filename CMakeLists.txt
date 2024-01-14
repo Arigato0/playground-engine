@@ -108,6 +108,8 @@ add_library(playgroundEngineLib
         src/graphics/openGL/shadow_map.cpp
         src/common_util/os.cpp
         src/common_util/os.hpp
+        src/graphics/openGL/gaussian_blur.cpp
+        src/graphics/openGL/gaussian_blur.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

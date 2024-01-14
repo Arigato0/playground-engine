@@ -8,8 +8,8 @@ uint32_t pge::create_shadow_map(int width, int height, GlFramebuffer &fb)
 {
 	fb.tex_target = GL_TEXTURE_CUBE_MAP;
 
-	glGenTextures(1, &fb.texture);
-	glBindTexture(fb.tex_target, fb.texture);
+	glGenTextures(1, &fb.textures[0]);
+	glBindTexture(fb.tex_target, fb.textures[0]);
 
 	for (int i = 0; i < 6; ++i)
 	{
@@ -26,7 +26,7 @@ uint32_t pge::create_shadow_map(int width, int height, GlFramebuffer &fb)
 
 	glGenFramebuffers(1, &fb.fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, fb.fbo);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.texture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fb.textures[0], 0);
 
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);

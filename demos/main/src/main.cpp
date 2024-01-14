@@ -660,10 +660,17 @@ public:
 
 						CHECK_CHANGE(changed, ImGui::DragFloat("Gamma", &settings.gamma, 0.1));
 						CHECK_CHANGE(changed, ImGui::DragFloat("Exposure", &settings.exposure, 0.1));
+						CHECK_CHANGE(changed, ImGui::Checkbox("Bloom", &settings.enable_bloom));
+
+						if (settings.enable_bloom)
+						{
+							CHECK_CHANGE(changed, ImGui::DragFloat("Bright threshold", &settings.bright_threshold, 0.1));
+							CHECK_CHANGE(changed, ImGui::DragInt("Bloom blur passes", &settings.bloom_blur_passes, 0.1));
+						}
 
 						if (changed)
 						{
-							Engine::renderer->set_color_settings(settings);
+							Engine::renderer->set_screen_space_settings(settings);
 						}
 					}
 
@@ -856,7 +863,12 @@ void init_room_scene()
 
     create_mesh("Room", "/home/arian/Downloads/testing room/testing room 2.obj");
 
-    create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
+    auto [sword_ent, sword_mesh] = create_mesh("Sword", "/home/arian/Downloads/lowpoly-stylized-scimitar/source/scimitarobj.obj");
+
+	auto &sword_mat = sword_mesh->model.meshes.front();
+
+	sword_mat.material.color = {0.969, 0.059, 0.106};
+	sword_mat.material.emission = 5;
 
     auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
 
@@ -884,7 +896,9 @@ void init_room_scene()
     {
 //        mesh.material.use_alpha = true;
 //        mesh.material.alpha = 0.3f;
-//        mesh.material.color = {1, 0.161, 0.933};
+        mesh.material.color = {1, 0.161, 0.933};
+		mesh.material.emission = 5;
+		mesh.material.cast_shadow = false;
 		mesh.material.bump.enabled = false;
     }
 }
@@ -972,8 +986,8 @@ int main()
     //init_grass_scene();
 
 	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
-//    init_room_scene();
-	init_sponza_scene();
+    init_room_scene();
+//	init_sponza_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");

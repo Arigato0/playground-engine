@@ -13,6 +13,7 @@
 #include "gl_buffers.hpp"
 #include "../render_view.hpp"
 #include "shadow_map.hpp"
+#include "gaussian_blur.hpp"
 
 namespace pge
 {
@@ -117,11 +118,11 @@ namespace pge
 			return m_shadow_settings;
 		}
 
-		void set_color_settings(pge::RenderColorSettings settings) override;
+		void set_screen_space_settings(pge::ScreenSpaceSettings settings) override;
 
-		RenderColorSettings get_color_settings() override
+		ScreenSpaceSettings get_color_settings() override
 		{
-			return m_color_settings;
+			return m_screen_space_settings;
 		}
 
 		RenderStats get_stats() override
@@ -159,6 +160,7 @@ namespace pge
         RenderViewList m_render_views;
 		// the buffer all the meshes will get rendered to
 		GlFramebuffer m_render_buffer;
+
         // the screen buffer used for screen space rendering
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
@@ -168,9 +170,10 @@ namespace pge
 		IdTable<GlFramebuffer> m_shadow_maps;
 		//int shadow_map_texture = GL_TEXTURE4;
 		int sampler_start = 4;
+		GaussianBlur m_gaussian_blur;
 
 		ShadowSettings m_shadow_settings;
-		RenderColorSettings m_color_settings;
+		ScreenSpaceSettings m_screen_space_settings;
 		RenderStats m_stats;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
@@ -196,6 +199,10 @@ namespace pge
         void create_screen_plane();
 
         void create_skybox_cube();
+
+		void apply_bloom_blur();
+
+		void draw_quad(GlBuffers &buffers);
 
         void draw_screen_plane();
 

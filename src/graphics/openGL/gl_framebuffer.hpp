@@ -5,18 +5,20 @@
 #include "../../application/engine.hpp"
 #include "../../application/window_interface.hpp"
 
+#define PGE_GL_MAX_FB_TEXTURES 2
+
 namespace pge
 {
     struct GlFramebuffer : public IFramebuffer
     {
-        uint32_t fbo;
-        uint32_t rbo;
-        uint32_t texture;
-		int samples;
-		int tex_target;
-		int internal_format;
-
-        uint32_t init(int msaa_samples = 0, int format = GL_RGB);
+        GLuint fbo;
+        GLuint rbo;
+		GLsizei texture_count = 1;
+        GLuint textures[PGE_GL_MAX_FB_TEXTURES];
+		GLsizei samples = 0;
+		GLuint tex_target = GL_TEXTURE_2D;
+		GLuint internal_format = GL_RGB16F;
+		GLuint pixel_format = GL_RGB;
 
         ~GlFramebuffer() override;
 
@@ -32,10 +34,10 @@ namespace pge
 
         Connection<void, IWindow*, int, int> *m_on_resize_con;
 
-        void on_resize(IWindow*, int width, int height) const;
+        void on_resize(IWindow*, int width, int height);
 
-		void set_buffers(int width, int height) const;
+		void set_buffers(int width, int height);
 	};
 
-	pge::GlFramebuffer create_depth_buffer(int width, int height);
+	uint32_t create_color_buffer(GlFramebuffer &fb);
 }
