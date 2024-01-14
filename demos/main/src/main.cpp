@@ -140,6 +140,7 @@ public:
                 SEPERATOR(mesh.name),
                 {"Recieve light", &material.recieve_lighting},
 				{"Cast shadow", &material.cast_shadow},
+				{"Contribute bloom", &material.contribute_bloom},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
 				{"Emission", DragControl(&material.emission)},
@@ -867,8 +868,8 @@ void init_room_scene()
 
 	auto &sword_mat = sword_mesh->model.meshes.front();
 
-	sword_mat.material.color = {0.969, 0.059, 0.106};
-	sword_mat.material.emission = 5;
+//	sword_mat.material.color = {0.969, 0.059, 0.106};
+//	sword_mat.material.emission = 5;
 
     auto [window_ent, window_mesh] = create_mesh("Window", "assets/models/primitives/plane.glb");
 
@@ -892,15 +893,15 @@ void init_room_scene()
     skull_ent->transform.translate({-2, 1.5, -3});
     skull_ent->transform.rotate(30, {0, 1, 0});
 
-    for (auto &mesh : skull_mesh->model.meshes)
-    {
+//    for (auto &mesh : skull_mesh->model.meshes)
+//    {
 //        mesh.material.use_alpha = true;
 //        mesh.material.alpha = 0.3f;
-        mesh.material.color = {1, 0.161, 0.933};
-		mesh.material.emission = 5;
-		mesh.material.cast_shadow = false;
-		mesh.material.bump.enabled = false;
-    }
+//        mesh.material.color = {1, 0.161, 0.933};
+//		mesh.material.emission = 5;
+//		mesh.material.cast_shadow = false;
+//		mesh.material.bump.enabled = false;
+//    }
 }
 
 PGE_COMPONENT(CameraViewComp)

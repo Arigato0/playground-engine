@@ -8,6 +8,7 @@ uniform float texture_scale;
 uniform bool receive_lighting;
 uniform bool visualize_depth;
 uniform bool flip_normals;
+uniform bool contribute_bloom;
 
 uniform float camera_near;
 uniform float camera_far;
@@ -313,7 +314,7 @@ void main()
 
     float brightness = dot(result, vec3(0.2126, 0.7152, 0.0722));
 
-    if (brightness > bright_threshold)
+    if (brightness > bright_threshold && contribute_bloom)
     {
         bright_color = vec4(result, 1);
     }
@@ -323,5 +324,4 @@ void main()
     }
 
     frag_color = vec4(result, tex.a * material.transparency);
-    //bright_color = frag_color;
 }

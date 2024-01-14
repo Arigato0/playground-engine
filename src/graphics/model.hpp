@@ -32,6 +32,7 @@ namespace pge
 		float emission = 00;
         bool recieve_lighting = true;
 		bool cast_shadow = true;
+		bool contribute_bloom = true;
     };
 
     struct Vertex
