@@ -29,7 +29,7 @@ namespace pge
 		bool flip_normals = false;
         float specular = 0;
         glm::vec3 color {0.0f};
-		float emission = 00;
+		float emission = 0;
         bool recieve_lighting = true;
 		bool cast_shadow = true;
 		bool contribute_bloom = true;

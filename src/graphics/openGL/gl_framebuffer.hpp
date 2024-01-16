@@ -24,6 +24,9 @@ namespace pge
 
 		void set_samples(int n) override;
 
+		void blit(pge::IFramebuffer *src, int width = 0, int height = 0, int attachment = 0, int x = 0, int y = 0) override;
+		void blit_all_targets(pge::IFramebuffer *src, int width = 0, int height = 0, int x = 0, int y = 0) override;
+
         void bind() override;
 
         void unbind() override;

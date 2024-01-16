@@ -38,41 +38,41 @@ uint32_t pge::OpenglRenderer::init()
 
 	using enum ShaderType;
 
-    m_lighting_shader.create
+
+    VALIDATE_ERR(m_lighting_shader.create
    ({
        {PGE_FIND_SHADER("lighting.vert"), Vertex},
        {PGE_FIND_SHADER("lighting.frag"), Fragment}
-   });
+   }));
 
-    m_outline_shader.create
+    VALIDATE_ERR(m_outline_shader.create
    ({
        {PGE_FIND_SHADER("extrude_from_normals.vert"), Vertex},
        {PGE_FIND_SHADER("color.frag"), Fragment}
-   });
+   }));
 
-    m_screen_shader.create
+    VALIDATE_ERR(m_screen_shader.create
    ({
        {PGE_FIND_SHADER("quad.vert.glsl"), Vertex},
        {PGE_FIND_SHADER("screen.frag"), Fragment}
-   });
+   }));
 
     m_screen_shader.use();
     m_screen_shader.set("screen_texture", 0);
 	m_screen_shader.set("bloom_texture", 1);
-	m_screen_shader.set("gamma", m_screen_space_settings.gamma);
 
-	m_shadow_map_shader.create
+	VALIDATE_ERR(m_shadow_map_shader.create
    ({
        {PGE_FIND_SHADER("shadow_map.vert"), Vertex},
        {PGE_FIND_SHADER("omni_shadow_map.geo.glsl"), Geometry},
        {PGE_FIND_SHADER("shadow_map.frag.glsl"), Fragment},
-   });
+   }));
 
-    m_skybox_shader.create
+    VALIDATE_ERR(m_skybox_shader.create
    ({
        {PGE_FIND_SHADER("skybox.vert"), Vertex},
        {PGE_FIND_SHADER("skybox.frag"), Fragment}
-   });
+   }));
 
     m_skybox_shader.use();
     m_skybox_shader.set("skybox_texture", 0);
@@ -102,8 +102,9 @@ uint32_t pge::OpenglRenderer::init()
 
 	VALIDATE_ERR(create_color_buffer(m_screen_buffer));
 
-	set_shadow_settings(m_shadow_settings);
-	set_screen_space_settings(m_screen_space_settings);
+	set_shadow_settings(m_settings.shadow);
+	set_screen_space_settings(m_settings.screen_space);
+	set_texture_settings(m_settings.texture);
 
 	VALIDATE_ERR(m_gaussian_blur.init());
 
@@ -255,6 +256,7 @@ pge::OpenglRenderer::create_texture(ustring_view data, int width, int height, in
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+
     int pixel_format;
 	int internal_format;
 
@@ -401,7 +403,7 @@ void pge::OpenglRenderer::handle_lighting()
 		{
 			auto fb = new GlFramebuffer();
 
-			create_shadow_map(m_shadow_settings.width, m_shadow_settings.height, *fb);
+			create_shadow_map(m_settings.shadow.width, m_settings.shadow.height, *fb);
 
 			light->shadow_map = fb;
 			light->texture_id = sampler_start++;
@@ -472,6 +474,8 @@ uint32_t pge::OpenglRenderer::handle_draw(const DrawData &data)
 
 void pge::OpenglRenderer::draw_passes()
 {
+	set_constant_uniforms();
+
 	render_to_framebuffer(m_render_buffer);
 
 	auto *main_camera = m_camera;
@@ -527,7 +531,7 @@ void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 		}
 		else
 		{
-			set_base_uniforms(data);
+			set_model_uniforms(data);
 		}
 
         handle_draw(data);
@@ -593,13 +597,13 @@ void pge::OpenglRenderer::handle_gl_buffer_delete()
     }
 }
 
-void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
+void pge::OpenglRenderer::set_model_uniforms(const DrawData &data)
 {
     auto &[mesh, model, _] = data;
 
     auto material = mesh.material;
 
-	auto mvp = m_camera->projection * m_camera->view * data.model;
+	auto mvp = m_const_data.vp_mat * data.model;
 
     m_lighting_shader.use()
     	.set("material.color", material.color)
@@ -618,16 +622,25 @@ void pge::OpenglRenderer::set_base_uniforms(const DrawData &data)
     	.set("material.specular", material.specular)
 		.set("material.emission", material.emission)
     	.set("mvp", mvp)
-		.set("model", data.model)
-    	.set("view_pos", m_camera->position)
-    	.set("camera_near", m_camera->near)
-    	.set("camera_far", m_camera->far)
-		.set("shadow_far", m_shadow_settings.distance);
+		.set("model", data.model);
+
+	auto anisotropy_level = m_settings.texture.anisotropic_level;
+
+	float distance = glm::length2(m_camera->position - glm::vec3{model[3]});
+
+	if (distance >= m_settings.texture.anisotropic_distance)
+	{
+		anisotropy_level = 0;
+	}
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy_level);
+
 	glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, material.bump.id);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy_level);
 }
 
 void pge::OpenglRenderer::create_screen_plane()
@@ -712,21 +725,7 @@ void pge::OpenglRenderer::render_to_framebuffer(pge::GlFramebuffer &fb)
 	draw_everything(false);
     draw_skybox();
 
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.fbo);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fb.fbo);
-	glReadBuffer(GL_COLOR_ATTACHMENT1);
-
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_screen_buffer.fbo);
-	glDrawBuffer(GL_COLOR_ATTACHMENT1);
-
-	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	m_screen_buffer.blit_all_targets(&fb, width, height);
 
     fb.unbind();
 }
@@ -767,7 +766,7 @@ void pge::OpenglRenderer::remove_view(RenderView *view)
 
 void pge::OpenglRenderer::render_to_shadow_map(IFramebuffer *fb, glm::vec3 position)
 {
-	glViewport(0, 0, m_shadow_settings.width, m_shadow_settings.height);
+	glViewport(0, 0, m_settings.shadow.width, m_settings.shadow.height);
 
 	fb->bind();
 
@@ -776,8 +775,8 @@ void pge::OpenglRenderer::render_to_shadow_map(IFramebuffer *fb, glm::vec3 posit
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 
-	auto projection = glm::perspective(glm::radians(90.0f), float(m_shadow_settings.width / m_shadow_settings.height),
-		1.0f, m_shadow_settings.distance);
+	auto projection = glm::perspective(glm::radians(90.0f), float(m_settings.shadow.width / m_settings.shadow.height),
+		1.0f, m_settings.shadow.distance);
 
 	std::array shadow_transforms =
 	{
@@ -790,7 +789,7 @@ void pge::OpenglRenderer::render_to_shadow_map(IFramebuffer *fb, glm::vec3 posit
 	};
 
 	m_shadow_map_shader.use()
-		.set("far_plane", m_shadow_settings.distance)
+		.set("far_plane", m_settings.shadow.distance)
 		.set("light_pos", position);
 
 	for (int i = 0; i < shadow_transforms.size(); ++i)
@@ -813,7 +812,7 @@ void pge::OpenglRenderer::set_shadow_settings(pge::ShadowSettings settings)
 		.set("shadow_bias", settings.bias)
 		.set("pcf_samples", settings.pcf_samples);
 
-	m_shadow_settings = settings;
+	m_settings.shadow = settings;
 }
 
 void pge::OpenglRenderer::set_screen_space_settings(pge::ScreenSpaceSettings settings)
@@ -826,12 +825,12 @@ void pge::OpenglRenderer::set_screen_space_settings(pge::ScreenSpaceSettings set
 		.set("exposure", settings.exposure)
 		.set("enable_bloom", settings.enable_bloom);
 
-	m_screen_space_settings = settings;
+	m_settings.screen_space = settings;
 }
 
 void pge::OpenglRenderer::apply_bloom_blur()
 {
-	if (!m_screen_space_settings.enable_bloom)
+	if (!m_settings.screen_space.enable_bloom)
 	{
 		return;
 	}
@@ -844,7 +843,7 @@ void pge::OpenglRenderer::apply_bloom_blur()
 
 	glActiveTexture(GL_TEXTURE0);
 
-	for (int i = 0; i < m_screen_space_settings.bloom_blur_passes; i++)
+	for (int i = 0; i < m_settings.screen_space.bloom_blur_passes; i++)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, m_gaussian_blur.fbos[m_gaussian_blur.horizontal]);
 
@@ -860,6 +859,27 @@ void pge::OpenglRenderer::apply_bloom_blur()
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void pge::OpenglRenderer::set_constant_uniforms()
+{
+	m_lighting_shader.use()
+		.set("view_pos", m_camera->position)
+    	.set("camera_near", m_camera->near)
+    	.set("camera_far", m_camera->far)
+		.set("shadow_far", m_settings.shadow.distance);
+
+ 	m_const_data.vp_mat = m_camera->projection * m_camera->view;
+}
+
+void pge::OpenglRenderer::set_texture_settings(pge::TextureSettings settings)
+{
+	m_settings.texture = settings;
+}
+
+pge::TextureSettings pge::OpenglRenderer::get_texture_settings()
+{
+	return m_settings.texture;
 }
 
 

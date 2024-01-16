@@ -61,6 +61,12 @@ namespace pge
 		uint32_t draw_calls = 0;
 	};
 
+	struct TextureSettings
+	{
+		float anisotropic_level = 4;
+		float anisotropic_distance = 100;
+	};
+
     struct ShadowSettings
     {
 		int pcf_samples = 20;
@@ -74,9 +80,16 @@ namespace pge
 	struct ScreenSpaceSettings
 	{
 		float gamma = 1.4;
-		float exposure = 1;
-		float bright_threshold = 1;
+		float exposure = 2.7;
+		float bright_threshold = 1.4;
 		bool enable_bloom = true;
 		int bloom_blur_passes = 10;
+	};
+
+	struct AllRenderSettings
+	{
+		TextureSettings texture;
+		ShadowSettings shadow;
+		ScreenSpaceSettings screen_space;
 	};
 }

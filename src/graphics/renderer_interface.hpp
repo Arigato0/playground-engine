@@ -104,13 +104,14 @@ namespace pge
 
 		virtual IFramebuffer* get_render_framebuffer() = 0;
 
-		virtual void set_gamma(float value) = 0;
-
 		virtual void set_shadow_settings(ShadowSettings settings) = 0;
 		virtual ShadowSettings get_shadow_settings() = 0;
 
-		virtual void set_screen_space_settings(pge::ScreenSpaceSettings settings) = 0;
+		virtual void set_screen_space_settings(ScreenSpaceSettings settings) = 0;
 		virtual ScreenSpaceSettings get_color_settings() = 0;
+
+		virtual void set_texture_settings(TextureSettings settings) = 0;
+		virtual TextureSettings get_texture_settings() = 0;
 
 		virtual RenderStats get_stats() = 0;
 

@@ -103,26 +103,20 @@ namespace pge
             return opengl_error_message((OpenGlErrorCode)code);
         }
 
-		void set_gamma(float value) override
-		{
-			m_screen_shader.use();
-			m_screen_shader.set("gamma", value);
-		}
-
-        RendererProperties properties() override;
+		RendererProperties properties() override;
 
 		void set_shadow_settings(pge::ShadowSettings settings) override;
 
 		ShadowSettings get_shadow_settings() override
 		{
-			return m_shadow_settings;
+			return m_settings.shadow;
 		}
 
 		void set_screen_space_settings(pge::ScreenSpaceSettings settings) override;
 
 		ScreenSpaceSettings get_color_settings() override
 		{
-			return m_screen_space_settings;
+			return m_settings.screen_space;
 		}
 
 		RenderStats get_stats() override
@@ -130,7 +124,16 @@ namespace pge
 			return m_stats;
 		}
 
+		void set_texture_settings(TextureSettings settings) override;
+		TextureSettings get_texture_settings() override;
+
     private:
+
+		struct ConstantData
+		{
+			// the view projection matrix to be multiplied by the model
+			glm::mat4 vp_mat;
+		};
         // the default missing texture to use when unable to create a texture
         uint32_t m_missing_texture;
         // the texture id for the skybox
@@ -160,7 +163,6 @@ namespace pge
         RenderViewList m_render_views;
 		// the buffer all the meshes will get rendered to
 		GlFramebuffer m_render_buffer;
-
         // the screen buffer used for screen space rendering
         GlFramebuffer m_screen_buffer;
         // the buffer for the render output if offline renders are enabled
@@ -172,9 +174,10 @@ namespace pge
 		int sampler_start = 4;
 		GaussianBlur m_gaussian_blur;
 
-		ShadowSettings m_shadow_settings;
-		ScreenSpaceSettings m_screen_space_settings;
+		AllRenderSettings m_settings;
 		RenderStats m_stats;
+
+		ConstantData m_const_data;
 
         void draw_shaded_wireframe(const Mesh &mesh, glm::mat4 model);
 
@@ -194,7 +197,7 @@ namespace pge
 
         void handle_gl_buffer_delete();
 
-        void set_base_uniforms(const DrawData &data);
+        void set_model_uniforms(const DrawData &data);
 
         void create_screen_plane();
 
@@ -211,5 +214,8 @@ namespace pge
 		void render_to_framebuffer(pge::GlFramebuffer &fb);
 
 		void render_to_shadow_map(IFramebuffer *fb, glm::vec3 position);
-    };
+
+		// sets uniforms that do not change in between draw calls
+		void set_constant_uniforms();
+	};
 }

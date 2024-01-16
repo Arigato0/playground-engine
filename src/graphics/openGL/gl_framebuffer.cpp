@@ -110,6 +110,36 @@ void pge::GlFramebuffer::set_buffers(int width, int height)
 	glBindTexture(tex_target, 0);
 }
 
+void pge::GlFramebuffer::blit(pge::IFramebuffer *src, int width, int height, int attachment, int x, int y)
+{
+	auto gl_src = (GlFramebuffer*)src;
+
+	if (width == 0 && height == 0)
+	{
+		auto wh = Engine::window.framebuffer_size();
+		width = wh.first;
+		height = wh.second;
+	}
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, gl_src->fbo);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + attachment);
+
+	glBlitFramebuffer(x, y, width, height, x, y, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
+
+void pge::GlFramebuffer::blit_all_targets(pge::IFramebuffer *src, int width, int height, int x, int y)
+{
+	auto gl_src = (GlFramebuffer*)src;
+
+	for (int i = 0; i < texture_count && i < gl_src->texture_count; i++)
+	{
+		blit(src, width, height, i);
+	}
+}
+
 uint32_t pge::create_color_buffer(GlFramebuffer &fb)
 {
 	auto [width, height] = Engine::window.framebuffer_size();

@@ -50,19 +50,108 @@ vec4 pp_invert()
     return vec4(vec3(1 - texture(screen_texture, tex_coords)), 1);
 }
 
+// tonemapping functions yoinked from https://github.com/dmnsgn/glsl-tone-map and https://64.github.io/tonemapping/
+
+vec3 filmic(vec3 x)
+{
+  vec3 X = max(vec3(0.0), x - 0.004);
+  vec3 result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);
+  return pow(result, vec3(2.2));
+}
+
+vec3 hable_tonemap_partial(vec3 x)
+{
+    float A = 0.15f;
+    float B = 0.50f;
+    float C = 0.10f;
+    float D = 0.20f;
+    float E = 0.02f;
+    float F = 0.30f;
+    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+vec3 hable_filmic(vec3 v)
+{
+    vec3 curr = hable_tonemap_partial(v * exposure);
+
+    vec3 W = vec3(11.2f);
+    vec3 white_scale = vec3(1.0f) / hable_tonemap_partial(W);
+    return curr * white_scale;
+}
+
+vec3 reinhard(vec3 color)
+{
+    return vec3(1.0) - exp(-color * exposure);
+}
+
+vec3 reinhard2(vec3 x)
+{
+  const float L_white = 4.0;
+
+  return (x * (1.0 + x / (L_white * L_white))) / (1.0 + x);
+}
+
+vec3 lottes(vec3 x)
+{
+  const vec3 a = vec3(1.6);
+  const vec3 d = vec3(0.977);
+  const vec3 hdrMax = vec3(10.0);
+  const vec3 midIn = vec3(0.18);
+  const vec3 midOut = vec3(0.267);
+
+  const vec3 b =
+      (-pow(midIn, a) + pow(hdrMax, a) * midOut) /
+      ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
+  const vec3 c =
+      (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /
+      ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
+
+  return pow(x, a) / (pow(x, a * d) * b + c);
+}
+
+vec3 uchimura(vec3 x, float P, float a, float m, float l, float c, float b)
+{
+  float l0 = ((P - m) * l) / a;
+  float L0 = m - m / a;
+  float L1 = m + (1.0 - m) / a;
+  float S0 = m + l0;
+  float S1 = m + a * l0;
+  float C2 = (a * P) / (P - S1);
+  float CP = -C2 / P;
+
+  vec3 w0 = vec3(1.0 - smoothstep(0.0, m, x));
+  vec3 w2 = vec3(step(m + l0, x));
+  vec3 w1 = vec3(1.0 - w0 - w2);
+
+  vec3 T = vec3(m * pow(x / m, vec3(c)) + b);
+  vec3 S = vec3(P - (P - S1) * exp(CP * (x - S0)));
+  vec3 L = vec3(m + a * (x - m));
+
+  return T * w0 + L * w1 + S * w2;
+}
+
+vec3 uchimura(vec3 x)
+{
+  const float P = 1.0;  // max display brightness
+  const float a = 1.0;  // contrast
+  const float m = 0.22; // linear section start
+  const float l = 0.4;  // linear section length
+  const float c = 1.33; // black
+  const float b = 0.0;  // pedestal
+
+  return uchimura(x, P, a, m, l, c, b);
+}
+
 void main()
 {
     vec3 screen_color = texture(screen_texture, tex_coords).rgb;
-
-//    frag_color = texture(bloom_texture, tex_coords).rgb;
-//    return;
 
     if (enable_bloom)
     {
         screen_color += texture(bloom_texture, tex_coords).rgb;
     }
 
-    vec3 mapped = vec3(1.0) - exp(-screen_color * exposure);
+    vec3 mapped = hable_filmic(screen_color);
 
     mapped = pow(mapped, vec3(1.0 / gamma));
 

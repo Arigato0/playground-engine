@@ -605,6 +605,20 @@ public:
 						}
 					}
 
+					{
+						ImGui::SeparatorText("Textures");
+
+						auto changed = false;
+						auto settings = Engine::renderer->get_texture_settings();
+
+						CHECK_CHANGE(changed, ImGui::DragFloat("anisotropic level", &settings.anisotropic_level, 1, 0));
+
+						if (changed)
+						{
+							Engine::renderer->set_texture_settings(settings);
+						}
+					}
+
 					ImGui::SeparatorText("Debug Visualize");
 
                     ImGui::Checkbox("Wireframe", &enable_wireframe);
@@ -895,10 +909,10 @@ void init_room_scene()
 
 //    for (auto &mesh : skull_mesh->model.meshes)
 //    {
-//        mesh.material.use_alpha = true;
-//        mesh.material.alpha = 0.3f;
+////        mesh.material.use_alpha = true;
+////        mesh.material.alpha = 0.3f;
 //        mesh.material.color = {1, 0.161, 0.933};
-//		mesh.material.emission = 5;
+//		mesh.material.emission = 3;
 //		mesh.material.cast_shadow = false;
 //		mesh.material.bump.enabled = false;
 //    }
@@ -987,8 +1001,8 @@ int main()
     //init_grass_scene();
 
 	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
-    init_room_scene();
-//	init_sponza_scene();
+//    init_room_scene();
+	init_sponza_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");
