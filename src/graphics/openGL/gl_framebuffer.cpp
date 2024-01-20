@@ -21,8 +21,10 @@ pge::GlFramebuffer::~GlFramebuffer()
     glDeleteRenderbuffers(1, &rbo);
     glDeleteTextures(texture_count, textures);
 
-	// TODO uncommenting this causes a segfault investigate why
-    //Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
+	if (m_on_resize_con)
+	{
+    	Engine::window.on_framebuffer_resize.disconnect(m_on_resize_con);
+	}
 }
 
 uint32_t pge::GlFramebuffer::get_texture() const
@@ -184,6 +186,11 @@ uint32_t pge::create_color_buffer(GlFramebuffer &fb)
 	glBindTexture(fb.tex_target, 0);
 
 	fb.m_on_resize_con = Engine::window.on_framebuffer_resize.connect(&fb, &GlFramebuffer::on_resize);
+
+	if (fb.m_on_resize_con == nullptr)
+	{
+		Logger::info("is null");
+	}
 
     return OPENGL_ERROR_OK;
 }

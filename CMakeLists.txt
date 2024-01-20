@@ -7,7 +7,7 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm lib/assimp/include)
+include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm lib/assimp/include src/)
 add_subdirectory("lib")
 add_subdirectory("lib/glm/")
 add_subdirectory("lib/assimp")
@@ -63,8 +63,8 @@ add_library(playgroundEngineLib
         "src/game/entity_manager.cpp"
         "src/application/statistics.cpp"
         "src/application/statistics.hpp"
-        "src/application/dialog.cpp"
-        "src/application/dialog.hpp"
+        "src/application/platform/dialog.cpp"
+        "src/application/platform/dialog.hpp"
         "src/graphics/renderer_interface.hpp"
         "src/graphics/model.hpp"
         "src/graphics/openGL/opengl_renderer.cpp"
@@ -110,6 +110,14 @@ add_library(playgroundEngineLib
         src/common_util/os.hpp
         src/graphics/openGL/gaussian_blur.cpp
         src/graphics/openGL/gaussian_blur.hpp
+        src/application/platform/linux/linux_file_monitor.cpp
+        src/application/platform/linux/linux_file_monitor.hpp
+        src/application/platform/fs_monitor.hpp
+        src/application/platform/fs_events.hpp
+        src/application/platform/linux/linux_dialog.cpp
+        src/application/platform/linux/linux_dialog.hpp
+        src/application/platform/linux/linux_fs_monitor.cpp
+        src/application/platform/linux/linux_fs_monitor.hpp
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)

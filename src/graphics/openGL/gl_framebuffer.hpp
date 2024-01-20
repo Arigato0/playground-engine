@@ -35,11 +35,11 @@ namespace pge
 
 		Image get_image() const override;
 
-        Connection<void, IWindow*, int, int> *m_on_resize_con;
-
         void on_resize(IWindow*, int width, int height);
 
 		void set_buffers(int width, int height);
+
+        Connection<void, IWindow*, int, int> *m_on_resize_con = nullptr;
 	};
 
 	uint32_t create_color_buffer(GlFramebuffer &fb);

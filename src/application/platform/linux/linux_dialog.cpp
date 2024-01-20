@@ -1,15 +1,11 @@
-#include "dialog.hpp"
+#pragma once
 
+#include "linux_dialog.hpp"
+#include "../../fmt.hpp"
+#include "common_util/defer.hpp"
 #include <cstdio>
-#include <string>
 
-#include "fmt.hpp"
-#include "log.hpp"
-#include "../common_util/defer.hpp"
-
-constexpr int MAX_PATH = 256;
-
-std::optional<std::filesystem::path> linux_native_dialog(std::string_view start_dir)
+std::optional<std::filesystem::path> pge::linux_native_dialog(std::string_view start_dir)
 {
     std::string_view gde = getenv("XDG_CURRENT_DESKTOP");
 
@@ -38,7 +34,7 @@ std::optional<std::filesystem::path> linux_native_dialog(std::string_view start_
 
     std::string buffer;
 
-    buffer.reserve(MAX_PATH);
+    buffer.reserve(256);
 
     char c = fgetc(f);
 
@@ -49,11 +45,4 @@ std::optional<std::filesystem::path> linux_native_dialog(std::string_view start_
     }
 
     return buffer;
-}
-
-std::optional<std::filesystem::path> pge::native_file_dialog(std::string_view start_dir)
-{
-#if defined(__linux__)
-    return linux_native_dialog(start_dir);
-#endif
 }

@@ -10,7 +10,7 @@
 #include <map>
 #include <thread>
 
-#include "application/dialog.hpp"
+#include "application/platform/dialog.hpp"
 #include "application/engine.hpp"
 #include "game/ecs.hpp"
 #include "application/imgui_handler.hpp"
@@ -26,6 +26,7 @@
 #include "graphics/util.hpp"
 
 #include "misc/cpp/imgui_stdlib.h"
+#include "application/platform/linux/linux_file_monitor.hpp"
 
 class LightComp;
 using namespace pge;
@@ -863,7 +864,7 @@ void init_sponza_scene()
 
 	for (auto &mesh : sponza_mesh->model.meshes)
 	{
-		mesh.material.bump.enabled = false;
+//		mesh.material.bump.enabled = false;
 		mesh.material.use_alpha = true;
 	}
 
