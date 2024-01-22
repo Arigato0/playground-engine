@@ -14,9 +14,12 @@ namespace pge
 	public:
 		using Callback = Signal<void(int)>;
 
-		bool init();
+		LinuxFsMonitor();
+		~LinuxFsMonitor();
+
 		bool add_watch(std::string_view path, FS_EVENTS events, Callback callback);
 		bool remove_watch(std::string_view path);
+		int poll();
 
 	private:
 		int m_fd;

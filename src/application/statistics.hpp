@@ -42,9 +42,15 @@ namespace pge
             };
         }
 
+		bool one_second_elapsed() const
+		{
+			return m_delta_elapsed >= 1.0f;
+		}
+
     private:
         double   m_previous_time = program_time();
         double	 m_delta_time;
+		double   m_delta_elapsed;
         uint32_t m_fps;
     };
 }

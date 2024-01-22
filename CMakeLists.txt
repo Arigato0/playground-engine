@@ -7,10 +7,12 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm lib/assimp/include src/)
+include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm lib/assimp/include
+        lib/unordered_dense/include/ src/)
 add_subdirectory("lib")
 add_subdirectory("lib/glm/")
 add_subdirectory("lib/assimp")
+add_subdirectory("lib/unordered_dense")
 
 add_library(playgroundEngineLib
         lib/glad/src/glad.c
@@ -96,7 +98,7 @@ add_library(playgroundEngineLib
         "src/graphics/openGL/gl_framebuffer.hpp"
         "src/graphics/openGL/gl_buffers.cpp"
         "src/graphics/openGL/gl_buffers.hpp"
-        "src/data/map.hpp"
+        "src/data/hash_table.hpp"
         "src/graphics/util.hpp"
         "src/graphics/util.hpp"
         "src/graphics/util.hpp"
@@ -120,4 +122,4 @@ add_library(playgroundEngineLib
         src/application/platform/linux/linux_fs_monitor.hpp
 )
 
-target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp)
+target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp unordered_dense::unordered_dense)

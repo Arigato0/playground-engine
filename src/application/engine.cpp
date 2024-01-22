@@ -59,6 +59,11 @@ pge::ErrorCode pge::Engine::run()
 
         statistics.calculate();
 
+		if (statistics.one_second_elapsed())
+		{
+			// per second logic goes here
+		}
+
         imgui_new_frame();
 
         entity_manager.update(statistics.delta_time());

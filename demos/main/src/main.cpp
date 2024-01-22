@@ -965,6 +965,8 @@ private:
 	inline static int m_count = 0;
 };
 
+#include "data/hash_table.hpp"
+
 int main()
 {
     ASSERT_ERR(Engine::init({
@@ -1022,4 +1024,5 @@ int main()
     ASSERT_ERR(Engine::run());
 
     Engine::shutdown();
+
 }

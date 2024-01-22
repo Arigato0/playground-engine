@@ -182,6 +182,20 @@ namespace pge
             m_name(other.m_name)
         {}
 
+		Entity& operator=(Entity &&other)
+		{
+		 	m_id = other.m_id;
+            m_components = std::move(other.m_components);
+            m_name = other.m_name;
+
+			return *this;
+		}
+
+		bool operator==(const Entity &other)
+		{
+			return m_id == other.id();
+		}
+
         void update_components(double delta_time)
         {
             for (auto &[_, component] : m_components)

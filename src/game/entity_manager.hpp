@@ -4,7 +4,8 @@
 #include <unordered_map>
 
 #include "ecs.hpp"
-#include "../common_util/misc.hpp"
+#include "common_util/misc.hpp"
+#include "data/hash_table.hpp"
 
 namespace pge
 {
@@ -12,7 +13,7 @@ namespace pge
     class EntityManager
     {
     public:
-        using EntityTable = std::unordered_map<std::string, Entity, ENABLE_TRANSPARENT_HASH>;
+        using EntityTable = HashMap<std::string, Entity, ENABLE_TRANSPARENT_HASH>;
         void start();
 
         void update(double delta_time);
@@ -85,8 +86,9 @@ namespace pge
 
         void erase(std::string_view name)
         {
-            auto iter = m_entities.find(name);
-            m_entities.erase(iter);
+			m_entities.erase(name);
+//            auto iter = m_entities.find(name);
+//            m_entities.erase(iter);
         }
 
         void clear()
