@@ -112,8 +112,6 @@ add_library(playgroundEngineLib
         src/common_util/os.hpp
         src/graphics/openGL/gaussian_blur.cpp
         src/graphics/openGL/gaussian_blur.hpp
-        src/application/platform/linux/linux_file_monitor.cpp
-        src/application/platform/linux/linux_file_monitor.hpp
         src/application/platform/fs_monitor.hpp
         src/application/platform/fs_events.hpp
         src/application/platform/linux/linux_dialog.cpp

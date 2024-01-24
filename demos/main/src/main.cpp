@@ -26,7 +26,6 @@
 #include "graphics/util.hpp"
 
 #include "misc/cpp/imgui_stdlib.h"
-#include "application/platform/linux/linux_file_monitor.hpp"
 
 class LightComp;
 using namespace pge;
@@ -965,11 +964,9 @@ private:
 	inline static int m_count = 0;
 };
 
-#include "data/hash_table.hpp"
-
-int main()
+void run_engine()
 {
-    ASSERT_ERR(Engine::init({
+	ASSERT_ERR(Engine::init({
             .title = "playground engine",
             .window_size = {1920, 1080},
             .graphics_api = GraphicsApi::OpenGl,
@@ -1024,5 +1021,42 @@ int main()
     ASSERT_ERR(Engine::run());
 
     Engine::shutdown();
+}
 
+#include "data/hash_table.hpp"
+#include "application/platform/fs_monitor.hpp"
+#include "application/platform/fs_events.hpp"
+
+int main()
+{
+//    run_engine();
+	FsMonitor monitor;
+
+	int wd;
+
+	wd = monitor.add_watch("test.txt", FSE_MODIFY, [&monitor, &wd](int events, std::string_view path)
+	{
+		fmt::println("file was modified");
+	});
+
+	monitor.add_watch("./", FSE_MODIFY | FSE_ONE_SHOT, [&monitor, &wd](int _, std::string_view path)
+	{
+		fmt::println("file {} was modified in root dir", path);
+	});
+
+	while (true)
+	{
+		auto start = std::chrono::high_resolution_clock::now();
+
+		auto monitors_called = monitor.poll();
+
+		auto end = std::chrono::high_resolution_clock::now();
+
+		if (monitors_called > 0)
+		{
+			Logger::info("monitors called in {}", std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count());
+
+//			break;
+		}
+	}
 }

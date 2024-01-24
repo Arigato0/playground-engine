@@ -13,5 +13,5 @@ namespace pge
 			  class KeyEqual = std::equal_to<Key>,
 			  class AllocatorOrContainer = std::allocator<std::pair<Key, T>>,
 			  class Bucket = ankerl::unordered_dense::bucket_type::standard>
-    using HashMap = ankerl::unordered_dense::segmented_map<Key, T, Hash, KeyEqual, AllocatorOrContainer, Bucket>;
+    using HashMap = ankerl::unordered_dense::map<Key, T, Hash, KeyEqual, AllocatorOrContainer, Bucket>;
 }
