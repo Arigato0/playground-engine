@@ -4,6 +4,7 @@
 #include <utility>
 #include <filesystem>
 #include <initializer_list>
+#include <vector>
 
 #define PGE_SHADER_PATH "./src/shaders/"
 #define PGE_FIND_SHADER(s) PGE_SHADER_PATH s
@@ -17,7 +18,9 @@ namespace pge
 		Geometry,
     };
 
-    using ShaderList = std::initializer_list<
+	constexpr int MAX_SHADERS_TYPES = 3;
+
+    using ShaderList = std::vector<
             std::pair<const std::filesystem::path, ShaderType>>;
 
     class IShader

@@ -59,9 +59,15 @@ pge::ErrorCode pge::Engine::run()
 
         statistics.calculate();
 
+		// per second logic goes here
 		if (statistics.one_second_elapsed())
 		{
-			// per second logic goes here
+			auto monitors_called = fs_monitor.poll();
+
+			if (monitors_called)
+			{
+				Logger::info("called {} monitors", monitors_called);
+			}
 		}
 
         imgui_new_frame();

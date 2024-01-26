@@ -18,9 +18,7 @@ namespace pge
     public:
         ~GlShader() override;
 
-        uint32_t create(
-            std::initializer_list<
-            std::pair<const std::filesystem::path, ShaderType>> shaders) override;
+        uint32_t create(ShaderList shaders) override;
 
         IShader& use() override
         {
@@ -72,7 +70,6 @@ namespace pge
 
     private:
         uint32_t m_program = -1;
-
-        Result<uint32_t, OpenGlErrorCode> load_file(const std::filesystem::path &path, ShaderType type);
+		std::array<int, MAX_SHADERS_TYPES> m_monitors = {-1};
     };
 }

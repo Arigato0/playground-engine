@@ -394,7 +394,7 @@ void pge::OpenglRenderer::handle_lighting()
     {
         auto *light = *light_iter++;
 
-        if (light == nullptr)
+        if (light == nullptr || !light->is_active)
         {
             continue;
         }

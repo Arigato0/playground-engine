@@ -13,7 +13,7 @@ namespace pge
     class EntityManager
     {
     public:
-        using EntityTable = HashMap<std::string, Entity, ENABLE_TRANSPARENT_HASH>;
+        using EntityTable = std::unordered_map<std::string, Entity, ENABLE_TRANSPARENT_HASH>;
         void start();
 
         void update(double delta_time);
@@ -86,9 +86,9 @@ namespace pge
 
         void erase(std::string_view name)
         {
-			m_entities.erase(name);
-//            auto iter = m_entities.find(name);
-//            m_entities.erase(iter);
+//			m_entities.erase(name);
+            auto iter = m_entities.find(name);
+            m_entities.erase(iter);
         }
 
         void clear()

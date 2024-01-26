@@ -24,6 +24,9 @@
 #include "game/camera_comp.hpp"
 #include "graphics/light.hpp"
 #include "graphics/util.hpp"
+#include "data/hash_table.hpp"
+#include "application/platform/fs_monitor.hpp"
+#include "application/platform/fs_events.hpp"
 
 #include "misc/cpp/imgui_stdlib.h"
 
@@ -109,7 +112,7 @@ public:
                     "Load mesh",
                     [&]
                     {
-                        auto path = native_file_dialog("~");
+                        auto path = native_file_dialog("./assets/models/");
 
                         if (!path)
                         {
@@ -1018,45 +1021,18 @@ void run_engine()
 
     auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 
+	Engine::fs_monitor.add_watch("test.txt", FSE_MODIFY,
+	[](int events, std::string_view path)
+	{
+		Logger::info("file was modified");
+	});
+
     ASSERT_ERR(Engine::run());
 
     Engine::shutdown();
 }
 
-#include "data/hash_table.hpp"
-#include "application/platform/fs_monitor.hpp"
-#include "application/platform/fs_events.hpp"
-
 int main()
 {
-//    run_engine();
-	FsMonitor monitor;
-
-	int wd;
-
-	wd = monitor.add_watch("test.txt", FSE_MODIFY, [&monitor, &wd](int events, std::string_view path)
-	{
-		fmt::println("file was modified");
-	});
-
-	monitor.add_watch("./", FSE_MODIFY | FSE_ONE_SHOT, [&monitor, &wd](int _, std::string_view path)
-	{
-		fmt::println("file {} was modified in root dir", path);
-	});
-
-	while (true)
-	{
-		auto start = std::chrono::high_resolution_clock::now();
-
-		auto monitors_called = monitor.poll();
-
-		auto end = std::chrono::high_resolution_clock::now();
-
-		if (monitors_called > 0)
-		{
-			Logger::info("monitors called in {}", std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count());
-
-//			break;
-		}
-	}
+    run_engine();
 }

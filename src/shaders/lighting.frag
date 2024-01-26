@@ -233,6 +233,7 @@ vec4 calculate_depth()
 
 void main()
 {
+
     if (visualize_depth)
     {
         frag_color = calculate_depth();

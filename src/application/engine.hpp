@@ -8,6 +8,7 @@
 #include "../graphics/vulkan/vulkan_manager.hpp"
 #include "window.hpp"
 #include "../data/asset_manager.hpp"
+#include "application/platform/fs_monitor.hpp"
 
 namespace pge
 {
@@ -33,6 +34,7 @@ namespace pge
 		inline static IRenderer	   *renderer;
 		inline static Statistics	statistics;
 		inline static AssetManager	asset_manager;
+		inline static FsMonitor 	fs_monitor;
 		inline static float			time_scale = 1;
 	private:
 		inline static bool m_initialized = false;
