@@ -8,11 +8,15 @@
 #include "../../application/log.hpp"
 #include "../../application/error.hpp"
 #include "../../common_util/macros.hpp"
+#include "data/hash_table.hpp"
 
 #include <glad/glad.h>
+#include <common_util/misc.hpp>
 
 namespace pge
 {
+	void set_uniform(uint32_t program, std::string_view name, const pge::UniformValue &value);
+
     class GlShader : public IShader
     {
     public:
@@ -30,6 +34,7 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform1i(location, value);
+			m_cache[name] = value;
 			return *this;
         }
 
@@ -37,6 +42,7 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform1f(location, value);
+			m_cache[name] = value;
 			return *this;
         }
 
@@ -44,6 +50,7 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform2f(location, EXPAND_VEC2(value));
+			m_cache[name] = value;
 			return *this;
         }
 
@@ -51,6 +58,7 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform3f(location, EXPAND_VEC3(value));
+			m_cache[name] = value;
 			return *this;
         }
 
@@ -58,6 +66,7 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniform4f(location, EXPAND_VEC4(value));
+			m_cache[name] = value;
 			return *this;
         }
 
@@ -65,11 +74,16 @@ namespace pge
         {
             auto location = glGetUniformLocation(m_program, name.data());
             glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+			m_cache[name] = value;
 			return *this;
         }
 
     private:
         uint32_t m_program = -1;
+		int m_count = 0;
 		std::array<int, MAX_SHADERS_TYPES> m_monitors = {-1};
+		// a cache for uniforms used to set uniforms to their previous state when shaders reload
+		HashMap<std::string, UniformValue, ENABLE_TRANSPARENT_HASH> m_cache;
     };
 }
+

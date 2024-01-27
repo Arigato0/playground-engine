@@ -28,7 +28,6 @@ pge::Result<unsigned, pge::OpenGlErrorCode> load_file(const std::filesystem::pat
 
     if (contents.empty())
     {
-		Logger::info("contents empty {}", path);
         return pge::OPENGL_ERROR_SHADER_CREATION;
     }
 
@@ -99,6 +98,11 @@ uint32_t make_program(pge::ShaderList shaders, uint32_t &out_program)
 pge::GlShader::~GlShader()
 {
     glDeleteProgram(m_program);
+
+	for (int i = 0; i < m_count; i++)
+	{
+		Engine::fs_monitor.remove_watch(m_monitors[i]);
+	}
 }
 
 uint32_t pge::GlShader::create(pge::ShaderList shaders)
@@ -108,15 +112,58 @@ uint32_t pge::GlShader::create(pge::ShaderList shaders)
 		for (auto i = 0; auto &[path, _] : shaders)
 		{
 			m_monitors[i] = Engine::fs_monitor.add_watch(path.c_str(), FSE_MODIFY,
-			[&program = m_program, shaders](int mask, std::string_view _)
+			[&program = m_program, &cache = m_cache, shaders](int mask, std::string_view _)
 			{
 				glDeleteProgram(program);
 				make_program(shaders, program);
+
+				glUseProgram(program);
+
+				for (auto &[name, value] : cache)
+				{
+					set_uniform(program, name, value);
+				}
 			});
 
 			i++;
 		}
 	}
 
+	m_count = shaders.count();
+
     return make_program(shaders, m_program);
+}
+
+void pge::set_uniform(uint32_t program, std::string_view name, const pge::UniformValue &value)
+{
+	auto location = glGetUniformLocation(program, name.data());
+
+	std::visit(overload
+	{
+		[location](int value)
+		{
+			glUniform1i(location, value);
+		},
+		[location](float value)
+		{
+			glUniform1f(location, value);
+		},
+		[location](glm::vec2 value)
+		{
+			glUniform2f(location, EXPAND_VEC2(value));
+		},
+		[location](glm::vec3 value)
+		{
+			glUniform3f(location, EXPAND_VEC3(value));
+		},
+		[location](glm::vec4 value)
+		{
+			glUniform4f(location, EXPAND_VEC4(value));
+		},
+		[location](glm::mat4 value)
+		{
+			glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+		},
+
+	}, value);
 }

@@ -4,7 +4,8 @@
 #include <utility>
 #include <filesystem>
 #include <initializer_list>
-#include <vector>
+#include <array>
+#include <variant>
 
 #define PGE_SHADER_PATH "./src/shaders/"
 #define PGE_FIND_SHADER(s) PGE_SHADER_PATH s
@@ -20,8 +21,43 @@ namespace pge
 
 	constexpr int MAX_SHADERS_TYPES = 3;
 
-    using ShaderList = std::vector<
-            std::pair<const std::filesystem::path, ShaderType>>;
+	using UniformValue = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4>;
+	using ShaderPath = std::pair<std::filesystem::path, ShaderType>;
+
+	class ShaderList
+	{
+	public:
+
+		ShaderList(std::initializer_list<ShaderPath> list) :
+			m_count(list.size())
+		{
+			for (auto i = 0; auto &path : list)
+			{
+				m_paths[i] = path;
+				i++;
+			}
+		}
+
+		ShaderPath* begin()
+		{
+			return m_paths.begin();
+		}
+
+		ShaderPath* end()
+		{
+			return &m_paths[m_count];
+		}
+
+		[[nodiscard]]
+		int count() const
+		{
+			return m_count;
+		}
+
+	private:
+		int m_count = 0;
+		std::array<ShaderPath, MAX_SHADERS_TYPES> m_paths;
+	};
 
     class IShader
     {
