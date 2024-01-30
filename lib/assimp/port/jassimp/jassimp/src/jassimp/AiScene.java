@@ -173,7 +173,7 @@ public final class AiScene {
      * @return the number of cameras
      */
     public int getNumCameras() {
-        return m_cameras.size();
+        return m_render_views.size();
     }
     
     
@@ -185,7 +185,7 @@ public final class AiScene {
      * @return a possibly empty list of cameras
      */
     public List<AiCamera> getCameras() {
-        return m_cameras;
+        return m_render_views;
     }
 
     
@@ -241,7 +241,7 @@ public final class AiScene {
     /**
      * Cameras.
      */
-    private final List<AiCamera> m_cameras = new ArrayList<AiCamera>();
+    private final List<AiCamera> m_render_views = new ArrayList<AiCamera>();
     
     
     /**
