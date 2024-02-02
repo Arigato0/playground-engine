@@ -78,9 +78,22 @@ namespace pge
 			return *this;
         }
 
+//		 IShader& set(std::string_view name, const UniformValue &&value) override
+//        {
+//			set_uniform(m_program, name, value);
+//			m_cache[name] = value;
+//			return *this;
+//        }
+
+		[[nodiscard]]
+		uint32_t get_program() const
+		{
+			return m_program;
+		}
+
     private:
-        uint32_t m_program = -1;
-		int m_count = 0;
+        uint32_t m_program = 0;
+		uint32_t m_count = 0;
 		std::array<int, MAX_SHADERS_TYPES> m_monitors = {-1};
 		// a cache for uniforms used to set uniforms to their previous state when shaders reload
 		HashMap<std::string, UniformValue, ENABLE_TRANSPARENT_HASH> m_cache;

@@ -4,6 +4,8 @@
 #include "../../fmt.hpp"
 #include "common_util/defer.hpp"
 #include <cstdio>
+#include <sys/poll.h>
+#include <sys/ioctl.h>
 
 std::optional<std::filesystem::path> pge::linux_native_dialog(std::string_view start_dir)
 {
@@ -20,7 +22,7 @@ std::optional<std::filesystem::path> pge::linux_native_dialog(std::string_view s
         cmd_name = "zenity --file-selection";
     }
 
-    FILE *f = popen(cmd_name.c_str(), "r");
+    auto *f = popen(cmd_name.c_str(), "r");
 
     if (f == nullptr)
     {
@@ -32,9 +34,26 @@ std::optional<std::filesystem::path> pge::linux_native_dialog(std::string_view s
         pclose(f);
     });
 
+	pollfd pfd
+	{
+		.fd = f->_fileno,
+		.events = POLLIN
+	};
+
+	auto result = poll(&pfd, 1, 0);
+
+	if (result < 0)
+	{
+		return std::nullopt;
+	}
+
+	uint32_t bytes_to_read;
+
+	ioctl(f->_fileno, FIONREAD, &bytes_to_read);
+
     std::string buffer;
 
-    buffer.reserve(256);
+    buffer.reserve(bytes_to_read);
 
     char c = fgetc(f);
 

@@ -1,4 +1,5 @@
 #include <bits/stl_algo.h>
+#include <filesystem>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
@@ -141,7 +142,7 @@ public:
             {
                 START_GROUP,
                 SEPERATOR(mesh.name),
-                {"Recieve light", &material.recieve_lighting},
+                {"Recieve light", &material.receive_lighting},
 				{"Cast shadow", &material.cast_shadow},
 				{"Contribute bloom", &material.contribute_bloom},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
@@ -153,6 +154,8 @@ public:
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
                 {"Enable texture", &material.diffuse.enabled},
 				{"Enable normals", &material.bump.enabled},
+				{"Enable depth", &material.depth.enabled},
+				{"Depth Strength", DragControl(&material.depth_strength)},
 				{"Normal strength", DragControl(&material.bump_strength)},
 				{"Flip normals", &material.flip_normals},
                 {"Set Diffuse", [&mesh]
@@ -853,24 +856,24 @@ std::pair<Entity*, MeshRenderer*> create_mesh(std::string_view name, std::string
 
 void init_sponza_scene()
 {
-	 auto light_ent = Engine::entity_manager.create<LightComp>("Light");
+	auto light_ent = Engine::entity_manager.create<LightComp>("Light");
 
     light_ent->transform.translate({2, 15, -1});
 	auto light = light_ent->find<LightComp>();
 
 	light->data.power = 4;
 
-
 	auto [sponza_ent, sponza_mesh] = create_mesh("sponza", "/home/arian/Downloads/sponza/sponza.obj");
 	sponza_ent->transform.scale(glm::vec3{0.01});
 
 	for (auto &mesh : sponza_mesh->model.meshes)
 	{
-//		mesh.material.bump.enabled = false;
+		mesh.material.depth.enabled = mesh.material.bump.enabled;
+		mesh.material.bump.enabled = false;
 		mesh.material.use_alpha = true;
 	}
 
-	create_mesh("gun", "/home/arian/Downloads/beretta_686_e/scene.gltf");
+
 }
 
 void init_room_scene()
@@ -896,7 +899,7 @@ void init_room_scene()
     auto &window_material = window_mesh->model.meshes.front().material;
     window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
     window_material.shininess = 1;
-    window_material.recieve_lighting = false;
+    window_material.receive_lighting = false;
     window_material.use_alpha = true;
 
 //	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
@@ -919,6 +922,18 @@ void init_room_scene()
 //		mesh.material.cast_shadow = false;
 //		mesh.material.bump.enabled = false;
 //    }
+
+	auto [wall_ent, wall_mesh_comp] = create_mesh("wall", "assets/models/primitives/plane.glb");
+
+	wall_ent->transform.translate({0, 1, 0});
+	wall_ent->transform.rotate(90, {1, 0, 0});
+	wall_ent->transform.rotate(-180, {0, 0, 1});
+
+	auto &wall_mesh = wall_mesh_comp->model.meshes.front();
+	wall_mesh.material.diffuse = *Engine::asset_manager.get_texture("/home/arian/Downloads/wood.png");
+	wall_mesh.material.bump = *Engine::asset_manager.get_texture("/home/arian/Downloads/toy_box_normal.png");
+	wall_mesh.material.depth = *Engine::asset_manager.get_texture("/home/arian/Downloads/toy_box_disp.png");
+	wall_mesh.material.depth_strength = 0.2;
 }
 
 PGE_COMPONENT(CameraViewComp)
@@ -969,6 +984,8 @@ private:
 
 void run_engine()
 {
+    fmt::println("{}", std::filesystem::current_path());
+    
 	ASSERT_ERR(Engine::init({
             .title = "playground engine",
             .window_size = {1920, 1080},
@@ -982,30 +999,26 @@ void run_engine()
 
     register_components<MeshRenderer, LightComp>();
 
-    std::array<std::string_view, 6> skybox_faces
-    {
-        "assets/skybox/Daylight Box_Pieces/Daylight Box_Right.bmp",
-        "assets/skybox/Daylight Box_Pieces/Daylight Box_Left.bmp",
-        "assets/skybox/Daylight Box_Pieces/Daylight Box_Top.bmp",
-        "assets/skybox/Daylight Box_Pieces/Daylight Box_Bottom.bmp",
-        "assets/skybox/Daylight Box_Pieces/Daylight Box_Front.bmp",
-        "assets/skybox/Daylight Box_Pieces/Daylight Box_Back.bmp"
-    };
+     std::array<std::string_view, 6> skybox_faces
+     {
+         "assets/skybox/Daylight Box_Pieces/Daylight Box_Right.bmp",
+         "assets/skybox/Daylight Box_Pieces/Daylight Box_Left.bmp",
+         "assets/skybox/Daylight Box_Pieces/Daylight Box_Top.bmp",
+         "assets/skybox/Daylight Box_Pieces/Daylight Box_Bottom.bmp",
+         "assets/skybox/Daylight Box_Pieces/Daylight Box_Front.bmp",
+         "assets/skybox/Daylight Box_Pieces/Daylight Box_Back.bmp"
+     };
 
-    uint32_t skybox_texture;
+     uint32_t skybox_texture;
 
-    auto result = Engine::renderer->create_cubemap_from_path(skybox_faces, skybox_texture);
+     auto result = Engine::renderer->create_cubemap_from_path(skybox_faces, skybox_texture);
 
-    assert(result == 0);
+     assert(result == 0);
 
-    Engine::renderer->set_skybox(skybox_texture);
+     Engine::renderer->set_skybox(skybox_texture);
 
-    // Engine::renderer->set_offline(true);
-    //init_grass_scene();
-
-	//create_mesh("test_cube", "/home/arian/Downloads/test_cube.gltf");
-//    init_room_scene();
-	init_sponza_scene();
+    init_room_scene();
+//	 init_sponza_scene();
 
 // 	Engine::entity_manager.create<CameraViewComp>("CameraView");
 //	Engine::entity_manager.create<CameraViewComp>("CameraView2");
@@ -1018,14 +1031,8 @@ void run_engine()
  * glm::mat4 transforms[];
  * mesh.set_instances(transforms);
  */
-
-    auto player = Engine::entity_manager.create<PlayerController, CameraComp>("Player");
-
-	Engine::fs_monitor.add_watch("test.txt", FSE_MODIFY,
-	[](int events, std::string_view path)
-	{
-		Logger::info("file was modified");
-	});
+    
+    Engine::entity_manager.create<PlayerController, CameraComp>("Player");
 
     ASSERT_ERR(Engine::run());
 

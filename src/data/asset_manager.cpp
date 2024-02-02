@@ -59,12 +59,13 @@ pge::Texture* pge::AssetManager::get_texture(std::string_view path, bool flip, T
 
         auto result = Engine::renderer->create_texture_from_path(path, texture.id, TextureOptions{});
 
-        texture.path = path;
-
         if (result != 0)
         {
             return nullptr;
         }
+
+        texture.path = path;
+		texture.enabled = true;
 
         return set_asset(key, texture);
     }

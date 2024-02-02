@@ -21,7 +21,7 @@ uniform bool enable_soft_shadows;
 
 in vec3 frag_pos;
 in vec3 normals;
-in vec2 text_cord;
+in vec2 tex_coords;
 
 in mat3 TBN;
 
@@ -35,6 +35,8 @@ struct Material
 {
     Texture diffuse;
     Texture bump;
+    Texture depth;
+    float depth_strength;
     float bump_strength;
     float specular;
     float shininess;
@@ -93,14 +95,14 @@ float get_attenuation(Light light)
     		    light.quadratic * (distance * distance));
 }
 
-vec3 create_texture(Texture text)
+vec4 create_texture(Texture text, vec2 coords)
 {
     if (!text.enabled)
     {
-        return material.color;
+        return vec4(material.color, 1);
     }
 
-    return vec3(texture(text.sampler, text_cord * texture_scale));
+    return texture(text.sampler, coords * texture_scale);
 }
 
 struct LightingData
@@ -231,27 +233,71 @@ vec4 calculate_depth()
     return vec4(vec3(linear_depth / camera_far), 1.0);
 }
 
+vec2 parallax_coords(vec3 view_dir)
+{
+    const float min_layers = 8.0;
+    const float max_layers = 32.0;
+    const float layers = mix(max_layers, min_layers, max(dot(vec3(0.0, 0.0, 1.0), view_dir), 0.0));
+
+    float layer_depth = 1 / layers;
+
+    float current_layer_depth = 0;
+
+    vec2 p = view_dir.xy * material.depth_strength;
+    vec2 delta_coords = p / layers;
+
+    float height =  texture(material.depth.sampler, tex_coords * texture_scale).r;
+
+    vec2  current_coords = tex_coords;
+    float current_depth_value = texture(material.depth.sampler, current_coords).r;
+
+    while(current_layer_depth < current_depth_value)
+    {
+        current_coords -= delta_coords;
+        current_depth_value = texture(material.depth.sampler, current_coords).r;
+        current_layer_depth += layer_depth;
+    }
+
+    vec2 previous_coords = current_coords + delta_coords;
+
+    float after_depth  = current_depth_value - current_layer_depth;
+    float before_depth = texture(material.depth.sampler, previous_coords).r - current_layer_depth + layer_depth;
+
+    float weight = after_depth / (after_depth - before_depth);
+    vec2 final_coords = previous_coords * weight + current_coords * (1.0 - weight);
+
+    return final_coords;
+}
+
 void main()
 {
-
     if (visualize_depth)
     {
         frag_color = calculate_depth();
         return;
     }
 
-    vec4 tex = texture(material.diffuse.sampler, text_cord);
-
-    if (tex.a < 0.1)
-    {
-        discard;
-    }
-
     vec3 result;
+
+    data.frag_pos = frag_pos * TBN;
+    data.view_pos = view_pos * TBN;
+    data.view_dir = normalize(data.view_pos - data.frag_pos);
+
+    vec2 coords = tex_coords;
+
+    if (material.depth.enabled)
+    {
+        coords = parallax_coords(data.view_dir);
+
+        if(coords.x > 1.0 || coords.y > 1.0 || coords.x < 0.0 || coords.y < 0.0)
+        {
+            discard;
+        }
+    }
 
     if (material.bump.enabled)
     {
-        vec3 bump_normal = texture(material.bump.sampler, text_cord).rgb;
+        vec3 bump_normal = texture(material.bump.sampler, coords).rgb;
 
         if (flip_normals)
         {
@@ -261,20 +307,21 @@ void main()
         bump_normal = bump_normal * 2 - 1.0;
         bump_normal.xy *= material.bump_strength;
         data.norm = normalize(bump_normal);
-
-        data.frag_pos = frag_pos * TBN;
-        data.view_pos = view_pos * TBN;
     }
     else
     {
         data.norm = normalize(normals);
-        data.frag_pos = frag_pos;
-        data.view_pos = view_pos;
     }
 
-    data.diffuse = create_texture(material.diffuse);
+    vec4 diffuse = create_texture(material.diffuse, coords);
+
+    if (diffuse.a < 0.1)
+    {
+        discard;
+    }
+
+    data.diffuse = diffuse.xyz;
     data.specular = material.specular;
-    data.view_dir = normalize(data.view_pos - data.frag_pos);
     data.shadow = material.cast_shadow ? 1 : 0;
 
     if (material.cast_shadow)
@@ -324,5 +371,5 @@ void main()
         bright_color = vec4(0, 0, 0, 1);
     }
 
-    frag_color = vec4(result, tex.a * material.transparency);
+    frag_color = vec4(result, diffuse.a * material.transparency);
 }

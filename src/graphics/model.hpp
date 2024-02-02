@@ -14,7 +14,7 @@ namespace pge
     {
         uint32_t id;
         float scale = 1;
-        bool enabled = true;
+        bool enabled = false;
         std::string_view path;
     };
 
@@ -25,12 +25,14 @@ namespace pge
         float alpha = 1;
         Texture diffuse;
 		Texture bump;
+		Texture depth;
+		float depth_strength = 0.1;
 		float bump_strength = 1;
 		bool flip_normals = false;
         float specular = 0;
         glm::vec3 color {0.0f};
 		float emission = 0;
-        bool recieve_lighting = true;
+        bool receive_lighting = true;
 		bool cast_shadow = true;
 		bool contribute_bloom = true;
     };

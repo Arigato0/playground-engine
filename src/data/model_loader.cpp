@@ -163,6 +163,7 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 
 	output.diffuse = load_material(material, aiTextureType_DIFFUSE);
 	output.bump    = load_material(material, m_is_obj ? aiTextureType_HEIGHT : aiTextureType_NORMALS);
+//	output.depth   = load_material(material, aiTextureType_HEIGHT);
 
 	return output;
 }

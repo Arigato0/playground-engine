@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.22)
 project(playgroundEngineLib)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -7,12 +7,16 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Never can get assimp to compile with this option turned on
+set(ASSIMP_WARNINGS_AS_ERRORS OFF)
+
 include_directories(lib/glad/include/ lib/imgui-docking/ lib/imgui-docking/backends lib/stb/ lib/glm/glm lib/assimp/include
         lib/unordered_dense/include/ src/)
 add_subdirectory("lib")
 add_subdirectory("lib/glm/")
 add_subdirectory("lib/assimp")
 add_subdirectory("lib/unordered_dense")
+
 
 add_library(playgroundEngineLib
         lib/glad/src/glad.c
@@ -121,3 +125,4 @@ add_library(playgroundEngineLib
 )
 
 target_link_libraries(playgroundEngineLib glfw vulkan ${OPENGL_LIBRARIES} IMGUI glm assimp unordered_dense::unordered_dense)
+

@@ -164,6 +164,5 @@ void pge::set_uniform(uint32_t program, std::string_view name, const pge::Unifor
 		{
 			glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
 		},
-
 	}, value);
 }

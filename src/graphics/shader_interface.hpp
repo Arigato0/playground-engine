@@ -49,13 +49,13 @@ namespace pge
 		}
 
 		[[nodiscard]]
-		int count() const
+		uint32_t count() const
 		{
 			return m_count;
 		}
 
 	private:
-		int m_count = 0;
+		uint32_t m_count = 0;
 		std::array<ShaderPath, MAX_SHADERS_TYPES> m_paths;
 	};
 
@@ -71,5 +71,6 @@ namespace pge
         virtual IShader& set(std::string_view name, glm::vec3 value) = 0;
         virtual IShader& set(std::string_view name, glm::vec4 value) = 0;
         virtual IShader& set(std::string_view name, glm::mat4 value) = 0;
+//		virtual IShader& set(std::string_view name, const UniformValue &&value) = 0;
     };
 }

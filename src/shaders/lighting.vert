@@ -9,7 +9,7 @@ layout(location = 4) in vec3 in_bitangent;
 uniform mat4 model;
 uniform mat4 mvp;
 
-out vec2 text_cord;
+out vec2 tex_coords;
 out vec3 normals;
 out vec3 frag_pos;
 
@@ -34,6 +34,6 @@ void main()
     frag_pos = vec3(model * vec4(in_pos, 1.0));
 
     gl_Position = mvp * vec4(in_pos, 1.0);
-    text_cord = in_tex_cord;
+    tex_coords = in_tex_cord;
     normals = mat3(transpose(inverse(model))) * in_normals;
 }

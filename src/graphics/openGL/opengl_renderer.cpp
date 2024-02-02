@@ -256,7 +256,6 @@ pge::OpenglRenderer::create_texture(ustring_view data, int width, int height, in
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-
     int pixel_format;
 	int internal_format;
 
@@ -612,13 +611,16 @@ void pge::OpenglRenderer::set_model_uniforms(const DrawData &data)
     	.set("material.diffuse.enabled", material.diffuse.enabled)
     	.set("material.bump.enabled", material.bump.enabled)
 		.set("material.bump_strength", material.bump_strength)
+		.set("material.depth.enabled", material.depth.enabled)
+		.set("material.depth_strength", material.depth_strength)
     	.set("material.transparency", material.alpha)
-    	.set("receive_lighting", material.recieve_lighting)
+    	.set("receive_lighting", material.receive_lighting)
 		.set("contribute_bloom", material.contribute_bloom)
 		.set("material.cast_shadow", material.cast_shadow)
 		.set("flip_normals", material.flip_normals)
     	.set("material.diffuse.sampler", 0)
 		.set("material.bump.sampler", 1)
+		.set("material.depth.sampler", 2)
     	.set("material.specular", material.specular)
 		.set("material.emission", material.emission)
     	.set("mvp", mvp)
@@ -641,6 +643,9 @@ void pge::OpenglRenderer::set_model_uniforms(const DrawData &data)
 	glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, material.bump.id);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy_level);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, material.depth.id);
 }
 
 void pge::OpenglRenderer::create_screen_plane()
@@ -679,7 +684,7 @@ void pge::OpenglRenderer::draw_screen_plane()
     auto [width, height] = Engine::window.framebuffer_size();
 
     m_screen_shader.use()
-    	.set("resolution", {width, height});
+    	.set("resolution", glm::vec2{width, height});
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_screen_buffer.textures[0]);
