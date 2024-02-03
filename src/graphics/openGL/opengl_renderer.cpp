@@ -198,7 +198,7 @@ void pge::OpenglRenderer::draw(const MeshView&mesh, glm::mat4 model, DrawOptions
 {
     DrawData data {mesh, model, options};
 
-    if (mesh.material.use_alpha)
+    if (mesh.material.flags & MAT_USE_ALPHA)
     {
         float distance = glm::length2(m_camera->position - glm::vec3{model[3]});
         m_sorted_meshes.emplace(distance, std::move(data));
@@ -521,7 +521,7 @@ void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 
 		if (calculate_shadows)
 		{
-			if (!data.mesh.material.cast_shadow)
+			if (!data.mesh.material.flags & MAT_CAST_SHADOW)
 			{
 				return;
 			}
@@ -614,10 +614,10 @@ void pge::OpenglRenderer::set_model_uniforms(const DrawData &data)
 		.set("material.depth.enabled", material.depth.enabled)
 		.set("material.depth_strength", material.depth_strength)
     	.set("material.transparency", material.alpha)
-    	.set("receive_lighting", material.receive_lighting)
-		.set("contribute_bloom", material.contribute_bloom)
-		.set("material.cast_shadow", material.cast_shadow)
-		.set("flip_normals", material.flip_normals)
+    	.set("receive_lighting", bool(material.flags & MAT_RECEIVE_LIGHT))
+		.set("contribute_bloom", bool(material.flags & MAT_CONTRIBUTE_BLOOM))
+		.set("material.cast_shadow", bool(material.flags & MAT_CAST_SHADOW))
+		.set("flip_normals", bool(material.flags & MAT_FLIP_NORMALS))
     	.set("material.diffuse.sampler", 0)
 		.set("material.bump.sampler", 1)
 		.set("material.depth.sampler", 2)

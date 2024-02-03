@@ -18,23 +18,26 @@ namespace pge
         std::string_view path;
     };
 
+    constexpr uint8_t MAT_USE_ALPHA { 1 << 0};
+	constexpr uint8_t MAT_FLIP_NORMALS { 1 << 1};
+	constexpr uint8_t MAT_RECEIVE_LIGHT { 1 << 2};
+	constexpr uint8_t MAT_CAST_SHADOW { 1 << 3};
+	constexpr uint8_t MAT_CONTRIBUTE_BLOOM { 1 << 4};
+	constexpr uint32_t DEFAULT_MAT_FLAGS = MAT_RECEIVE_LIGHT | MAT_CAST_SHADOW | MAT_CONTRIBUTE_BLOOM;
+
     struct Material
     {
-        bool use_alpha = false;
         float shininess = 32;
         float alpha = 1;
         Texture diffuse;
 		Texture bump;
 		Texture depth;
+		uint32_t flags = DEFAULT_MAT_FLAGS;
 		float depth_strength = 0.1;
 		float bump_strength = 1;
-		bool flip_normals = false;
         float specular = 0;
         glm::vec3 color {0.0f};
 		float emission = 0;
-        bool receive_lighting = true;
-		bool cast_shadow = true;
-		bool contribute_bloom = true;
     };
 
     struct Vertex

@@ -56,6 +56,17 @@ namespace pge
 
     struct EndGroup {};
 
+	struct BitFlag
+	{
+		uint32_t *flag;
+		uint8_t mask;
+
+		BitFlag(uint32_t *flag, uint8_t mask) :
+			flag(flag),
+			mask(mask)
+		{}
+	};
+
 #define SEPERATOR(name) {(name), SeperatorControl{} }
 #define START_GROUP {"", StartGroup{} }
 #define END_GROUP {"", EndGroup{} }
@@ -68,7 +79,7 @@ namespace pge
 
     using EditorControl = std::variant<
         bool*, Drag3Control<float>, DragControl<float>, ButtonControl, ColorEdit<float>,
-        SeperatorControl, StartGroup, EndGroup>;
+        SeperatorControl, StartGroup, EndGroup, BitFlag>;
 
     struct EditorProperty
     {

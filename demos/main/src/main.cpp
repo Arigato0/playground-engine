@@ -142,13 +142,13 @@ public:
             {
                 START_GROUP,
                 SEPERATOR(mesh.name),
-                {"Recieve light", &material.receive_lighting},
-				{"Cast shadow", &material.cast_shadow},
-				{"Contribute bloom", &material.contribute_bloom},
+                {"Recieve light", BitFlag(&material.flags, MAT_RECEIVE_LIGHT)},
+				{"Cast shadow", BitFlag(&material.flags, MAT_CAST_SHADOW)},
+				{"Contribute bloom", BitFlag(&material.flags, MAT_CONTRIBUTE_BLOOM)},
                 {"Color", ColorEdit(glm::value_ptr(material.color))},
                 {"Shininess", DragControl(&material.shininess)},
 				{"Emission", DragControl(&material.emission)},
-                {"Is transparent", &material.use_alpha},
+                {"Is transparent", BitFlag(&material.flags, MAT_USE_ALPHA)},
                 {"Transparency", DragControl(&material.alpha)},
 				{"Specular", DragControl(&material.specular)},
                 {"Texture scale",  DragControl(&material.diffuse.scale)},
@@ -157,7 +157,7 @@ public:
 				{"Enable depth", &material.depth.enabled},
 				{"Depth Strength", DragControl(&material.depth_strength)},
 				{"Normal strength", DragControl(&material.bump_strength)},
-				{"Flip normals", &material.flip_normals},
+				{"Flip normals", BitFlag(&material.flags, MAT_FLIP_NORMALS)},
                 {"Set Diffuse", [&mesh]
                 {
                     auto path = native_file_dialog("~");
@@ -228,6 +228,22 @@ void render_properties(const EditorProperties &properties)
             {
                 ImGui::PopID();
             },
+			[&prop](BitFlag bf)
+            {
+                bool enabled = *bf.flag & bf.mask;
+
+				ImGui::Checkbox(prop.name.data(), &enabled);
+
+				if (enabled)
+				{
+					*bf.flag |= bf.mask;
+				}
+				else
+				{
+					*bf.flag &= ~bf.mask;
+				}
+            },
+
         }, prop.control);
     }
 }
@@ -806,9 +822,14 @@ public:
 class ControlTest : public IComponent
 {
 public:
+
+	inline static constexpr uint8_t FLAG1 { 1 << 0 };
+	inline static constexpr uint8_t FLAG2 { 1 << 2 };
+
     bool show_window = false;
     float f_value = 10.0f;
     glm::vec3 my_vec3;
+	uint32_t flags = FLAG1;
 
     std::vector<EditorProperty> editor_properties() override
     {
@@ -817,8 +838,8 @@ public:
             {"Enabled", &show_window},
             {"My vec3", Drag3Control(glm::value_ptr(my_vec3))},
             {"Drag", DragControl(&f_value)},
-            {"Drag", DragControl(&f_value)},
             {"Hello", hello},
+			{"Flag1", BitFlag(&flags, FLAG1)}
         };
     }
 
@@ -829,7 +850,7 @@ public:
 
     void update(double delta_time) override
     {
-        if (!show_window)
+        if (!(flags & FLAG1))
         {
             return;
         }
@@ -870,10 +891,8 @@ void init_sponza_scene()
 	{
 		mesh.material.depth.enabled = mesh.material.bump.enabled;
 		mesh.material.bump.enabled = false;
-		mesh.material.use_alpha = true;
+		mesh.material.flags |= MAT_USE_ALPHA;
 	}
-
-
 }
 
 void init_room_scene()
@@ -899,8 +918,7 @@ void init_room_scene()
     auto &window_material = window_mesh->model.meshes.front().material;
     window_material.diffuse = *Engine::asset_manager.get_texture("assets/window.png", true, TextureWrapMode::ClampToEdge);
     window_material.shininess = 1;
-    window_material.receive_lighting = false;
-    window_material.use_alpha = true;
+    window_material.flags |= MAT_USE_ALPHA;
 
 //	create_mesh("table", "/home/arian/Downloads/wooden_table_02_4k.gltf/wooden_table_02_4k.gltf");
 	auto [couch_ent, _] = create_mesh("couch", "/home/arian/Downloads/gaudy_couch/scene.gltf");
@@ -930,10 +948,11 @@ void init_room_scene()
 	wall_ent->transform.rotate(-180, {0, 0, 1});
 
 	auto &wall_mesh = wall_mesh_comp->model.meshes.front();
+
 	wall_mesh.material.diffuse = *Engine::asset_manager.get_texture("/home/arian/Downloads/wood.png");
 	wall_mesh.material.bump = *Engine::asset_manager.get_texture("/home/arian/Downloads/toy_box_normal.png");
 	wall_mesh.material.depth = *Engine::asset_manager.get_texture("/home/arian/Downloads/toy_box_disp.png");
-	wall_mesh.material.depth_strength = 0.2;
+	wall_mesh.material.depth_strength = 0.3;
 }
 
 PGE_COMPONENT(CameraViewComp)

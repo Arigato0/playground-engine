@@ -152,7 +152,7 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 
 	if (output.alpha < 1.0f)
 	{
-		output.use_alpha = true;
+		output.flags |= MAT_USE_ALPHA;
 	}
 	if (output.shininess < 1)
 	{
@@ -163,12 +163,15 @@ pge::Material pge::ModelLoader::load_mesh_material(const aiMesh *mesh, const aiS
 
 	output.diffuse = load_material(material, aiTextureType_DIFFUSE);
 	output.bump    = load_material(material, m_is_obj ? aiTextureType_HEIGHT : aiTextureType_NORMALS);
-//	output.depth   = load_material(material, aiTextureType_HEIGHT);
+
+	// man i love assimp
+	if (!m_is_obj)
+	{
+		output.depth  = load_material(material, aiTextureType_HEIGHT);
+	}
 
 	return output;
 }
-
-
 
 pge::Texture pge::ModelLoader::load_material(aiMaterial* material, aiTextureType type)
 {

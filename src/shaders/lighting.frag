@@ -238,20 +238,15 @@ vec2 parallax_coords(vec3 view_dir)
     const float min_layers = 8.0;
     const float max_layers = 32.0;
     const float layers = mix(max_layers, min_layers, max(dot(vec3(0.0, 0.0, 1.0), view_dir), 0.0));
-
-    float layer_depth = 1 / layers;
+    const float layer_depth = 1 / layers;
+    const vec2 delta_coords = view_dir.xy * material.depth_strength / layers;
 
     float current_layer_depth = 0;
-
-    vec2 p = view_dir.xy * material.depth_strength;
-    vec2 delta_coords = p / layers;
-
-    float height =  texture(material.depth.sampler, tex_coords * texture_scale).r;
 
     vec2  current_coords = tex_coords;
     float current_depth_value = texture(material.depth.sampler, current_coords).r;
 
-    while(current_layer_depth < current_depth_value)
+    while (current_layer_depth < current_depth_value)
     {
         current_coords -= delta_coords;
         current_depth_value = texture(material.depth.sampler, current_coords).r;
