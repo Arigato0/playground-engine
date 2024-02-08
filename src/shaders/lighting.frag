@@ -111,7 +111,6 @@ struct LightingData
     float specular;
     vec3 norm;
     vec3 view_dir;
-    float shadow;
     vec3 light_pos;
     vec3 frag_pos;
     vec3 view_pos;
@@ -204,8 +203,6 @@ vec3 calculate_lighting(Light light, LightingData data)
     float spec = pow(max(dot(data.norm, halfway_dir), 0.0), material.shininess);
     vec3 specular = light.color * data.specular * spec * light.specular * light.power;
 
-    //return specular + diffuse + ambient;
-
     if (light.is_spot)
     {
         float epsilon = light.cutoff - light.outer_cutoff;
@@ -222,7 +219,9 @@ vec3 calculate_lighting(Light light, LightingData data)
     diffuse  *= attenuation;
     specular *= attenuation;
 
-    return ambient + (1 - data.shadow) * (diffuse + specular + material.emission);
+    float shadow = material.cast_shadow ? calculate_shadows(light) : 0;
+
+    return ambient + (1 - shadow) * (diffuse + specular + material.emission);
 }
 
 vec4 calculate_depth()
@@ -317,22 +316,9 @@ void main()
 
     data.diffuse = diffuse.xyz;
     data.specular = material.specular;
-    data.shadow = material.cast_shadow ? 1 : 0;
-
-    if (material.cast_shadow)
-    {
-        for (int i = 0; i < light_count; i++)
-        {
-            if (lights[i].is_active)
-            {
-                data.shadow *= calculate_shadows(lights[i]);
-            }
-        }
-    }
 
     if (receive_lighting)
     {
-
         for (int i = 0; i < light_count; i++)
         {
             if (lights[i].is_active)

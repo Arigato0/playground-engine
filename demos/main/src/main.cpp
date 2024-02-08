@@ -829,7 +829,7 @@ public:
     bool show_window = false;
     float f_value = 10.0f;
     glm::vec3 my_vec3;
-	uint32_t flags = FLAG1;
+	uint32_t flags;
 
     std::vector<EditorProperty> editor_properties() override
     {
@@ -850,7 +850,7 @@ public:
 
     void update(double delta_time) override
     {
-        if (!(flags & FLAG1))
+        if (!(flags & FLAG1) || show_window)
         {
             return;
         }
@@ -884,14 +884,15 @@ void init_sponza_scene()
 
 	light->data.power = 4;
 
-	auto [sponza_ent, sponza_mesh] = create_mesh("sponza", "/home/arian/Downloads/sponza/sponza.obj");
-	sponza_ent->transform.scale(glm::vec3{0.01});
+	auto [sponza_ent, sponza_mesh] = create_mesh("sponza", "/home/arian/Downloads/glTF-Sample-Assets/Models/Sponza/glTF/Sponza.gltf");
+//	sponza_ent->transform.scale(glm::vec3{0.01});
 
 	for (auto &mesh : sponza_mesh->model.meshes)
 	{
-		mesh.material.depth.enabled = mesh.material.bump.enabled;
-		mesh.material.bump.enabled = false;
+//		mesh.material.depth.enabled = false;
+//		mesh.material.bump.enabled = false;
 		mesh.material.flags |= MAT_USE_ALPHA;
+//		mesh.material.flags &= ~(MAT_RECEIVE_LIGHT | MAT_CAST_SHADOW);
 	}
 }
 
@@ -925,6 +926,7 @@ void init_room_scene()
 	couch_ent->transform.translate({-3.4, -0.8, -0.15});
 	//create_mesh("conference room", "/home/arian/Downloads/conference/conference.obj");
 
+	create_mesh("Wrench", "/home/arian/Documents/Adobe/Adobe Substance 3D Painter/export/scifi_wrench/scifi_wrench2.gltf");
 
     auto [skull_ent, skull_mesh] = create_mesh("Skull", "/home/arian/Downloads/scull-cup/source/SculCup/Cup_low.obj");
 
@@ -1003,8 +1005,6 @@ private:
 
 void run_engine()
 {
-    fmt::println("{}", std::filesystem::current_path());
-    
 	ASSERT_ERR(Engine::init({
             .title = "playground engine",
             .window_size = {1920, 1080},

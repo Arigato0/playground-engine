@@ -17,8 +17,8 @@ out mat3 TBN;
 
 mat3 calculate_TBN()
 {
-    vec3 T = normalize(vec3(model * vec4(in_tangent,   0.0)));
-    vec3 N = normalize(vec3(model * vec4(in_normals,   0.0)));
+    vec3 T = normalize(vec3(model * vec4(in_tangent, 0.0)));
+    vec3 N = normalize(vec3(model * vec4(in_normals, 0.0)));
 
     T = normalize(T - dot(T, N) * N);
 

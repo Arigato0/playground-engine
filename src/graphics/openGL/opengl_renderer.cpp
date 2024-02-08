@@ -518,10 +518,9 @@ void pge::OpenglRenderer::draw_everything(bool calculate_shadows)
 	auto draw_data = [&]
 	(DrawData &data)
 	{
-
 		if (calculate_shadows)
 		{
-			if (!data.mesh.material.flags & MAT_CAST_SHADOW)
+			if (!(data.mesh.material.flags & MAT_CAST_SHADOW))
 			{
 				return;
 			}
